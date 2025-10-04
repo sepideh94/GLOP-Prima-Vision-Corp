@@ -1,0 +1,29 @@
+services:
+
+  db:
+    image: postgres:16.10-bookworm
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=glop 
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5433:5432"
+    volumes:
+      - /tmp/postgresqlvolume/:/var/lib/postgresql/data 
+  front:
+    build: ./front
+    ports:
+      - "3000:80"
+    depends_on:
+      - back
+  back:
+    build: ./back
+    ports:
+      - "8000:80"
+    depends_on: 
+      - db  
+
+
+
+      
