@@ -1,0 +1,1 @@
+Mettre tous les hooks commun pour l'application ici

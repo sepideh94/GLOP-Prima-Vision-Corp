@@ -1,0 +1,1 @@
+des codes qui seraient utiles pour l'application mais qui encombrent le code. ex: formatDate
