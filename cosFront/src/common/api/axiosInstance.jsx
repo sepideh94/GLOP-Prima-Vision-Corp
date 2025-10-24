@@ -1,6 +1,8 @@
 //L'instance des axios pour les appels API 
 import axios from "axios";
 
+// Création d'une instance Axios partagée pour tout le projet
+// La base URL est définie dans le fichier .env (VITE_API_URL)
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
 });
