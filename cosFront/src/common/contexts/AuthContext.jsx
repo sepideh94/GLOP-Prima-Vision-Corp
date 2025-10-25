@@ -1,11 +1,11 @@
-// Gère la connexion, la déconnexion et le stockage du token/utilisateur
+// Gère la connexion, la déconnexion et le stockage du token/user
 import { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
 export default function AuthProvider({ children }) {
-  // Stockage du token et de l'utilisateur dans le navigateur (localStorage)
+  // Stockage du token et user dans le navigateur (localStorage)
   const [token, setToken] = useState(() => localStorage.getItem("token"));
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem("user");
@@ -20,7 +20,7 @@ export default function AuthProvider({ children }) {
     localStorage.setItem("user", JSON.stringify(user));
   };
 
-  // Supprime le token → déconnexion
+  // Supprime le token pour déconnexion
   const logout = () => {
     setToken(null);
     setUser(null);
