@@ -13,5 +13,8 @@ VITE_API_URL=http://localhost:8080/api
 npm i bootstrap → design de base
 npm i axios → appels d'API
 npm i react-router-dom → gestion des routes
+npm install @mui/material @mui/icons-material
+npm install @emotion/react @emotion/styled
+
  
 
