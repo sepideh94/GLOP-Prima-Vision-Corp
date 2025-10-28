@@ -1,0 +1,30 @@
+# OS / Editeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Maven / Java
+back/target/
+*.iml
+*.class
+*.log
+
+# Node (si un jour tu rajoutes un front JS)
+node_modules/
+dist/
+
+# Environnements / Secrets
+.env
+*.env
+*.sql
+*.dump
+
+# Données locales (si tu utilises un bind-mount)
+data/
+
+# Docker artefacts locaux
+**/.dockerignore
+
+# Autre
+*.tmp
