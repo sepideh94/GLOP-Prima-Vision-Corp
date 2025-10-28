@@ -6,10 +6,10 @@ import { loginApi } from "../services/authService";
 // Redirections selon le rôle
 const roleTarget = {
   ADMIN: "/admin",
-  COMMISSAIRE: "/commissaire",
+  COMMISSAIRE: "/commissioner",
   ATHLETE: "/athlete",
-  VOLONTAIRE: "/volontaire",
-  SPECTATEUR: "/",
+  VOLONTAIRE: "/volunteer",
+  SPECTATEUR: "/spectator",
 };
 
 export default function LoginPage() {

@@ -1,8 +1,4 @@
-
-
-function Volunteer() {  
-
-    return <div>Volunteer Page</div>;   
+function Volunteer() {
+  return <div>Volontaire Page</div>;
 }
-
-export default Volunteer;   
+export default Volunteer;

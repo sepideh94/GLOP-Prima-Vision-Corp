@@ -1,7 +1,7 @@
 
 
 function Commissioner() {
-  return <div>Commissioner Page</div>;
+  return <div>Commissaire Page</div>;
 }
 
 export default Commissioner; 

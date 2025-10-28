@@ -1,7 +1,4 @@
-
-
-function Commissioner() {      
-    return <div>Commissioner Page</div>;
+function Spectator() {
+  return <div>Spectateur Page</div>;
 }
-
-export default Commissioner;    
+export default Spectator;

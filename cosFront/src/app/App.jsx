@@ -9,18 +9,6 @@ import Spectator from "../features/user/pages/Spectator.jsx";
 import Volunteer from "../features/user/pages/Volunteer.jsx";
 
 
-
-
-// //Page temporaire juste pour tester la redirection après connexion 
-// function AdminPage() {
-//   return (
-//     <div className="container mt-5 text-center">
-//       <h1>Page Admin</h1>
-//       <p>Redirection réussie</p>
-//     </div>
-//   );
-// }
-
 export default function App() {
   return (
     <AuthProvider>

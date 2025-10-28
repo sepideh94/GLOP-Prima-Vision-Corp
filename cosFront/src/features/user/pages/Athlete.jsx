@@ -1,13 +1,4 @@
-
-
-
 function Athlete() {
-
-
-
-    return <div>HEllo !! c'est l'athlete </div>; 
-
-
+    return <div>Athlete Page </div>; 
 }
-
 export default Athlete;
