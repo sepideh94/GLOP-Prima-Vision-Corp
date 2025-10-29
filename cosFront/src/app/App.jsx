@@ -1,5 +1,7 @@
 import AuthProvider from "../common/contexts/AuthContext";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import PrivateRoute from "../common/components/PrivateRoute.jsx";
+import Layout from "../common/components/Layout.jsx";
 import LoginPage from "../features/user/pages/LoginPage.jsx";
 
 import Admin from "../features/user/pages/Admin.jsx";
@@ -15,11 +17,17 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/athlete" element={<Athlete />} />   
-          <Route path="/commissioner" element={<Commissioner />} />
-          <Route path="/spectator" element={<Spectator />} />
-          <Route path="/volunteer" element={<Volunteer />} />
+
+          <Route element={<PrivateRoute />}>
+           <Route element={<Layout />}>
+             <Route path="/admin" element={<Admin />} />
+             <Route path="/athlete" element={<Athlete />} />   
+             <Route path="/commissioner" element={<Commissioner />} />
+             <Route path="/spectator" element={<Spectator />} />
+             <Route path="/volunteer" element={<Volunteer />} />
+            </Route>
+          </Route>
+          
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
