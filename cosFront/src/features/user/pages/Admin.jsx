@@ -11,8 +11,37 @@ import {
   CardContent,
   CardActionArea,
   Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
-import { AddCircleOutline, Event, Report, Map, People, Timeline, CalendarMonth } from "@mui/icons-material";
+import {
+  AddCircleOutline,
+  Event,
+  Report,
+  Map,
+  People,
+  Timeline,
+  CalendarMonth,
+  Group,
+} from "@mui/icons-material";
+import { useState } from "react";
+
+// ---- Simulation d'une "API" pour récupérer les utilisateurs ----
+async function fetchUsers() {
+  const users = [
+    { email: "admin@cos.com", role: "ADMIN" },
+    { email: "commissaire@cos.com", role: "COMMISSAIRE" },
+    { email: "athlete@cos.com", role: "ATHLETE" },
+    { email: "spectateur@cos.com", role: "SPECTATEUR" },
+    { email: "volontaire@cos.com", role: "VOLONTAIRE" },
+  ];
+  return Promise.resolve(users);
+}
 
 export default function Admin() {
   const sections = [
@@ -23,16 +52,34 @@ export default function Admin() {
     { title: "Créer le planning des acteurs", icon: <CalendarMonth />, color: "#7b1fa2" },
     { title: "Générer un rapport pour le comité", icon: <AddCircleOutline />, color: "#512da8" },
     { title: "Gérer les infos sur la carte", icon: <Map />, color: "#455a64" },
+    // ✅ Nouvelle carte pour afficher les utilisateurs
+    { title: "Afficher les utilisateurs", icon: <Group />, color: "#388e3c", isUserButton: true },
   ];
+
+  const [users, setUsers] = useState([]);
+  const [showUsers, setShowUsers] = useState(false);
+
+  const handleShowUsers = async () => {
+    if (!showUsers) {
+      const data = await fetchUsers();
+      setUsers(data);
+    }
+    setShowUsers(!showUsers);
+  };
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f9fafb" }}>
+      {/* --- Menu latéral --- */}
       <Drawer
         variant="permanent"
         sx={{
           width: 240,
           flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: 240, boxSizing: "border-box", bgcolor: "#f4f6f8" },
+          [`& .MuiDrawer-paper`]: {
+            width: 240,
+            boxSizing: "border-box",
+            bgcolor: "#f4f6f8",
+          },
         }}
       >
         <Box sx={{ p: 2 }}>
@@ -51,11 +98,13 @@ export default function Admin() {
         </List>
       </Drawer>
 
+      {/* --- Contenu principal --- */}
       <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
         <Typography variant="h5" fontWeight="bold" mb={3}>
           Tableau de bord de l’administrateur
         </Typography>
 
+        {/* --- Grille des cartes --- */}
         <Grid container spacing={3}>
           {sections.map((section, index) => (
             <Grid item xs={12} sm={6} md={4} key={index}>
@@ -67,7 +116,9 @@ export default function Admin() {
                   "&:hover": { transform: "scale(1.03)" },
                 }}
               >
-                <CardActionArea>
+                <CardActionArea
+                  onClick={section.isUserButton ? handleShowUsers : undefined} // 👈 Seule la carte “Afficher les utilisateurs” a une action
+                >
                   <CardContent sx={{ textAlign: "center", py: 4 }}>
                     <Box
                       sx={{
@@ -90,11 +141,39 @@ export default function Admin() {
           ))}
         </Grid>
 
-        <Box sx={{ mt: 5, textAlign: "center" }}>
-          <Button variant="contained" color="primary">
-            Voir le rapport global
-          </Button>
-        </Box>
+        {/* --- Tableau des utilisateurs (s’affiche après clic sur la carte) --- */}
+        {showUsers && (
+          <Box sx={{ mt: 6 }}>
+            <Typography variant="h6" fontWeight="bold" mb={2}>
+              Liste des utilisateurs et leurs rôles
+            </Typography>
+
+            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
+              <Table>
+                <TableHead sx={{ bgcolor: "#e3f2fd" }}>
+                  <TableRow>
+                    <TableCell><strong>Email</strong></TableCell>
+                    <TableCell><strong>Rôle</strong></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <Box sx={{ mt: 3, textAlign: "center" }}>
+              <Button variant="outlined" color="secondary" onClick={handleShowUsers}>
+                Masquer les utilisateurs
+              </Button>
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
   );
