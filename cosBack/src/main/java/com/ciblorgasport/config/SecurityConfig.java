@@ -53,10 +53,10 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.POST,"/api/auth/login").permitAll()
 					    .requestMatchers("/api/admin/**").hasRole("ADMIN")
-					    .requestMatchers("/api/commissaire/**").hasRole("COMMISSAIRE")
+					    .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
 					    .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
-					    .requestMatchers("/api/volontaire/**").hasRole("VOLONTAIRE")
-					    .requestMatchers("/api/spectateur/**").hasRole("SPECTATEUR")
+					    .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
+					    .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
 					    .anyRequest().authenticated()
 						)
 				.authenticationProvider(authenticationProvider())
