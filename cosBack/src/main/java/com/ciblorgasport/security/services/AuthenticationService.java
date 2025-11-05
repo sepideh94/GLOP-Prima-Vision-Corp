@@ -5,6 +5,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.user.application.UserAccountService;
+import com.ciblorgasport.user.domain.Role;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
@@ -22,13 +23,13 @@ public class AuthenticationService {
 	
 	
 	 public JwtAuthenticationResponse signup(SignUpRequest request) {
-	      var user = UserAccount
+		 UserAccount user = UserAccount
 	                  .builder()
 	                  .firstName(request.getFirstName())
 	                  .lastName(request.getLastName())
 	                  .email(request.getEmail())
 	                  .password(passwordEncoder.encode(request.getPassword()))
-	                  .role(Role.ROLE_USER)
+	                  .role(request.getRole())
 	                  .build();
 
 	      user = userService.save(user);
