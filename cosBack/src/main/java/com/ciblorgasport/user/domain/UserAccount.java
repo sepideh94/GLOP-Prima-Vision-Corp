@@ -32,8 +32,8 @@ public class UserAccount implements UserDetails {
     private Long id;
 	
 	
-	private String firstname;
-	private String lastname;
+	private String firstName;
+	private String lastName;
 	 
 	@Column(unique = true, nullable = false)
 	private String email;

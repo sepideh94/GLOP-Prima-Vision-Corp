@@ -1,9 +1,13 @@
 package com.ciblorgasport.security.services;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
+import com.ciblorgasport.security.dto.SignInRequest;
+import com.ciblorgasport.security.dto.SignUpRequest;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.Role;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -23,6 +27,11 @@ public class AuthenticationService {
 	
 	
 	 public JwtAuthenticationResponse signup(SignUpRequest request) {
+		 
+		 if (request.getRole() == Role.ADMIN || request.getRole() == Role.COMMISSIONNER) {
+			    throw new IllegalArgumentException("This user can't signUp, try signIn.");
+			}
+		 
 		 UserAccount user = UserAccount
 	                  .builder()
 	                  .firstName(request.getFirstName())
