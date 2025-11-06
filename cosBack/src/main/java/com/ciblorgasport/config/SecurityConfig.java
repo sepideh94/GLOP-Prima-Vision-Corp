@@ -38,6 +38,9 @@ public class SecurityConfig {
 	}
 	
 	
+
+	
+	
 	@Bean 
 	public AuthenticationManager authentificationManager(AuthenticationConfiguration config)throws Exception{
 		return config.getAuthenticationManager();
@@ -51,7 +54,8 @@ public class SecurityConfig {
 						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
 						)
 				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(HttpMethod.POST,"/api/auth/login").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
+						.requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
 					    .requestMatchers("/api/admin/**").hasRole("ADMIN")
 					    .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
 					    .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
@@ -65,4 +69,7 @@ public class SecurityConfig {
 		 return http.build();		
 				
 	}
+	
+	
+	
 }
