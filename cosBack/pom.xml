@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.primavisioncorp.ciblorgasport</groupId>
+  <groupId>com.ciblorgasport</groupId>
   <artifactId>cos-back</artifactId>
   <version>0.0.1</version>
   <packaging>jar</packaging>
@@ -104,7 +104,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring.boot.version}</version>
         <configuration>
-          <mainClass>com.primavisioncorp.ciblorqasport.CosBackApplication</mainClass>
+          <mainClass>com.ciblorgasport.CosBackApplication</mainClass>
           <layers enabled="true"/>
         </configuration>
         <executions>
