@@ -1,5 +1,6 @@
 package com.ciblorgasport.security.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,7 +17,8 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthenticationController {
-
+	
+	@Autowired
     private final AuthenticationService authenticationService;
 
     @PostMapping("/signup")
