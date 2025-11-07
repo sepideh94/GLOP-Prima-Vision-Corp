@@ -56,6 +56,7 @@ public class SecurityConfig {
 				.authorizeHttpRequests(authorize -> authorize
 						.requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
 						.requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
+						.requestMatchers("/api/user/change-password").authenticated()
 					    .requestMatchers("/api/admin/**").hasRole("ADMIN")
 					    .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
 					    .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
