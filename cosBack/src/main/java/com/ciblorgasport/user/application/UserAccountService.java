@@ -5,11 +5,15 @@ import java.time.LocalDateTime;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.user.domain.Role;
 import com.ciblorgasport.user.domain.UserAccount;
+import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -17,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class UserAccountService implements UserDetailsService{
 	
 	private final UserAccountRepository userRepo ;
+	private final PasswordEncoder passwordEncoder;
 	
 	
 	
@@ -40,4 +45,22 @@ public class UserAccountService implements UserDetailsService{
 	public UserDetailsService userDetailsService() {
         return this::loadUserByUsername; 
     }
+	
+	@Transactional
+	public UserAccount createUserWithRole(CreateUserRequest request, Role role) {
+	    userRepo.findByEmail(request.getEmail()).ifPresent(u -> {
+	        throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
+	    });
+
+	    UserAccount user = UserAccount.builder()
+	            .firstName(request.getFirstName())
+	            .lastName(request.getLastName())
+	            .email(request.getEmail())
+	            .password(passwordEncoder.encode(request.getPassword()))
+	            .role(role)
+	            .build();
+
+	    return userRepo.save(user);
+	}
+
 }
