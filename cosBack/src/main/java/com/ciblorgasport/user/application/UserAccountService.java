@@ -2,6 +2,7 @@ package com.ciblorgasport.user.application;
 
 import java.time.LocalDateTime;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,7 +21,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserAccountService implements UserDetailsService{
 	
+	
+	@Autowired
 	private final UserAccountRepository userRepo ;
+	
+	
 	private final PasswordEncoder passwordEncoder;
 	
 	
@@ -62,5 +67,17 @@ public class UserAccountService implements UserDetailsService{
 
 	    return userRepo.save(user);
 	}
+	
+	public void changePassword(String email, String oldPassword, String newPassword) {
+        UserAccount user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Ancien mot de passe incorrect.");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepo.save(user);
+    }
 
 }
