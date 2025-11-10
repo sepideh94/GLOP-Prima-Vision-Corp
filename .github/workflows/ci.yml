@@ -25,5 +25,5 @@ jobs:
       # Compiler le projet et exécuter les tests
       - name: Build and test with Maven
         run: |
-          cd back
+          cd cosBack
           mvn -B clean verify
