@@ -1,19 +1,43 @@
-//L'instance des axios pour les appels API 
-import axios from "axios";
+import axios from 'axios';
 
-// Création d'une instance Axios partagée pour tout le projet
-// La base URL est définie dans le fichier .env (VITE_API_URL)
+// URL de base de l'API - utilise les variables d'environnement
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+
+// Création de l'instance axios
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080/api",
+  baseURL: API_BASE_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true,
 });
 
-// Ajoute le token dans le header (même si pour l'instant on n'a pas de vrai token)
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Intercepteur pour ajouter le token JWT à chaque requête
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Intercepteur pour gérer les erreurs de réponse
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expiré ou invalide
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default axiosInstance;
