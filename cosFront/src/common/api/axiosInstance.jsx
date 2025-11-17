@@ -1,43 +1,39 @@
-import axios from 'axios';
+import axios from "axios";
 
-// URL de base de l'API - utilise les variables d'environnement
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// Le backend est accessible depuis le navigateur via localhost:8080
+const API_BASE_URL = "http://localhost:8080";
 
-// Création de l'instance axios
-const axiosInstance = axios.create({
+const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-  withCredentials: true,
 });
 
-// Intercepteur pour ajouter le token JWT à chaque requête
-axiosInstance.interceptors.request.use(
+api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // on n’ajoute PAS de token pour /auth/signin
+    if (!config.url.includes("/auth/signin")) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Intercepteur pour gérer les erreurs de réponse
-axiosInstance.interceptors.response.use(
+api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expiré ou invalide
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
 
-export default axiosInstance;
+export default api;

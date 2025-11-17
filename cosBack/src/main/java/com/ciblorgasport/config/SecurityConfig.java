@@ -1,5 +1,7 @@
 package com.ciblorgasport.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,6 +16,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ciblorgasport.security.JwtAuthenticationFilter;
 import com.ciblorgasport.user.application.UserAccountService;
@@ -26,51 +31,79 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-	private final JwtAuthenticationFilter jwtAuthFilter;
-	private final UserAccountService userService;
-	private final PasswordEncoder pwdEncoder;
-	
-	@Bean
-	public AuthenticationProvider authenticationProvider() {
-		DaoAuthenticationProvider authProvider= new DaoAuthenticationProvider(userService.userDetailsService());
-		authProvider.setPasswordEncoder(pwdEncoder);
-		return authProvider;
-	}
-	
-	
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final UserAccountService userService;
+    private final PasswordEncoder pwdEncoder;
 
-	
-	
-	@Bean 
-	public AuthenticationManager authentificationManager(AuthenticationConfiguration config)throws Exception{
-		return config.getAuthenticationManager();
-	}
-	
-	@Bean
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userService.userDetailsService());
+        authProvider.setPasswordEncoder(pwdEncoder);
+        return authProvider;
+    }
+
+    @Bean
+    public AuthenticationManager authentificationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    // 🔥 CORS CONFIG
+   /* @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost:3000", "http://frontend", "http://frontend:80"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true); // important pour envoyer les cookies ou tokens
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }*/
+
+   @Bean
+public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+
+    config.setAllowedOrigins(List.of(
+        "http://localhost:3000",   // ton navigateur
+        "http://frontend",         // docker name
+        "http://frontend:80",
+        "http://ciblorgasport-frontend", 
+        "http://backend:8080"      // 🔥🔥 MANQUAIT !
+    ));
+
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+}
+
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
-				.csrf(csrf -> csrf.disable())
-				.sessionManagement(session -> session
-						.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-						)
-				.authorizeHttpRequests(authorize -> authorize
-						.requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
-						.requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
-						.requestMatchers("/api/user/change-password").authenticated()
-					    .requestMatchers("/api/admin/**").hasRole("ADMIN")
-					    .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
-					    .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
-					    .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
-					    .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
-					    .anyRequest().authenticated()
-						)
-				.authenticationProvider(authenticationProvider())
-				.addFilterBefore(jwtAuthFilter,UsernamePasswordAuthenticationFilter.class)
-				;
-		 return http.build();		
-				
-	}
-	
-	
-	
+        http
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 👈 active le CORS ici
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(authorize -> authorize
+                .requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
+                .requestMatchers("/api/user/change-password").authenticated()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
+                .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
+                .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
+                .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
+                .anyRequest().authenticated()
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+    
 }

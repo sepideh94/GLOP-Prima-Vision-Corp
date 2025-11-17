@@ -1,18 +1,10 @@
-// Simule une API d'authentification (mock)
-export async function loginApi({ email, password }) {
-  const roles = {
-    "admin@cos.com": "ADMIN",
-    "commissaire@cos.com": "COMMISSAIRE",
-    "athlete@cos.com": "ATHLETE",
-    "spectateur@cos.com": "SPECTATEUR",
-    "volontaire@cos.com": "VOLONTAIRE",
-  };
+import api from "./axiosInstance";
 
-  const role = roles[email?.toLowerCase()] || "SPECTATEUR";
+const authService = {
+  async signIn(email, password) {
+    const res = await api.post("/auth/signin", { email, password });
+    return res.data; // { token: "..." }
+  },
+};
 
-  // Simule une réponse réussie avec un faux token
-  return Promise.resolve({
-    token: "fake-token-123",
-    user: { email, role },
-  });
-}
+export default authService;

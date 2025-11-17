@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -25,11 +27,26 @@ const LoginPage = () => {
     setError('');
 
     try {
-      await authService.signIn(formData.email, formData.password);
-      // Rediriger vers la page d'accueil après connexion réussie
-      navigate('/');
+      const res = await authService.signIn(formData.email, formData.password);
+
+      // POUR L'INSTANT : on met un rôle par défaut.
+      // Le backend doit renvoyer le rôle plus tard.
+      const userRole = "SPECTATEUR";
+
+      // Stocker dans AuthContext
+      login({
+        token: res.token,
+        user: {
+          email: formData.email,
+          role: userRole,
+        },
+      });
+
+      // Rediriger vers page spectateur ou autre
+      navigate("/spectator");
+
     } catch (err) {
-      setError(err || 'Erreur de connexion. Veuillez réessayer.');
+      setError("Email ou mot de passe incorrect.");
     } finally {
       setLoading(false);
     }
@@ -39,7 +56,7 @@ const LoginPage = () => {
     <div style={styles.container}>
       <div style={styles.card}>
         <h2 style={styles.title}>Connexion</h2>
-        
+
         {error && (
           <div style={styles.error}>
             {error}
@@ -56,7 +73,6 @@ const LoginPage = () => {
               onChange={handleChange}
               required
               style={styles.input}
-              placeholder="votre@email.com"
             />
           </div>
 
@@ -69,110 +85,32 @@ const LoginPage = () => {
               onChange={handleChange}
               required
               style={styles.input}
-              placeholder="••••••••"
             />
           </div>
 
           <button 
             type="submit" 
             disabled={loading}
-            style={{
-              ...styles.button,
-              opacity: loading ? 0.6 : 1,
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
+            style={styles.button}
           >
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
-
-        <p style={styles.linkText}>
-          Pas encore de compte ?{' '}
-          <a href="/signup" style={styles.link}>
-            S'inscrire
-          </a>
-        </p>
       </div>
     </div>
   );
 };
 
-// Styles inline simples
 const styles = {
-  container: {
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
-    padding: '20px',
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-    padding: '40px',
-    width: '100%',
-    maxWidth: '400px',
-  },
-  title: {
-    fontSize: '24px',
-    fontWeight: 'bold',
-    marginBottom: '24px',
-    textAlign: 'center',
-    color: '#333',
-  },
-  error: {
-    backgroundColor: '#fee',
-    color: '#c33',
-    padding: '12px',
-    borderRadius: '4px',
-    marginBottom: '20px',
-    fontSize: '14px',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  label: {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#555',
-  },
-  input: {
-    padding: '12px',
-    fontSize: '14px',
-    border: '1px solid #ddd',
-    borderRadius: '4px',
-    outline: 'none',
-  },
-  button: {
-    padding: '12px',
-    fontSize: '16px',
-    fontWeight: '500',
-    color: 'white',
-    backgroundColor: '#007bff',
-    border: 'none',
-    borderRadius: '4px',
-    marginTop: '8px',
-  },
-  linkText: {
-    textAlign: 'center',
-    marginTop: '20px',
-    fontSize: '14px',
-    color: '#666',
-  },
-  link: {
-    color: '#007bff',
-    textDecoration: 'none',
-    fontWeight: '500',
-  },
+  container: { display: 'flex', justifyContent: 'center', paddingTop: '90px' },
+  card: { background: 'white', padding: '40px', borderRadius: '8px', width: '400px' },
+  title: { fontSize: '24px', textAlign: 'center' },
+  error: { background: '#fee', color: '#c33', padding: '10px', marginBottom: '20px' },
+  form: { display: 'flex', flexDirection: 'column', gap: '15px' },
+  formGroup: { display: 'flex', flexDirection: 'column' },
+  label: { fontWeight: '600' },
+  input: { padding: '12px', border: '1px solid #ccc', borderRadius: '5px' },
+  button: { padding: '12px', background: '#007bff', color: 'white', borderRadius: '5px', marginTop: '15px' }
 };
 
 export default LoginPage;
