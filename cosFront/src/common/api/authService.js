@@ -8,6 +8,16 @@ const authService = {
     });
     return res.data; 
   },
+  async signUp(firstName, lastName, email, password, role) {
+    const res = await api.post("/api/auth/signup", {
+      firstName,
+      lastName,
+      email,
+      password,
+      role,
+    });
+    return res.data;
+  },
 };
 
 export default authService;

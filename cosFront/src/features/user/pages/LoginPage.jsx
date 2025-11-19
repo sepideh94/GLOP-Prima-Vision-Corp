@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 
@@ -96,6 +96,17 @@ const LoginPage = () => {
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+
+        <div style={styles.divider}></div>
+
+        <div style={styles.linkContainer}>
+          <p style={styles.linkText}>
+            Pas encore de compte ?
+          </p>
+          <Link to="/signup" style={styles.signupButton}>
+            S'inscrire
+          </Link>
+        </div>
       </div>
     </div>
   );
@@ -103,14 +114,52 @@ const LoginPage = () => {
 
 const styles = {
   container: { display: 'flex', justifyContent: 'center', paddingTop: '90px' },
-  card: { background: 'white', padding: '40px', borderRadius: '8px', width: '400px' },
-  title: { fontSize: '24px', textAlign: 'center' },
-  error: { background: '#fee', color: '#c33', padding: '10px', marginBottom: '20px' },
+  card: { background: 'white', padding: '40px', borderRadius: '8px', width: '400px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
+  title: { fontSize: '24px', textAlign: 'center', marginBottom: '20px' },
+  error: { background: '#fee', color: '#c33', padding: '10px', marginBottom: '20px', borderRadius: '5px' },
   form: { display: 'flex', flexDirection: 'column', gap: '15px' },
   formGroup: { display: 'flex', flexDirection: 'column' },
-  label: { fontWeight: '600' },
-  input: { padding: '12px', border: '1px solid #ccc', borderRadius: '5px' },
-  button: { padding: '12px', background: '#007bff', color: 'white', borderRadius: '5px', marginTop: '15px' }
+  label: { fontWeight: '600', marginBottom: '5px' },
+  input: { padding: '12px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '14px' },
+  button: { 
+    padding: '12px', 
+    background: '#007bff', 
+    color: 'white', 
+    border: 'none',
+    borderRadius: '5px', 
+    marginTop: '15px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: '600'
+  },
+  divider: { 
+    margin: '25px 0', 
+    borderTop: '1px solid #e0e0e0' 
+  },
+  linkContainer: { 
+    marginTop: '20px', 
+    textAlign: 'center',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+  linkText: { 
+    fontSize: '14px', 
+    color: '#666',
+    margin: 0
+  },
+  signupButton: { 
+    display: 'inline-block',
+    padding: '10px 20px',
+    background: '#28a745', 
+    color: 'white', 
+    textDecoration: 'none', 
+    fontWeight: '600',
+    borderRadius: '5px',
+    fontSize: '14px',
+    transition: 'background 0.3s'
+  },
+  link: { color: '#007bff', textDecoration: 'none', fontWeight: '600' }
 };
 
 export default LoginPage;
