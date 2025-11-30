@@ -1,6 +1,5 @@
 package com.ciblorgasport.user.application;
 
-import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,7 +9,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.user.domain.UserAccount;
-import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 import jakarta.transaction.Transactional;
@@ -29,18 +27,17 @@ public class UserAccountService implements UserDetailsService{
 	
 	
 	
+	
+	@Transactional 
 	public UserAccount save(UserAccount newUser) {
-		
-		this.userRepo.findByEmail(newUser.getEmail()).ifPresent(u -> {
-            throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
-        });
-		if (newUser.getId() == null) {
-			newUser.setCreatedAt(LocalDateTime.now());
-		}
-		
-		newUser.setUpdatedAt(LocalDateTime.now());
-		return this.userRepo.save(newUser);
+	    
+	    this.userRepo.findByEmail(newUser.getEmail()).ifPresent(u -> {
+	        throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
+	    });
+	    
+	    return this.userRepo.save(newUser);
 	}
+	
 
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
