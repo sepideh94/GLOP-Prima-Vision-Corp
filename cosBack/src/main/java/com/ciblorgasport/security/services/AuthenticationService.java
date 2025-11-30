@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
-import com.ciblorgasport.user.domain.Role;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
@@ -28,18 +28,12 @@ public class AuthenticationService {
 	
 	 public JwtAuthenticationResponse signup(SignUpRequest request) {
 		 
-		 if (request.getRole() == Role.ADMIN || request.getRole() == Role.COMMISSIONNER) {
-			    throw new IllegalArgumentException("This user can't signUp, try signIn.");
-			}
-		 
-		 UserAccount user = UserAccount
-	                  .builder()
-	                  .firstName(request.getFirstName())
-	                  .lastName(request.getLastName())
-	                  .email(request.getEmail())
-	                  .password(passwordEncoder.encode(request.getPassword()))
-	                  .role(Role.SPECTATOR)
-	                  .build();
+		 UserAccount user = Spectator.builder() 
+                 .firstName(request.getFirstName())
+                 .lastName(request.getLastName())
+                 .email(request.getEmail())
+                 .password(passwordEncoder.encode(request.getPassword()))
+                 .build();
 
 	      user = userService.save(user);
 	      var jwt = jwtService.generateToken(user);
