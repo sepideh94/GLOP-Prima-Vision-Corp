@@ -10,8 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ciblorgasport.user.application.UserAccountService;
-import com.ciblorgasport.user.domain.Role;
+import com.ciblorgasport.commissionner.application.CommissionnerCreationService;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 
 import lombok.RequiredArgsConstructor;
@@ -22,18 +21,18 @@ import lombok.RequiredArgsConstructor;
 public class AdminController {
 	
 	@Autowired
-	private  UserAccountService userService;
-    
+	private final CommissionnerCreationService commissionnerService;
+	
 	@PostMapping("/create-commissaire")
 	 public ResponseEntity<?> createCommissaire(@RequestBody CreateUserRequest request) {
-	        var created = userService.createUserWithRole(request, Role.COMMISSIONNER);
+	        var created = commissionnerService.createUser(request);
 	        
 	        return ResponseEntity.status(HttpStatus.CREATED).body(
-	            Map.of(
-	              "id", created.getId(),
-	              "email", created.getEmail(),
-	              "role", created.getRole().name()
-	            )
-	        );
+		            Map.of(
+		              "id", created.getId(),
+		              "email", created.getEmail(),
+		              "role", created.getRoleName().replace("ROLE_", "") 
+		            )
+		        );
 	    }
 }
