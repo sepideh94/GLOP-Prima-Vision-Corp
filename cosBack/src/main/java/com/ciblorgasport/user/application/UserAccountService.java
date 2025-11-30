@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ciblorgasport.user.domain.Role;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
@@ -31,6 +30,10 @@ public class UserAccountService implements UserDetailsService{
 	
 	
 	public UserAccount save(UserAccount newUser) {
+		
+		this.userRepo.findByEmail(newUser.getEmail()).ifPresent(u -> {
+            throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
+        });
 		if (newUser.getId() == null) {
 			newUser.setCreatedAt(LocalDateTime.now());
 		}
@@ -51,22 +54,6 @@ public class UserAccountService implements UserDetailsService{
         return this::loadUserByUsername; 
     }
 	
-	@Transactional
-	public UserAccount createUserWithRole(CreateUserRequest request, Role role) {
-	    userRepo.findByEmail(request.getEmail()).ifPresent(u -> {
-	        throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
-	    });
-
-	    UserAccount user = UserAccount.builder()
-	            .firstName(request.getFirstName())
-	            .lastName(request.getLastName())
-	            .email(request.getEmail())
-	            .password(passwordEncoder.encode(request.getPassword()))
-	            .role(role)
-	            .build();
-
-	    return userRepo.save(user);
-	}
 	
 	public void changePassword(String email, String oldPassword, String newPassword) {
         UserAccount user = userRepo.findByEmail(email)
