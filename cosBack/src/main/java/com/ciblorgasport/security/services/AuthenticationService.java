@@ -37,7 +37,11 @@ public class AuthenticationService {
 
 	      user = userService.save(user);
 	      var jwt = jwtService.generateToken(user);
-	      return JwtAuthenticationResponse.builder().token(jwt).build();
+	      
+	      String role = user.getRoleName().replace("ROLE_", "");
+	      
+	      
+	      return JwtAuthenticationResponse.builder().token(jwt).role(role).build();
 	  }
 
 
@@ -47,6 +51,7 @@ public class AuthenticationService {
 	      var user = userRepository.findByEmail(request.getEmail())
 	              .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
 	      var jwt = jwtService.generateToken(user);
-	      return JwtAuthenticationResponse.builder().token(jwt).build();
+	      String role = user.getRoleName().replace("ROLE_", "");
+	      return JwtAuthenticationResponse.builder().token(jwt).role(role).build();
 	  }
 }
