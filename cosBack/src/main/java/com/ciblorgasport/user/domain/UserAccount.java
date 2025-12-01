@@ -8,23 +8,29 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.ciblorgasport.admin.domain.Admin;
+
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@SuperBuilder
 @Table(name = "user_account")
-public class UserAccount implements UserDetails {
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
+public abstract class UserAccount implements UserDetails {
 	
+	@Column(updatable = false)
 	private LocalDateTime createdAt;
+	
     private LocalDateTime updatedAt;
     
-    @Enumerated(EnumType.STRING)
-    private Role role;
+    public abstract String getRoleName();
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,7 +49,7 @@ public class UserAccount implements UserDetails {
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		
-		return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+		return List.of(new SimpleGrantedAuthority(getRoleName()));
 	}
 
 	@Override
@@ -87,4 +93,11 @@ public class UserAccount implements UserDetails {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public boolean isAdmin(){return false;}
+    public boolean isCommissionner(){return false;}
+    public boolean isAthlete(){return false;}
+    public boolean isVolonteer(){return false;}
+    public boolean isSpectator(){return false;}
+
 }
