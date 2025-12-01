@@ -25,4 +25,10 @@ public class Commissionner extends UserAccount {
 		return "ROLE_COMMISSIONNER";
 	}
 
+	public boolean isAdmin{return false;}
+	public boolean isCommissionner{return true;}
+	public boolean isAthlete{return false;}
+	public boolean isVolonteer{return false;}
+	public boolean isSpectator{return false;}
+
 }

@@ -93,4 +93,11 @@ public abstract class UserAccount implements UserDetails {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public boolean isAdmin{return false;}
+    public boolean isCommissionner{return false;}
+    public boolean isAthlete{return false;}
+    public boolean isVolonteer{return false;}
+    public boolean isSpectator{return false;}
+
 }

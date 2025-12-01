@@ -24,4 +24,10 @@ public class Spectator extends UserAccount {
 	public String getRoleName() {
 		return "ROLE_SPECTATOR";
 	}
+
+	public boolean isAdmin{return false;}
+	public boolean isCommissionner{return false;}
+	public boolean isAthlete{return false;}
+	public boolean isVolonteer{return false;}
+	public boolean isSpectator{return true;}
 }

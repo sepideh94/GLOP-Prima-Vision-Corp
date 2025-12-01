@@ -24,4 +24,10 @@ public class Athlete extends UserAccount{
 		return "ROLE_ATHLETE";
 	}
 
+	public boolean isAdmin{return false;}
+	public boolean isCommissionner{return false;}
+	public boolean isAthlete{return true;}
+	public boolean isVolonteer{return false;}
+	public boolean isSpectator{return false;}
+
 }
