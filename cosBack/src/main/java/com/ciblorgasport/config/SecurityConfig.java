@@ -92,7 +92,10 @@ public CorsConfigurationSource corsConfigurationSource() {
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
-                .requestMatchers("/api/user/change-password").authenticated()
+             // Events
+        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()      
+        .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN") 
+        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
