@@ -29,9 +29,8 @@ const LoginPage = () => {
     try {
       const res = await authService.signIn(formData.email, formData.password);
 
-      // POUR L'INSTANT : on met un rôle par défaut.
-      // Le backend doit renvoyer le rôle plus tard.
-      const userRole = "SPECTATEUR";
+      // Utiliser le rôle renvoyé par le backend
+      const userRole = res.role || "SPECTATEUR";
 
       // Stocker dans AuthContext
       login({
@@ -42,8 +41,16 @@ const LoginPage = () => {
         },
       });
 
-      // Rediriger vers page spectateur ou autre
-      navigate("/spectator");
+      const roleRoutes = {
+        ADMIN: "/admin",
+        SPECTATEUR: "/spectator",
+        ATHLETE: "/athlete",
+        COMMISSAIRE: "/commissioner",
+        VOLONTAIRE: "/volunteer",
+      };
+
+      const redirectPath = roleRoutes[userRole.toUpperCase()] || "/spectator";
+      navigate(redirectPath);
 
     } catch (err) {
       setError("Email ou mot de passe incorrect.");
