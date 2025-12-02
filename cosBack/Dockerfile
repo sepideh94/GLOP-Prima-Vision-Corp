@@ -27,7 +27,7 @@ ENV DB_HOST=postgres
 ENV DB_PORT=5432
 ENV DB_NAME=ciblorgasport
 ENV DB_USER=postgres
-ENV DB_PASSWORD=pwd
+ENV DB_PASSWORD=postgres123
 
 # Lancer l'application
 ENTRYPOINT ["java", "-jar", "app.jar"]
