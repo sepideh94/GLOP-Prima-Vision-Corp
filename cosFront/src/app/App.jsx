@@ -11,6 +11,9 @@ import Commissioner from "../features/user/pages/Commissioner.jsx";
 import Spectator from "../features/user/pages/Spectator.jsx";
 import Volunteer from "../features/user/pages/Volunteer.jsx";
 
+import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
+
+
 
 export default function App() {
   return (
@@ -25,6 +28,7 @@ export default function App() {
              <Route path="/admin" element={<Admin />} />
              <Route path="/athlete" element={<Athlete />} />   
              <Route path="/commissioner" element={<Commissioner />} />
+             <Route path="/commissioner/competitions" element={<CompetitionListPage />} />
              <Route path="/spectator" element={<Spectator />} />
              <Route path="/volunteer" element={<Volunteer />} />
             </Route>

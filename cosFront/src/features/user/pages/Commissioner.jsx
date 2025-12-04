@@ -21,11 +21,23 @@ import {
   PlaylistAddCheck,
   Publish,
   Login,
+  EmojiEvents, // ➜ AJOUT pour l'icône compétitions
 } from "@mui/icons-material";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Commissioner() {
+  const navigate = useNavigate();
+
   const features = [
+    // ➜ NOUVELLE CARTE DÉDIÉE AUX COMPÉTITIONS
+    {
+      key: "competitions",
+      title: "Gérer les compétitions",
+      icon: <EmojiEvents />,
+      color: "#ff9800",
+    },
+
     { title: "Modifier / Annuler une épreuve", icon: <EditCalendar />, color: "#1976d2" },
     { title: "Importer le fichier d’inscription des athlètes", icon: <UploadFile />, color: "#0288d1" },
     { title: "Consulter la liste des participants", icon: <ListAlt />, color: "#00796b" },
@@ -56,14 +68,22 @@ export default function Commissioner() {
             Espace Gestion
           </Typography>
         </Box>
+
         <List>
           {features.map((feature, index) => (
             <ListItem key={index} disablePadding>
-              <ListItemButton>
+              <ListItemButton
+                onClick={() => {
+                  if (feature.key === "competitions") {
+                    navigate("/commissioner/competitions");
+                  }
+                }}
+              >
                 <ListItemText primary={feature.title} />
               </ListItemButton>
             </ListItem>
           ))}
+
           <ListItem disablePadding>
             <ListItemButton onClick={() => setShowAuth(!showAuth)}>
               <Login sx={{ mr: 1 }} />
@@ -89,7 +109,13 @@ export default function Commissioner() {
                   "&:hover": { transform: "scale(1.03)" },
                 }}
               >
-                <CardActionArea>
+                <CardActionArea
+                  onClick={() => {
+                    if (feature.key === "competitions") {
+                      navigate("/commissioner/competitions");
+                    }
+                  }}
+                >
                   <CardContent sx={{ textAlign: "center", py: 4 }}>
                     <Box
                       sx={{
