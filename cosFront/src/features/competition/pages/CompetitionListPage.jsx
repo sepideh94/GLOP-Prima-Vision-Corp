@@ -17,7 +17,6 @@ import competitionService from "../services/competitionService";
 
 export default function CompetitionListPage() {
 
-  // Données provenant du backend
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitions, setCompetitions] = useState([]);
@@ -70,9 +69,39 @@ export default function CompetitionListPage() {
     setOpenForm(false);
   };
 
-  const handleFakeSave = () => {
+ const handleSave = async (form) => {
+  try {
+    if (!selectedEventId) {
+      alert("Aucun événement sélectionné");
+      return;
+    }
+
+    const payload = {
+      name: form.name,
+      description: form.description,
+      startDate: form.startDate,
+      parentEventId: selectedEventId,
+    };
+
+    console.log("Payload envoyé :", payload);
+
+    await competitionService.createCompetition(payload);
+
+    const updated = await competitionService.getCompetitionsByEvent(selectedEventId);
+    setCompetitions(updated);
+
     setOpenForm(false);
-  };
+  } catch (err) {
+    console.error("Erreur création :", err);
+    if (err.response) {
+      console.error("STATUS :", err.response.status);
+      console.error("BODY   :", err.response.data);
+      alert(`Erreur lors de la création (status ${err.response.status})`);
+    } else {
+      alert("Erreur réseau lors de la création");
+    }
+  }
+};
 
   return (
     <Box sx={{ p: 4 }}>
@@ -241,11 +270,12 @@ export default function CompetitionListPage() {
 
       {/* Dialog de formulaire */}
       <CompetitionFormDialog
-        open={openForm}
-        onClose={handleCloseForm}
-        onSave={handleFakeSave}
-        initialData={editingCompetition}
-      />
+       open={openForm}
+       onClose={handleCloseForm}
+       onSave={handleSave}     
+       initialData={editingCompetition}
+     />
+
     </Box>
   );
 }
