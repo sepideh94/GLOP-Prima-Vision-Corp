@@ -26,9 +26,9 @@ export default function App() {
           <Route element={<PrivateRoute />}>
            <Route element={<Layout />}>
              <Route path="/admin" element={<Admin />} />
+             <Route path="/admin/competitions" element={<CompetitionListPage />} />
              <Route path="/athlete" element={<Athlete />} />   
              <Route path="/commissioner" element={<Commissioner />} />
-             <Route path="/commissioner/competitions" element={<CompetitionListPage />} />
              <Route path="/spectator" element={<Spectator />} />
              <Route path="/volunteer" element={<Volunteer />} />
             </Route>

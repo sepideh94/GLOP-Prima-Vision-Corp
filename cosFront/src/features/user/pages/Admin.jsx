@@ -28,11 +28,14 @@ import {
   Timeline,
   CalendarMonth,
   Group,
+  EmojiEvents,
 } from "@mui/icons-material";
-import { useState } from "react";
 
-// ---- Simulation d'une "API" pour récupérer les utilisateurs ----
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 async function fetchUsers() {
+
   const users = [
     { email: "admin@cos.com", role: "ADMIN" },
     { email: "commissaire@cos.com", role: "COMMISSAIRE" },
@@ -44,7 +47,11 @@ async function fetchUsers() {
 }
 
 export default function Admin() {
+
+  const navigate = useNavigate();
+
   const sections = [
+    { title: "Gérer les compétitions", icon: <EmojiEvents />, color: "#ff9800", key: "competitions"},
     { title: "Créer des commissaires", icon: <People />, color: "#1976d2" },
     { title: "Créer / Modifier un évènement", icon: <Event />, color: "#0288d1" },
     { title: "Suivi des indicateurs quotidiens", icon: <Timeline />, color: "#00796b" },
@@ -52,8 +59,7 @@ export default function Admin() {
     { title: "Créer le planning des acteurs", icon: <CalendarMonth />, color: "#7b1fa2" },
     { title: "Générer un rapport pour le comité", icon: <AddCircleOutline />, color: "#512da8" },
     { title: "Gérer les infos sur la carte", icon: <Map />, color: "#455a64" },
-    // ✅ Nouvelle carte pour afficher les utilisateurs
-    { title: "Afficher les utilisateurs", icon: <Group />, color: "#388e3c", isUserButton: true },
+    { title: "Afficher les utilisateurs", icon: <Group />, color: "#388e3c", key: "users" },
   ];
 
   const [users, setUsers] = useState([]);
@@ -67,9 +73,17 @@ export default function Admin() {
     setShowUsers(!showUsers);
   };
 
+  const handleClick = (section) => {
+    if (section.key === "competitions") {
+      navigate("/admin/competitions");
+    }
+    if (section.key === "users") {
+      handleShowUsers();
+    }
+  };
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f9fafb" }}>
-      {/* --- Menu latéral --- */}
       <Drawer
         variant="permanent"
         sx={{
@@ -90,7 +104,7 @@ export default function Admin() {
         <List>
           {sections.map((section, index) => (
             <ListItem key={index} disablePadding>
-              <ListItemButton>
+              <ListItemButton onClick={() => handleClick(section)}>
                 <ListItemText primary={section.title} />
               </ListItemButton>
             </ListItem>
@@ -98,13 +112,11 @@ export default function Admin() {
         </List>
       </Drawer>
 
-      {/* --- Contenu principal --- */}
       <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
         <Typography variant="h5" fontWeight="bold" mb={3}>
           Tableau de bord de l’administrateur
         </Typography>
 
-        {/* --- Grille des cartes --- */}
         <Grid container spacing={3}>
           {sections.map((section, index) => (
             <Grid item xs={12} sm={6} md={4} key={index}>
@@ -116,9 +128,7 @@ export default function Admin() {
                   "&:hover": { transform: "scale(1.03)" },
                 }}
               >
-                <CardActionArea
-                  onClick={section.isUserButton ? handleShowUsers : undefined} // 👈 Seule la carte “Afficher les utilisateurs” a une action
-                >
+                <CardActionArea onClick={() => handleClick(section)}>
                   <CardContent sx={{ textAlign: "center", py: 4 }}>
                     <Box
                       sx={{
@@ -141,7 +151,6 @@ export default function Admin() {
           ))}
         </Grid>
 
-        {/* --- Tableau des utilisateurs (s’affiche après clic sur la carte) --- */}
         {showUsers && (
           <Box sx={{ mt: 6 }}>
             <Typography variant="h6" fontWeight="bold" mb={2}>
