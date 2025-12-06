@@ -5,11 +5,16 @@ import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.CompetitionUpdateRequest;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
+import com.ciblorgasport.event.application.EventNotFoundException;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.event.infrastructure.EventRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -35,7 +40,8 @@ public class CompetitionServiceImpl implements CompetitionService{
         return competitionRepository.save(newCompetition);
     }
 
-    private Competition getCompetitionById(Long id) {
+    
+    private Competition getCompetitionByIdOrThrow(Long id) {
         return competitionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + id));
     }
@@ -43,7 +49,7 @@ public class CompetitionServiceImpl implements CompetitionService{
     @Transactional
     @Override
     public CompetitionResponse updateCompetition(Long id, CompetitionUpdateRequest request) {
-        Competition existingCompetition = getCompetitionById(id);
+        Competition existingCompetition = getCompetitionByIdOrThrow(id);
 
         existingCompetition.setName(request.getName());
         existingCompetition.setDescription(request.getDescription());
@@ -52,6 +58,26 @@ public class CompetitionServiceImpl implements CompetitionService{
         Competition updatedCompetition = competitionRepository.save(existingCompetition);
         
         return CompetitionResponse.fromEntity(updatedCompetition);    }
+
+
+	@Override
+	public CompetitionResponse getCompetitionById(Long id) {
+		return CompetitionResponse.fromEntity(this.getCompetitionByIdOrThrow(id));
+	}
+
+
+	@Override
+    public List<CompetitionResponse> getCompetitionsByEventId(Long eventId) {
+        
+        Event parentEvent = eventRepository.findById(eventId)
+                .orElseThrow(() -> new EventNotFoundException(eventId)); 
+                
+        List<Competition> competitions = competitionRepository.findByParentEvent(parentEvent);
+        
+        return competitions.stream()
+            .map(CompetitionResponse::fromEntity)
+            .collect(Collectors.toList());
+    }
 
 
 }
