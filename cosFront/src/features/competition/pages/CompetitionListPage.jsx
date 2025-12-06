@@ -33,7 +33,7 @@ export default function CompetitionListPage() {
       const safeData = Array.isArray(data) ? data : [];
       setEvents(safeData);
       if (safeData.length > 0) {
-        setSelectedEventId(safeData[0].id);
+        setSelectedEventId(safeData[0].idEvent);
       }
     })
     .catch((err) => {
@@ -51,7 +51,7 @@ export default function CompetitionListPage() {
     .then((data) => setCompetitions(data));
   }, [selectedEventId]);
 
-  const currentEvent = events.find((e) => e.id === selectedEventId);
+  const currentEvent = events.find((e) => e.idEvent  === selectedEventId);
 
   const filteredCompetitions = competitions;
   const hasEvents = events.length > 0;
@@ -144,11 +144,11 @@ export default function CompetitionListPage() {
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {events.map((event) => (
                 <Chip
-                  key={event.id}
+                  key={event.idEvent}
                   label={event.name}
-                  color={event.id === selectedEventId ? "primary" : "default"}
-                  variant={event.id === selectedEventId ? "filled" : "outlined"}
-                  onClick={() => setSelectedEventId(event.id)}
+                  color={event.idEvent === selectedEventId ? "primary" : "default"}
+                  variant={event.idEvent=== selectedEventId ? "filled" : "outlined"}
+                  onClick={() => setSelectedEventId(event.idEvent)}
                   sx={{ borderRadius: 999 }}
                 />
               ))}
