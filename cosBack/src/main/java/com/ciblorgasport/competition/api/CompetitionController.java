@@ -1,7 +1,10 @@
 package com.ciblorgasport.competition.api;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -38,5 +41,18 @@ public class CompetitionController {
                                                         @Valid @RequestBody CompetitionUpdateRequest request) {
         CompetitionResponse updatedCompetition = competitionService.updateCompetition(id, request);
         return ResponseEntity.ok(updatedCompetition);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<CompetitionResponse> getCompetitionById(@PathVariable("id") Long id) {
+        CompetitionResponse competition = competitionService.getCompetitionById(id);
+        return ResponseEntity.ok(competition);
+    }
+    
+   
+    @GetMapping("/by-event/{eventId}")
+    public ResponseEntity<List<CompetitionResponse>> getCompetitionsByEventId(@PathVariable("eventId") Long eventId) {
+        List<CompetitionResponse> competitions = competitionService.getCompetitionsByEventId(eventId);
+        return ResponseEntity.ok(competitions);
     }
 }
