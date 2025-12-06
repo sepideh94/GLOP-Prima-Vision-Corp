@@ -1,4 +1,4 @@
-package com.ciblorgasport.config;
+package com.ciblorgasport.security.config;
 
 import java.util.List;
 
@@ -47,30 +47,17 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // 🔥 CORS CONFIG
-   /* @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://frontend", "http://frontend:80"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // important pour envoyer les cookies ou tokens
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }*/
 
    @Bean
 public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
 
     config.setAllowedOrigins(List.of(
-        "http://localhost:3000",   // ton navigateur
-        "http://frontend",         // docker name
+        "http://localhost:3000",   
+        "http://frontend",         
         "http://frontend:80",
         "http://ciblorgasport-frontend", 
-        "http://backend:8080"      // 🔥🔥 MANQUAIT !
+        "http://backend:8080"      
     ));
 
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
@@ -86,7 +73,7 @@ public CorsConfigurationSource corsConfigurationSource() {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // 👈 active le CORS ici
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
