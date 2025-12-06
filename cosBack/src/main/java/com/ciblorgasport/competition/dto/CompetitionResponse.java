@@ -1,10 +1,12 @@
 package com.ciblorgasport.competition.dto;
 
-import com.ciblorgasport.event.domain.Event;
+import java.time.LocalDate;
+
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.event.domain.Event;
+
 import lombok.Builder;
 import lombok.Data;
-import java.time.LocalDate;
 
 @Data
 @Builder
@@ -28,7 +30,7 @@ public class CompetitionResponse {
                 .name(competition.getName())
                 .description(competition.getDescription())
                 .startDate(competition.getStartDate())
-                .parentEventId(parentEvent.getIdEvent())
+                .parentEventId(parentEvent.getId())
                 .build();
     }
 }

@@ -1,21 +1,21 @@
 package com.ciblorgasport.competition.application;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.CompetitionUpdateRequest;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
-import com.ciblorgasport.event.application.EventNotFoundException;
 import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.event.domain.exception.EventNotFoundException;
 import com.ciblorgasport.event.infrastructure.EventRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
