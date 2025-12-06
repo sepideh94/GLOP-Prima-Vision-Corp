@@ -1,7 +1,8 @@
 package com.ciblorgasport.competition.application;
 
 import com.ciblorgasport.competition.domain.Competition;
-import com.ciblorgasport.competition.dto.CompetitionCreateRequest; 
+import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
+import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.CompetitionUpdateRequest;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.event.domain.Event;
@@ -33,6 +34,24 @@ public class CompetitionServiceImpl implements CompetitionService{
 
         return competitionRepository.save(newCompetition);
     }
+
+    private Competition getCompetitionById(Long id) {
+        return competitionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + id));
+    }
+
+    @Transactional
+    @Override
+    public CompetitionResponse updateCompetition(Long id, CompetitionUpdateRequest request) {
+        Competition existingCompetition = getCompetitionById(id);
+
+        existingCompetition.setName(request.getName());
+        existingCompetition.setDescription(request.getDescription());
+        existingCompetition.setStartDate(request.getStartDate());
+        
+        Competition updatedCompetition = competitionRepository.save(existingCompetition);
+        
+        return CompetitionResponse.fromEntity(updatedCompetition);    }
 
 
 }
