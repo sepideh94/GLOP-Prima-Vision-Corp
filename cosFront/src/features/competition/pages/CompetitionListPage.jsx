@@ -90,7 +90,7 @@ export default function CompetitionListPage() {
         </Typography>
       </Box>
 
-            {/* Sélection d'événement / Contenu principal */}
+     {/* Sélection d'événement */}
       {!hasEvents ? (
         <>
           <Card
@@ -116,7 +116,6 @@ export default function CompetitionListPage() {
         </>
       ) : (
         <>
-          {/* Sélection d'événement */}
           <Card
             sx={{
               mb: 3,
