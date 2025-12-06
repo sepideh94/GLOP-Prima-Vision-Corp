@@ -31,7 +31,7 @@ public class Competition {
 
 
  @ManyToOne(fetch = FetchType.LAZY)
- @JoinColumn(name = "event_id", nullable = false) 
+ @JoinColumn(name = "id_event", nullable = false) 
  private Event parentEvent;
  
 }
