@@ -9,6 +9,7 @@ import {
 
 import AddIcon from "@mui/icons-material/Add";
 import EventIcon from "@mui/icons-material/Event";
+import { TextField } from "@mui/material";
 import CompetitionFormDialog from "./CompetitionFormDialog";
 import competitionService from "../services/competitionService";
 
@@ -28,6 +29,7 @@ export default function CompetitionListPage() {
   const [competitions, setCompetitions] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Charger les événements 
   useEffect(() => {
@@ -62,6 +64,22 @@ export default function CompetitionListPage() {
   const currentEvent = events.find((e) => e.idEvent  === selectedEventId);
 
   const hasEvents = events.length > 0;
+
+  // filtrage par mot-clé 
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredCompetitions = competitions.filter((c) => {
+  if (!normalizedSearch) return true;
+
+  const name = (c.name || "").toLowerCase();
+  const description = (c.description || "").toLowerCase();
+  const date = formatDate(c.startDate).toLowerCase(); 
+
+  return (
+    name.includes(normalizedSearch) ||
+    description.includes(normalizedSearch) ||
+    date.includes(normalizedSearch)
+  );
+});
 
   const handleOpenCreate = () => {
     setEditingCompetition(null);
@@ -217,10 +235,21 @@ return (
             <div className="col-sm-12 col-12">
               <div className="card">
                 {/* En-tête */}
-                <div className="card-header">
-                  <div className="card-title">Liste des compétitions</div>
-                </div>
+                <div className="card-header d-flex justify-content-between align-items-center">
+                <div className="card-title">Liste des compétitions</div>
 
+                {/* Barre de recherche  */}
+                <div style={{ width: 300 }}>
+                <TextField
+                  size="small"
+                  fullWidth
+                  placeholder="Rechercher par nom, description ou date"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+               />
+               </div>
+               </div>
+               
                 {/* Corps */}
                 <div className="card-body">
                   <div className="table-responsive">
@@ -235,7 +264,7 @@ return (
                       </thead>
 
                       <tbody>
-                        {competitions.length === 0 ? (
+                        {filteredCompetitions.length === 0 ? (
                           <tr>
                             <td
                               colSpan="4"
@@ -245,7 +274,8 @@ return (
                             </td>
                           </tr>
                         ) : (
-                          competitions.map((c) => (
+                            filteredCompetitions.map((c) =>  
+                            (
                             <tr key={c.id}>
                               {/* Nom */}
                               <td>
