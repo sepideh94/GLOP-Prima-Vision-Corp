@@ -26,7 +26,7 @@ public class CompetitionServiceImpl implements CompetitionService{
 
     
     @Transactional
-    public Competition createCompetition(CompetitionCreateRequest request) {
+    public CompetitionResponse createCompetition(CompetitionCreateRequest request) {
         
         Event parentEvent = eventRepository.findById(request.getParentEventId())
                 .orElseThrow(() -> new IllegalArgumentException("Événement parent introuvable avec l'ID: " + request.getParentEventId()));
@@ -36,8 +36,10 @@ public class CompetitionServiceImpl implements CompetitionService{
         newCompetition.setDescription(request.getDescription());
         newCompetition.setStartDate(request.getStartDate());
         newCompetition.setParentEvent(parentEvent);
-
-        return competitionRepository.save(newCompetition);
+        
+        Competition savedCompetition = competitionRepository.save(newCompetition);
+        
+        return CompetitionResponse.fromEntity(savedCompetition);
     }
 
     
