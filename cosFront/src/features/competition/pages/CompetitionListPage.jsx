@@ -2,25 +2,30 @@ import  { useState, useEffect } from "react";
 import {
   Box,
   Typography,
-  Grid,
   Card,
-  CardContent,
-  CardActions,
   Button,
   Chip,
-  Divider,
 } from "@mui/material";
+
 import AddIcon from "@mui/icons-material/Add";
 import EventIcon from "@mui/icons-material/Event";
 import CompetitionFormDialog from "./CompetitionFormDialog";
 import competitionService from "../services/competitionService";
+
+const formatDate = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleDateString("fr-FR");
+};
 
 export default function CompetitionListPage() {
 
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitions, setCompetitions] = useState([]);
-
   const [openForm, setOpenForm] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState(null);
 
@@ -47,12 +52,15 @@ export default function CompetitionListPage() {
 
   competitionService
     .getCompetitionsByEvent(selectedEventId)
-    .then((data) => setCompetitions(data));
-  }, [selectedEventId]);
+    .then((data) => setCompetitions(data))
+    .catch((err) => {
+      console.error("Erreur lors du chargement des compétitions :", err);
+      setCompetitions([]);
+    });
+}, [selectedEventId]);
 
   const currentEvent = events.find((e) => e.idEvent  === selectedEventId);
 
-  const filteredCompetitions = competitions;
   const hasEvents = events.length > 0;
 
   const handleOpenCreate = () => {
@@ -103,48 +111,44 @@ export default function CompetitionListPage() {
   }
 };
 
-  return (
+return (
     <Box sx={{ p: 4 }}>
-      {/* En-tête */}
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-          mb: 3,
-        }}
-      >
+      {/* Titre page */}
+      <Box sx={{ mb: 3 }}>
         <Typography variant="h5" fontWeight="bold">
           Gestion des compétitions
         </Typography>
       </Box>
 
-     {/* Sélection d'événement */}
+      {/* Si aucun évènement */}
       {!hasEvents ? (
-        <>
-          <Card
-            sx={{
-              mb: 3,
-              borderRadius: 3,
-              boxShadow: 2,
-              p: 2,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <EventIcon color="primary" />
-              <Box>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Événement sélectionné
-                </Typography>
-                <Typography variant="h6" fontWeight="bold">
-                  Aucun événement disponible pour le moment
-                </Typography>
-              </Box>
+        <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 2, p: 2 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <EventIcon color="primary" />
+            <Box>
+              <Typography variant="subtitle2" color="text.secondary">
+                Événement sélectionné
+              </Typography>
+              <Typography variant="h6" fontWeight="bold">
+                Aucun événement disponible pour le moment
+              </Typography>
             </Box>
-          </Card>
-        </>
+          </Box>
+        </Card>
       ) : (
         <>
+          {/* Bouton ajouter */}
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleOpenCreate}
+            >
+              Ajouter une compétition
+            </Button>
+          </Box>
+
+          {/* Sélecteur d'événement */}
           <Card
             sx={{
               mb: 3,
@@ -175,8 +179,12 @@ export default function CompetitionListPage() {
                 <Chip
                   key={event.idEvent}
                   label={event.name}
-                  color={event.idEvent === selectedEventId ? "primary" : "default"}
-                  variant={event.idEvent=== selectedEventId ? "filled" : "outlined"}
+                  color={
+                    event.idEvent === selectedEventId ? "primary" : "default"
+                  }
+                  variant={
+                    event.idEvent === selectedEventId ? "filled" : "outlined"
+                  }
                   onClick={() => setSelectedEventId(event.idEvent)}
                   sx={{ borderRadius: 999 }}
                 />
@@ -184,98 +192,84 @@ export default function CompetitionListPage() {
             </Box>
           </Card>
 
-          {/* Bouton Ajouter */}
-          <Box
-            sx={{
-              mb: 2,
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
-            >
-              Ajouter une compétition
-            </Button>
-          </Box>
+          {/* Tableau des compétitions */}
+          <div className="row gx-3">
+            <div className="col-sm-12 col-12">
+              <div className="card">
+                {/* En-tête */}
+                <div className="card-header">
+                  <div className="card-title">Liste des compétitions</div>
+                </div>
 
-          <Divider sx={{ mb: 3 }} />
+                {/* Corps */}
+                <div className="card-body">
+                  <div className="table-responsive">
+                    <table className="table align-middle">
+                      <thead>
+                        <tr>
+                          <td>Nom</td>
+                          <td>Description</td>
+                          <td>Date de début</td>
+                          <td>Actions</td>
+                        </tr>
+                      </thead>
 
-          {/* Liste des compétitions */}
-          {filteredCompetitions.length === 0 ? (
-            <Typography color="text.secondary">
-              Aucune compétition n’est encore définie pour cet événement.
-            </Typography>
-          ) : (
-            <Grid container spacing={3}>
-              {filteredCompetitions.map((competition) => (
-                <Grid item xs={12} md={6} lg={4} key={competition.id}>
-                  <Card
-                    sx={{
-                      borderRadius: 3,
-                      boxShadow: 3,
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      transition: "0.25s",
-                      "&:hover": {
-                        transform: "translateY(-4px)",
-                        boxShadow: 6,
-                      },
-                    }}
-                  >
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="h6" fontWeight="bold" gutterBottom>
-                        {competition.name}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 1.5 }}
-                      >
-                        {competition.description}
-                      </Typography>
-                      <Chip
-                        label={`Début : ${competition.startDate}`}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                    </CardContent>
-                    <CardActions
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        px: 2,
-                        pb: 2,
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => handleOpenEdit(competition)}
-                      >
-                        Modifier
-                      </Button>
-                    </CardActions>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          )}
+                      <tbody>
+                        {competitions.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan="4"
+                              className="text-center text-muted py-4"
+                            >
+                              Aucune compétition pour cet événement.
+                            </td>
+                          </tr>
+                        ) : (
+                          competitions.map((c) => (
+                            <tr key={c.id}>
+                              {/* Nom */}
+                              <td>
+                                <div className="d-flex align-items-center">
+                                  <i className="bi bi-flag me-3 fs-4 text-primary"></i>
+                                  <p className="m-0 fw-bold">{c.name}</p>
+                                </div>
+                              </td>
+
+                              {/* Description */}
+                              <td>{c.description}</td>
+
+                              {/* Date de début */}
+                              <td>{formatDate(c.startDate)}</td>
+
+                              {/* Actions */}
+                              <td>
+                                <button
+                                  className="btn btn-primary me-2"
+                                  onClick={() => handleOpenEdit(c)}
+                                >
+                                  Modifier
+                                </button>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
-      {/* Dialog de formulaire */}
+      {/* Popup création / édition */}
       <CompetitionFormDialog
-       open={openForm}
-       onClose={handleCloseForm}
-       onSave={handleSave}     
-       initialData={editingCompetition}
-     />
-
+        open={openForm}
+        onClose={handleCloseForm}
+        onSave={handleSave}
+        initialData={editingCompetition}
+      />
     </Box>
   );
 }
