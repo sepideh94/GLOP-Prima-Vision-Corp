@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.event.domain.Event;
 
 @Entity
@@ -15,7 +16,7 @@ import com.ciblorgasport.event.domain.Event;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Competition {
+public class Competition implements StatusChecker {
  
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,5 +34,17 @@ public class Competition {
  @ManyToOne(fetch = FetchType.LAZY)
  @JoinColumn(name = "id_event", nullable = false) 
  private Event parentEvent;
+
+
+@Override
+public boolean hasStarted() {
+	return this.startDate.isBefore(LocalDate.now());
+}
+
+
+@Override
+public boolean hasEnded() {
+	return false;
+}
  
 }
