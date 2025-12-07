@@ -30,6 +30,8 @@ export default function CompetitionListPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; 
 
   // Charger les événements 
   useEffect(() => {
@@ -48,9 +50,10 @@ export default function CompetitionListPage() {
     });
 }, []);
 
-  // Charger les compétitions 
-  useEffect(() => {
+ // Charger les compétitions 
+ useEffect(() => {
   if (!selectedEventId) return;
+  setCurrentPage(1);
 
   competitionService
     .getCompetitionsByEvent(selectedEventId)
@@ -59,7 +62,7 @@ export default function CompetitionListPage() {
       console.error("Erreur lors du chargement des compétitions :", err);
       setCompetitions([]);
     });
-}, [selectedEventId]);
+  }, [selectedEventId]);
 
   const currentEvent = events.find((e) => e.idEvent  === selectedEventId);
 
@@ -81,6 +84,14 @@ export default function CompetitionListPage() {
   );
 });
 
+  // Pagination
+  const totalPages = Math.ceil(filteredCompetitions.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const currentCompetitions = filteredCompetitions.slice(
+  startIndex,
+  startIndex + itemsPerPage
+  );
+
   const handleOpenCreate = () => {
     setEditingCompetition(null);
     setOpenForm(true);
@@ -96,7 +107,7 @@ export default function CompetitionListPage() {
   setEditingCompetition(null); 
 };
 
-const handleSave = async (form) => {
+  const handleSave = async (form) => {
   try {
     if (!selectedEventId) {
       alert("Aucun événement sélectionné");
@@ -244,8 +255,11 @@ return (
                   size="small"
                   fullWidth
                   placeholder="Rechercher par nom, description ou date"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  value={searchTerm} 
+                  onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); 
+                  }}            
                />
                </div>
                </div>
@@ -274,9 +288,8 @@ return (
                             </td>
                           </tr>
                         ) : (
-                            filteredCompetitions.map((c) =>  
-                            (
-                            <tr key={c.id}>
+                            currentCompetitions.map((c) => (
+                              <tr key={c.id}>
                               {/* Nom */}
                               <td>
                                 <div className="d-flex align-items-center">
@@ -305,6 +318,48 @@ return (
                         )}
                       </tbody>
                     </table>
+                    <div className="d-flex justify-content-center mt-3">
+                    <ul className="pagination">
+                    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                    <button 
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    >
+                    ←
+                    </button>
+                    </li>
+
+                    {/* Numéros de pages */}
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                    <li 
+                    key={page}
+                    className={`page-item ${currentPage === page ? "active" : ""}`}
+                    >
+                    <button 
+                      className="page-link"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                   {page}
+                   </button>
+                  </li>
+               ))}
+
+                  <li
+                   className={`page-item ${
+                   currentPage === totalPages || totalPages === 0 ? "disabled" : ""
+                   }`}
+                   >
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                  →
+                  </button>
+                  </li>
+                  </ul>
+                  </div>
                   </div>
                 </div>
               </div>
