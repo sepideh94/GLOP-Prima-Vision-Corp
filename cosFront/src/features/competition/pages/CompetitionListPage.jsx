@@ -75,7 +75,7 @@ export default function CompetitionListPage() {
 
   const handleCloseForm = () => {
   setOpenForm(false);
-  setEditingCompetition(null); // ✅ on réinitialise le mode édition
+  setEditingCompetition(null); 
 };
 
 const handleSave = async (form) => {
@@ -86,7 +86,6 @@ const handleSave = async (form) => {
     }
 
     if (editingCompetition) {
-      // ✏️ MODE ÉDITION → PUT
       const payload = {
         name: form.name,
         description: form.description,
@@ -100,12 +99,11 @@ const handleSave = async (form) => {
         payload
       );
 
-      // 🔁 On remplace juste la ligne dans le state
       setCompetitions((prev) =>
         prev.map((c) => (c.id === editingCompetition.id ? updated : c))
       );
     } else {
-      // ➕ MODE CRÉATION → POST
+
       const payload = {
         name: form.name,
         description: form.description,
@@ -117,11 +115,8 @@ const handleSave = async (form) => {
 
       const created = await competitionService.createCompetition(payload);
 
-      // ➕ On ajoute la nouvelle compétition à la fin de la liste
       setCompetitions((prev) => [...prev, created]);
     }
-
-    // On ferme la popup et on sort du mode édition
     setOpenForm(false);
     setEditingCompetition(null);
   } catch (err) {
