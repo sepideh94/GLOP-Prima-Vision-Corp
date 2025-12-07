@@ -17,6 +17,7 @@ public class CompetitionResponse {
     private LocalDate startDate;
     private Long parentEventId;
     
+    private String statusLabel;
 
     /**
      * Méthode de conversion statique depuis l'entité Competition.
@@ -31,6 +32,19 @@ public class CompetitionResponse {
                 .description(competition.getDescription())
                 .startDate(competition.getStartDate())
                 .parentEventId(parentEvent.getId())
+                .statusLabel(determineStatusLabel(competition))
                 .build();
+    }
+    
+    
+    private static String determineStatusLabel(Competition competition) {
+        if (competition.hasEnded()) {
+            return "Terminée";
+        }
+        if (competition.hasStarted()) {
+            return "En cours";
+        }
+        
+        return "À venir";
     }
 }
