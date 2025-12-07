@@ -74,39 +74,64 @@ export default function CompetitionListPage() {
   };
 
   const handleCloseForm = () => {
-    setOpenForm(false);
-  };
+  setOpenForm(false);
+  setEditingCompetition(null); // ✅ on réinitialise le mode édition
+};
 
- const handleSave = async (form) => {
+const handleSave = async (form) => {
   try {
     if (!selectedEventId) {
       alert("Aucun événement sélectionné");
       return;
     }
 
-    const payload = {
-      name: form.name,
-      description: form.description,
-      startDate: form.startDate,
-      parentEventId: selectedEventId,
-    };
+    if (editingCompetition) {
+      // ✏️ MODE ÉDITION → PUT
+      const payload = {
+        name: form.name,
+        description: form.description,
+        startDate: form.startDate,
+      };
 
-    console.log("Payload envoyé :", payload);
+      console.log("Payload UPDATE :", payload);
 
-    await competitionService.createCompetition(payload);
+      const updated = await competitionService.updateCompetition(
+        editingCompetition.id,
+        payload
+      );
 
-    const updated = await competitionService.getCompetitionsByEvent(selectedEventId);
-    setCompetitions(updated);
+      // 🔁 On remplace juste la ligne dans le state
+      setCompetitions((prev) =>
+        prev.map((c) => (c.id === editingCompetition.id ? updated : c))
+      );
+    } else {
+      // ➕ MODE CRÉATION → POST
+      const payload = {
+        name: form.name,
+        description: form.description,
+        startDate: form.startDate,
+        parentEventId: selectedEventId,
+      };
 
+      console.log("Payload CREATE :", payload);
+
+      const created = await competitionService.createCompetition(payload);
+
+      // ➕ On ajoute la nouvelle compétition à la fin de la liste
+      setCompetitions((prev) => [...prev, created]);
+    }
+
+    // On ferme la popup et on sort du mode édition
     setOpenForm(false);
+    setEditingCompetition(null);
   } catch (err) {
-    console.error("Erreur création :", err);
+    console.error("Erreur sauvegarde compétition :", err);
     if (err.response) {
       console.error("STATUS :", err.response.status);
       console.error("BODY   :", err.response.data);
-      alert(`Erreur lors de la création (status ${err.response.status})`);
+      alert(`Erreur lors de la sauvegarde (status ${err.response.status})`);
     } else {
-      alert("Erreur réseau lors de la création");
+      alert("Erreur réseau lors de la sauvegarde");
     }
   }
 };

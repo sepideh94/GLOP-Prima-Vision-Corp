@@ -26,21 +26,24 @@ export default function CompetitionFormDialog({
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    if (initialData) {
-      setForm({
-        name: initialData.name || "",
-        description: initialData.description || "",
-        startDate: initialData.startDate || "",
-      });
-    } else {
-      setForm({
-        name: "",
-        description: "",
-        startDate: "",
-      });
-    }
-    setErrors({});
-  }, [initialData, open]);
+  if (initialData) {
+    setForm({
+      name: initialData.name || "",
+      description: initialData.description || "",
+      startDate: initialData.startDate
+        ? String(initialData.startDate).slice(0, 10)
+        : "",
+    });
+  } else {
+    setForm({
+      name: "",
+      description: "",
+      startDate: "",
+    });
+  }
+  setErrors({});
+}, [initialData, open]);
+
 
   const handleChange = (e) => {
     setForm({
