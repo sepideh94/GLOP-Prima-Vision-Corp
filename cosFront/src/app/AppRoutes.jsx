@@ -7,6 +7,7 @@ import Spectator from '../features/user/pages/Spectator';
 import Athlete from '../features/user/pages/Athlete';
 import Commissioner from '../features/user/pages/Commissioner';
 import Volunteer from '../features/user/pages/Volunteer';
+import EventsList from '../features/events/pages/EventsList';
 import NotFound from '../features/home/pages/NotFound';
 
 export default function AppRoutes() {
@@ -18,6 +19,7 @@ export default function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/events" element={<EventsList />} />
         <Route path="/spectator" element={<Spectator />} />
         <Route path="/athlete" element={<Athlete />} />
         <Route path="/commissioner" element={<Commissioner />} />
