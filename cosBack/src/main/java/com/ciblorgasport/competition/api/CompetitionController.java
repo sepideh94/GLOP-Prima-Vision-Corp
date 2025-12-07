@@ -30,9 +30,9 @@ public class CompetitionController {
 	private final CompetitionService competitionService;
 
   
-    @PostMapping
-    public ResponseEntity<Competition> createCompetition(@Valid @RequestBody CompetitionCreateRequest request) {
-        Competition newCompetition = competitionService.createCompetition(request);
+	@PostMapping
+    public ResponseEntity<CompetitionResponse> createCompetition(@Valid @RequestBody CompetitionCreateRequest request) {
+        CompetitionResponse newCompetition = competitionService.createCompetition(request);
         return new ResponseEntity<>(newCompetition, HttpStatus.CREATED);
     }
     

@@ -1,38 +1,48 @@
 package com.ciblorgasport.event.application;
 
-import com.ciblorgasport.event.domain.Event;
-import com.ciblorgasport.event.infrastructure.EventRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.ciblorgasport.event.api.dto.EventCreateRequest;
+import com.ciblorgasport.event.api.dto.EventUpdateRequest;
+import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.event.domain.exception.EventNotFoundException;
+import com.ciblorgasport.event.infrastructure.EventRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class EventService {
 
-    private final EventRepository eventRepository;
+    private final EventRepository repository;
 
-    public Event createEvent(Event event) {
-        return eventRepository.save(event);
+    public Event createFromDto(EventCreateRequest req) {
+        Event e = new Event();
+        e.setName(req.getName());
+        e.setDescription(req.getDescription());
+        e.setStartDate(req.getStartDate());
+        return repository.save(e);
     }
 
-    public List<Event> getAllEvents() {
-        return eventRepository.findAll();
-    }
-
-    public Event getEventById(Long id) {
-        return eventRepository.findById(id)
+    public Event updateFromDto(Long id, EventUpdateRequest req) {
+        Event existing = repository.findById(id)
                 .orElseThrow(() -> new EventNotFoundException(id));
+
+        existing.setName(req.getName());
+        existing.setDescription(req.getDescription());
+        existing.setStartDate(req.getStartDate());
+
+        return repository.save(existing);
     }
 
-    public Event updateEvent(Long id, Event updatedEvent) {
-        Event existing = getEventById(id);
+    public List<Event> getAll() {
+        return repository.findAll();
+    }
 
-        existing.setName(updatedEvent.getName());
-        existing.setDescription(updatedEvent.getDescription());
-        existing.setStartDate(updatedEvent.getStartDate());
-
-        return eventRepository.save(existing);
+    public Event getById(Long id) {
+        return repository.findById(id)
+                .orElseThrow(() -> new EventNotFoundException(id));
     }
 }

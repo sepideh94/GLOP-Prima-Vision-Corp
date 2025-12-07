@@ -53,7 +53,7 @@ export default function Admin() {
   const sections = [
     { title: "Gérer les compétitions", icon: <EmojiEvents />, color: "#ff9800", key: "competitions"},
     { title: "Créer des commissaires", icon: <People />, color: "#1976d2" },
-    { title: "Créer / Modifier un évènement", icon: <Event />, color: "#0288d1" },
+    { title: "Créer / Modifier un évènement", icon: <Event />, color: "#0288d1", route: "/events" },
     { title: "Suivi des indicateurs quotidiens", icon: <Timeline />, color: "#00796b" },
     { title: "Déclarer / Gérer un incident", icon: <Report />, color: "#d32f2f" },
     { title: "Créer le planning des acteurs", icon: <CalendarMonth />, color: "#7b1fa2" },

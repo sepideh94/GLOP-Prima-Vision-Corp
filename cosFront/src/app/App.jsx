@@ -10,9 +10,7 @@ import Athlete from "../features/user/pages/Athlete.jsx";
 import Commissioner from "../features/user/pages/Commissioner.jsx";
 import Spectator from "../features/user/pages/Spectator.jsx";
 import Volunteer from "../features/user/pages/Volunteer.jsx";
-
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
-
 
 
 export default function App() {

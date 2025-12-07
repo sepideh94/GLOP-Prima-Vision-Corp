@@ -97,6 +97,16 @@
           <release>21</release>
         </configuration>
       </plugin>
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+        <release>21</release>
+        <compilerArgs>
+            <arg>-parameters</arg>
+        </compilerArgs>
+    </configuration>
+</plugin>
 
       <!-- Repackage Spring Boot pour créer un jar exécutable -->
       <plugin>
