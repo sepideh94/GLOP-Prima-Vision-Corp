@@ -10,41 +10,14 @@ import {
   Card,
   CardContent,
   CardActionArea,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
 } from "@mui/material";
+
 import {
-  AddCircleOutline,
   Event,
-  Report,
-  Map,
-  People,
-  Timeline,
-  CalendarMonth,
-  Group,
   EmojiEvents,
 } from "@mui/icons-material";
 
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-async function fetchUsers() {
-
-  const users = [
-    { email: "admin@cos.com", role: "ADMIN" },
-    { email: "commissaire@cos.com", role: "COMMISSAIRE" },
-    { email: "athlete@cos.com", role: "ATHLETE" },
-    { email: "spectateur@cos.com", role: "SPECTATEUR" },
-    { email: "volontaire@cos.com", role: "VOLONTAIRE" },
-  ];
-  return Promise.resolve(users);
-}
 
 export default function Admin() {
 
@@ -53,36 +26,13 @@ export default function Admin() {
   const sections = [
     { title: "Créer / Modifier un évènement", icon: <Event />, color: "#0288d1", route: "/events" },
     { title: "Gérer les compétitions", icon: <EmojiEvents />, color: "#ff9800", key: "competitions"},
-    { title: "Créer des commissaires", icon: <People />, color: "#1976d2" },
-    { title: "Suivi des indicateurs quotidiens", icon: <Timeline />, color: "#00796b" },
-    { title: "Déclarer / Gérer un incident", icon: <Report />, color: "#d32f2f" },
-    { title: "Créer le planning des acteurs", icon: <CalendarMonth />, color: "#7b1fa2" },
-    { title: "Générer un rapport pour le comité", icon: <AddCircleOutline />, color: "#512da8" },
-    { title: "Gérer les infos sur la carte", icon: <Map />, color: "#455a64" },
-    { title: "Afficher les utilisateurs", icon: <Group />, color: "#388e3c", key: "users" },
   ];
-
-  const [users, setUsers] = useState([]);
-  const [showUsers, setShowUsers] = useState(false);
-
-  const handleShowUsers = async () => {
-    if (!showUsers) {
-      const data = await fetchUsers();
-      setUsers(data);
-    }
-    setShowUsers(!showUsers);
-  };
 
   const handleClick = (section) => {
     if (section.key === "competitions") {
       navigate("/admin/competitions");
       return;
     }
-    if (section.key === "users") {
-      handleShowUsers();
-      return;
-    }
-
     if (section.route) {
       navigate(section.route);
     }
@@ -156,39 +106,6 @@ export default function Admin() {
             </Grid>
           ))}
         </Grid>
-
-        {showUsers && (
-          <Box sx={{ mt: 6 }}>
-            <Typography variant="h6" fontWeight="bold" mb={2}>
-              Liste des utilisateurs et leurs rôles
-            </Typography>
-
-            <TableContainer component={Paper} sx={{ borderRadius: 2 }}>
-              <Table>
-                <TableHead sx={{ bgcolor: "#e3f2fd" }}>
-                  <TableRow>
-                    <TableCell><strong>Email</strong></TableCell>
-                    <TableCell><strong>Rôle</strong></TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Box sx={{ mt: 3, textAlign: "center" }}>
-              <Button variant="outlined" color="secondary" onClick={handleShowUsers}>
-                Masquer les utilisateurs
-              </Button>
-            </Box>
-          </Box>
-        )}
       </Box>
     </Box>
   );
