@@ -76,9 +76,15 @@ export default function Admin() {
   const handleClick = (section) => {
     if (section.key === "competitions") {
       navigate("/admin/competitions");
+      return;
     }
     if (section.key === "users") {
       handleShowUsers();
+      return;
+    }
+
+    if (section.route) {
+      navigate(section.route);
     }
   };
 
