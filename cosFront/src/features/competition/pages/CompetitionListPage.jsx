@@ -41,7 +41,7 @@ export default function CompetitionListPage() {
       const safeData = Array.isArray(data) ? data : [];
       setEvents(safeData);
       if (safeData.length > 0) {
-        setSelectedEventId(safeData[0].idEvent);
+        setSelectedEventId(safeData[0].id);
       }
     })
     .catch((err) => {
@@ -64,7 +64,7 @@ export default function CompetitionListPage() {
     });
   }, [selectedEventId]);
 
-  const currentEvent = events.find((e) => e.idEvent  === selectedEventId);
+  const currentEvent = events.find((e) => e.id  === selectedEventId);
 
   const hasEvents = events.length > 0;
 
@@ -226,15 +226,15 @@ return (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
               {events.map((event) => (
                 <Chip
-                  key={event.idEvent}
+                  key={event.id}
                   label={event.name}
                   color={
-                    event.idEvent === selectedEventId ? "primary" : "default"
+                    event.id === selectedEventId ? "primary" : "default"
                   }
                   variant={
-                    event.idEvent === selectedEventId ? "filled" : "outlined"
+                    event.id === selectedEventId ? "filled" : "outlined"
                   }
-                  onClick={() => setSelectedEventId(event.idEvent)}
+                  onClick={() => setSelectedEventId(event.id)}
                   sx={{ borderRadius: 999 }}
                 />
               ))}
@@ -273,6 +273,7 @@ return (
                           <td>Nom</td>
                           <td>Description</td>
                           <td>Date de début</td>
+                          <td>Statut</td>
                           <td>Actions</td>
                         </tr>
                       </thead>
@@ -304,6 +305,21 @@ return (
                               {/* Date de début */}
                               <td>{formatDate(c.startDate)}</td>
 
+                              {/* Badge statut */}                      
+                              <td>
+                              {/* Style du badge selon le texte du statut */}
+                              <span
+                                className={`badge ${
+                                c.statusLabel === "Terminée" ? "bg-success" :
+                                c.statusLabel === "En cours" ? "bg-primary" :
+                                c.statusLabel === "À venir" ? "bg-warning text-dark" :
+                                "bg-secondary"
+                                }`}
+                                >
+                               {c.statusLabel}
+                               </span>
+                               </td>
+                               
                               {/* Actions */}
                               <td>
                                 <button
