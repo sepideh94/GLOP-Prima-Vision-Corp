@@ -19,23 +19,31 @@ public class EventService {
     private final EventRepository repository;
 
     public Event createFromDto(EventCreateRequest req) {
-        Event e = new Event();
-        e.setName(req.getName());
-        e.setDescription(req.getDescription());
-        e.setStartDate(req.getStartDate());
-        return repository.save(e);
-    }
+    Event e = new Event();
+    e.setName(req.getName());
+    e.setDescription(req.getDescription());
+    e.setStartDate(req.getStartDate());
+    e.setEndDate(req.getEndDate());   
+
+    return repository.save(e);
+}
+
 
     public Event updateFromDto(Long id, EventUpdateRequest req) {
-        Event existing = repository.findById(id)
-                .orElseThrow(() -> new EventNotFoundException(id));
+    Event existing = repository.findById(id)
+            .orElseThrow(() -> new EventNotFoundException(id));
 
-        existing.setName(req.getName());
-        existing.setDescription(req.getDescription());
-        existing.setStartDate(req.getStartDate());
+    existing.setName(req.getName());
+    existing.setDescription(req.getDescription());
+    existing.setStartDate(req.getStartDate());
 
-        return repository.save(existing);
+    if (req.getEndDate() != null) {
+        existing.setEndDate(req.getEndDate()); 
     }
+
+    return repository.save(existing);
+}
+
 
     public List<Event> getAll() {
         return repository.findAll();
