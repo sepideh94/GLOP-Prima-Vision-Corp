@@ -21,6 +21,16 @@ const competitionService = {
     const res = await api.put(`/api/admin/competitions/${id}`, data);
     return res.data;
   },
+
+  async getCompetition(id) {
+    const res = await api.get(`/api/admin/competitions/${id}`);
+    return res.data;
+  },
+
+  async getEvent(id) {
+    const res = await api.get(`/api/events/${id}`);
+    return res.data;
+  },
 };
 
 export default competitionService;

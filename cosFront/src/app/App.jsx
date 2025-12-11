@@ -12,6 +12,7 @@ import Spectator from "../features/user/pages/Spectator.jsx";
 import Volunteer from "../features/user/pages/Volunteer.jsx";
 import EventsList from "../features/events/pages/EventsList.jsx";
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
+import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
              <Route path="/admin" element={<Admin />} />
              <Route path="/events" element={<EventsList />} />
              <Route path="/admin/competitions" element={<CompetitionListPage />} />
+             <Route path="/admin/competitions/:competitionId/trials" element={<TrialListPage />}/>
              <Route path="/athlete" element={<Athlete />} />   
              <Route path="/commissioner" element={<Commissioner />} />
              <Route path="/spectator" element={<Spectator />} />

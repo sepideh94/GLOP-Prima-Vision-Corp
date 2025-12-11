@@ -1,4 +1,5 @@
 import  { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -24,6 +25,7 @@ const formatDate = (value) => {
 
 export default function CompetitionListPage() {
 
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitions, setCompetitions] = useState([]);
@@ -290,7 +292,13 @@ return (
                           </tr>
                         ) : (
                             currentCompetitions.map((c) => (
-                              <tr key={c.id}>
+                              <tr key={c.id}
+                                  onClick={() => 
+                                    navigate(`/admin/competitions/${c.id}/trials`)
+                                  }
+                                  style={{ cursor: "pointer" }}
+                              >
+
                               {/* Nom */}
                               <td>
                                 <div className="d-flex align-items-center">
@@ -324,9 +332,12 @@ return (
                               <td>
                                 <button
                                   className="btn btn-primary me-2"
-                                  onClick={() => handleOpenEdit(c)}
+                                  onClick={(e) => {
+                                     e.stopPropagation();
+                                     handleOpenEdit(c);
+                                  }}
                                 >
-                                  Modifier
+                                Modifier
                                 </button>
                               </td>
                             </tr>
