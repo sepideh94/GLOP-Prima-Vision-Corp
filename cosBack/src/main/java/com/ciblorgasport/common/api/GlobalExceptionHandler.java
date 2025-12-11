@@ -11,6 +11,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -70,5 +71,20 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
+    
+    /**
+     * Gère les violations des règles d'intégrité de date (règles métier).
+     * Mappe l'erreur à 400 Bad Request.
+     */
+    @ExceptionHandler(CompetitionDateIntegrityException.class)
+    public ResponseEntity<ApiError> handleCompetitionDateIntegrityException(CompetitionDateIntegrityException ex) {
+        ApiError apiError = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error(HttpStatus.BAD_REQUEST.getReasonPhrase())
+                .message(ex.getMessage()) 
+                .build();
+        return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
     }
 }
