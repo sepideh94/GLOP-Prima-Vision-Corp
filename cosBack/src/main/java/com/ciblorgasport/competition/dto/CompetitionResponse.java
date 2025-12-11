@@ -1,6 +1,6 @@
 package com.ciblorgasport.competition.dto;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.event.domain.Event;
@@ -14,8 +14,8 @@ public class CompetitionResponse {
     private Long id;
     private String name;
     private String description;
-    private LocalDate startDate;
-    private LocalDate endDate;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private Long parentEventId;
     
     private String statusLabel;
