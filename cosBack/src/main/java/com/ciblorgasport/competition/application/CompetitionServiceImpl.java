@@ -2,7 +2,7 @@ package com.ciblorgasport.competition.application;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.competition.domain.Competition;
@@ -24,6 +24,26 @@ public class CompetitionServiceImpl implements CompetitionService{
     private final CompetitionRepository competitionRepository;
     private final EventRepository eventRepository;
 
+    private void validateCompetitionDate(LocalDateTime competitionStartDate, Event parentEvent) {
+    	
+        if (competitionStartDate.isBefore(parentEvent.getStartDate())) {
+            throw new IllegalArgumentException(
+                "La date de début de la compétition (" + competitionStartDate + 
+                ") ne peut pas être antérieure à la date de début de l'événement parent (" + 
+                parentEvent.getStartDate() + ")."
+            );
+        }
+    }
+    
+    private void validateDatesOrder(LocalDateTime startDate, LocalDateTime endDate) {
+        if (endDate.isBefore(startDate)) {
+            throw new IllegalArgumentException(
+                "La date de fin de la compétition (" + endDate + 
+                ") ne peut pas être antérieure à la date de début (" + 
+                startDate + ")."
+            );
+        }
+    }
     
     @Transactional
     public CompetitionResponse createCompetition(CompetitionCreateRequest request) {
@@ -31,10 +51,14 @@ public class CompetitionServiceImpl implements CompetitionService{
         Event parentEvent = eventRepository.findById(request.getParentEventId())
                 .orElseThrow(() -> new IllegalArgumentException("Événement parent introuvable avec l'ID: " + request.getParentEventId()));
 
+        validateCompetitionDate(request.getStartDate(), parentEvent);
+        validateDatesOrder(request.getStartDate(), request.getEndDate());
+        
         Competition newCompetition = new Competition();
         newCompetition.setName(request.getName());
         newCompetition.setDescription(request.getDescription());
         newCompetition.setStartDate(request.getStartDate());
+        newCompetition.setEndDate(request.getEndDate());
         newCompetition.setParentEvent(parentEvent);
         
         Competition savedCompetition = competitionRepository.save(newCompetition);
@@ -52,11 +76,16 @@ public class CompetitionServiceImpl implements CompetitionService{
     @Override
     public CompetitionResponse updateCompetition(Long id, CompetitionUpdateRequest request) {
         Competition existingCompetition = getCompetitionByIdOrThrow(id);
+        
+        Event parentEvent = existingCompetition.getParentEvent();
+        validateCompetitionDate(request.getStartDate(), parentEvent);
+        validateDatesOrder(request.getStartDate(), request.getEndDate());
 
         existingCompetition.setName(request.getName());
         existingCompetition.setDescription(request.getDescription());
         existingCompetition.setStartDate(request.getStartDate());
-        
+        existingCompetition.setEndDate(request.getEndDate());
+
         Competition updatedCompetition = competitionRepository.save(existingCompetition);
         
         return CompetitionResponse.fromEntity(updatedCompetition);    }
