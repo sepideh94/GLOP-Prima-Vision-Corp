@@ -25,6 +25,7 @@ public class Competition implements StatusChecker {
  private String name;
  private String description;
  private LocalDate startDate;
+ private LocalDate endDate;
 
 
  /*@OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)

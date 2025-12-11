@@ -9,6 +9,7 @@ public class CompetitionCreateRequest {
  private String name;
  private String description;
  private LocalDate startDate;
+ private LocalDate endDate;
  private Long parentEventId; 
  
 

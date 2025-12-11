@@ -15,6 +15,7 @@ public class CompetitionResponse {
     private String name;
     private String description;
     private LocalDate startDate;
+    private LocalDate endDate;
     private Long parentEventId;
     
     private String statusLabel;
@@ -31,6 +32,7 @@ public class CompetitionResponse {
                 .name(competition.getName())
                 .description(competition.getDescription())
                 .startDate(competition.getStartDate())
+                .endDate(competition.getEndDate())
                 .parentEventId(parentEvent.getId())
                 .statusLabel(determineStatusLabel(competition))
                 .build();

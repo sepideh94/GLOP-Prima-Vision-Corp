@@ -18,4 +18,8 @@ public class CompetitionUpdateRequest {
     @NotNull(message = "La date de début est obligatoire.")
     @FutureOrPresent(message = "La date de début doit être dans le présent ou le futur.")
     private LocalDate startDate;
+    
+    @NotNull(message = "La date de fin est obligatoire.")
+    @FutureOrPresent(message = "La date de début doit être dans le présent ou le futur.")
+    private LocalDate endDate;
 }
