@@ -10,6 +10,7 @@ import java.util.List;
 
 import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.trial.domain.Trial;
 
 @Entity
 @Table(name = "competition")
@@ -28,8 +29,8 @@ public class Competition implements StatusChecker {
  private LocalDateTime endDate;
 
 
- /*@OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
- private List<Trial> trials;*/
+ @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+ private List<Trial> trials;
 
 
  @ManyToOne(fetch = FetchType.LAZY)
