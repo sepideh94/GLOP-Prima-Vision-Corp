@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
@@ -27,7 +28,7 @@ public class CompetitionServiceImpl implements CompetitionService{
     private void validateCompetitionDate(LocalDateTime competitionStartDate, Event parentEvent) {
     	
         if (competitionStartDate.isBefore(parentEvent.getStartDate())) {
-            throw new IllegalArgumentException(
+            throw new CompetitionDateIntegrityException(
                 "La date de début de la compétition (" + competitionStartDate + 
                 ") ne peut pas être antérieure à la date de début de l'événement parent (" + 
                 parentEvent.getStartDate() + ")."
@@ -37,7 +38,7 @@ public class CompetitionServiceImpl implements CompetitionService{
     
     private void validateDatesOrder(LocalDateTime startDate, LocalDateTime endDate) {
         if (endDate.isBefore(startDate)) {
-            throw new IllegalArgumentException(
+            throw new CompetitionDateIntegrityException(
                 "La date de fin de la compétition (" + endDate + 
                 ") ne peut pas être antérieure à la date de début (" + 
                 startDate + ")."
