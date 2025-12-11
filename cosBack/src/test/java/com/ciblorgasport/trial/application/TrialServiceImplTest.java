@@ -1,0 +1,356 @@
+package com.ciblorgasport.trial.application;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
+import com.ciblorgasport.round.domain.Round;
+import com.ciblorgasport.round.domain.RoundName;
+import com.ciblorgasport.round.infrastructure.RoundRepository;
+import com.ciblorgasport.site.domain.Site;
+import com.ciblorgasport.site.infrastructure.SiteRepository;
+import com.ciblorgasport.trial.domain.CategoryGender;
+import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialMode;
+import com.ciblorgasport.trial.domain.TrialName;
+import com.ciblorgasport.trial.dto.TrialCreateRequest;
+import com.ciblorgasport.trial.dto.TrialResponse;
+import com.ciblorgasport.trial.dto.TrialUpdateRequest;
+import com.ciblorgasport.trial.infrastructure.TrialRepository;
+
+@ExtendWith(MockitoExtension.class)
+@DisplayName("TrialServiceImpl Unit Tests")
+class TrialServiceImplTest {
+
+    @Mock
+    private TrialRepository trialRepository;
+
+    @Mock
+    private SiteRepository siteRepository;
+
+    @Mock
+    private CompetitionRepository competitionRepository;
+
+    @Mock
+    private RoundRepository roundRepository;
+
+    @InjectMocks
+    private TrialServiceImpl trialService;
+
+    private Trial testTrial;
+    private Site testSite;
+    private Competition testCompetition;
+    private Round testRound;
+    private TrialCreateRequest createRequest;
+    private TrialUpdateRequest updateRequest;
+
+    @BeforeEach
+    void setUp() {
+        testSite = new Site();
+        testSite.setId(1L);
+        testSite.setAdress("123 Rue Test");
+
+        testCompetition = new Competition();
+        testCompetition.setId(1L);
+        testCompetition.setName("Test Competition");
+
+        testRound = new Round();
+        testRound.setId(1L);
+        testRound.setName(RoundName.FINALE);
+        // orderNumber is now auto-calculated from RoundName.FINALE.getOrder() = 5
+
+        testTrial = new Trial();
+        testTrial.setId(1L);
+        testTrial.setName("100m nage libre - Finale");
+        testTrial.setTrialName(TrialName.HUNDRED_M_FREESTYLE);
+        testTrial.setDescription("Sprint trial");
+        testTrial.setRules("Standard rules");
+        testTrial.setStartDate(LocalDate.of(2025, 12, 15));
+        testTrial.setStartHour(LocalTime.of(10, 0));
+        testTrial.setEndDate(LocalDate.of(2025, 12, 15));
+        testTrial.setEndHour(LocalTime.of(12, 0));
+        testTrial.setMode(TrialMode.INDIVIDUAL);
+        testTrial.setCategoryGender(CategoryGender.MALE);
+        testTrial.setSite(testSite);
+        testTrial.setCompetition(testCompetition);
+        testTrial.setRound(testRound);
+
+        createRequest = new TrialCreateRequest();
+        createRequest.setTrialName(TrialName.HUNDRED_M_FREESTYLE);
+        createRequest.setDescription("Sprint trial");
+        createRequest.setRules("Standard rules");
+        createRequest.setStartDate(LocalDate.of(2025, 12, 15));
+        createRequest.setStartHour(LocalTime.of(10, 0));
+        createRequest.setEndDate(LocalDate.of(2025, 12, 15));
+        createRequest.setEndHour(LocalTime.of(12, 0));
+        createRequest.setMode(TrialMode.INDIVIDUAL);
+        createRequest.setCategoryGender(CategoryGender.MALE);
+        createRequest.setSiteId(1L);
+        createRequest.setCompetitionId(1L);
+        createRequest.setRoundId(1L);
+
+        updateRequest = new TrialUpdateRequest();
+        updateRequest.setTrialName(TrialName.TWO_HUNDRED_M_FREESTYLE);
+        updateRequest.setDescription("Updated sprint trial");
+        updateRequest.setRules("Updated rules");
+        updateRequest.setStartDate(LocalDate.of(2025, 12, 16));
+        updateRequest.setStartHour(LocalTime.of(14, 0));
+        updateRequest.setEndDate(LocalDate.of(2025, 12, 16));
+        updateRequest.setEndHour(LocalTime.of(16, 0));
+        updateRequest.setMode(TrialMode.TEAM);
+        updateRequest.setCategoryGender(CategoryGender.FEMALE);
+        updateRequest.setSiteId(1L);
+        updateRequest.setCompetitionId(1L);
+        updateRequest.setRoundId(1L);
+    }
+
+    @Test
+    @DisplayName("Should create trial successfully with competition and round")
+    void testCreateTrial_WithCompetitionAndRound_Success() {
+        // Arrange
+        when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
+        when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
+        when(trialRepository.save(any(Trial.class))).thenReturn(testTrial);
+
+        // Act
+        TrialResponse result = trialService.create(createRequest);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("100m nage libre - Finale", result.getName());
+        assertEquals(TrialName.HUNDRED_M_FREESTYLE, result.getTrialName());
+        assertEquals(TrialMode.INDIVIDUAL, result.getMode());
+        assertEquals(CategoryGender.MALE, result.getCategoryGender());
+        assertEquals(1L, result.getSiteId());
+        assertEquals(1L, result.getCompetitionId());
+        assertEquals(1L, result.getRoundId());
+        verify(siteRepository, times(1)).findById(1L);
+        verify(competitionRepository, times(1)).findById(1L);
+        verify(roundRepository, times(1)).findById(1L);
+        verify(trialRepository, times(1)).save(any(Trial.class));
+    }
+
+
+    @Test
+    @DisplayName("Should throw exception when creating trial with non-existent site")
+    void testCreateTrial_SiteNotFound() {
+        // Arrange
+        when(siteRepository.findById(999L)).thenReturn(Optional.empty());
+        createRequest.setSiteId(999L);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.create(createRequest);
+        });
+
+        assertTrue(exception.getMessage().contains("Site introuvable avec l'ID: 999"));
+        verify(siteRepository, times(1)).findById(999L);
+        verify(trialRepository, never()).save(any(Trial.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when creating trial with non-existent competition")
+    void testCreateTrial_CompetitionNotFound() {
+        // Arrange
+        when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+        when(competitionRepository.findById(999L)).thenReturn(Optional.empty());
+        when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
+        createRequest.setCompetitionId(999L);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.create(createRequest);
+        });
+
+        assertTrue(exception.getMessage().contains("Compétition introuvable avec l'ID: 999"));
+        verify(competitionRepository, times(1)).findById(999L);
+        verify(trialRepository, never()).save(any(Trial.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when creating trial with non-existent round")
+    void testCreateTrial_RoundNotFound() {
+        // Arrange
+        when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
+        when(roundRepository.findById(999L)).thenReturn(Optional.empty());
+        createRequest.setRoundId(999L);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.create(createRequest);
+        });
+
+        assertTrue(exception.getMessage().contains("Round introuvable avec l'ID: 999"));
+        verify(roundRepository, times(1)).findById(999L);
+        verify(trialRepository, never()).save(any(Trial.class));
+    }
+
+    @Test
+    @DisplayName("Should update trial successfully")
+    void testUpdateTrial_Success() {
+        // Arrange
+        Trial updatedTrial = new Trial();
+        updatedTrial.setId(1L);
+        updatedTrial.setName("200m nage libre - Finale");
+        updatedTrial.setTrialName(TrialName.TWO_HUNDRED_M_FREESTYLE);
+        updatedTrial.setMode(TrialMode.TEAM);
+        updatedTrial.setCategoryGender(CategoryGender.FEMALE);
+        updatedTrial.setSite(testSite);
+        updatedTrial.setCompetition(testCompetition);
+        updatedTrial.setRound(testRound);
+
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(testTrial));
+        when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
+        when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
+        when(trialRepository.save(any(Trial.class))).thenReturn(updatedTrial);
+
+        // Act
+        TrialResponse result = trialService.update(1L, updateRequest);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("200m nage libre - Finale", result.getName());
+        assertEquals(TrialName.TWO_HUNDRED_M_FREESTYLE, result.getTrialName());
+        assertEquals(TrialMode.TEAM, result.getMode());
+        assertEquals(CategoryGender.FEMALE, result.getCategoryGender());
+        verify(trialRepository, times(1)).findById(1L);
+        verify(roundRepository, times(1)).findById(1L);
+        verify(trialRepository, times(1)).save(any(Trial.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when updating non-existent trial")
+    void testUpdateTrial_NotFound() {
+        // Arrange
+        when(trialRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.update(999L, updateRequest);
+        });
+
+        assertTrue(exception.getMessage().contains("Épreuve introuvable avec l'ID: 999"));
+        verify(trialRepository, times(1)).findById(999L);
+        verify(trialRepository, never()).save(any(Trial.class));
+    }
+
+    @Test
+    @DisplayName("Should get trial by id successfully")
+    void testGetTrialById_Success() {
+        // Arrange
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(testTrial));
+
+        // Act
+        TrialResponse result = trialService.getById(1L);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("100m nage libre - Finale", result.getName());
+        assertEquals(TrialName.HUNDRED_M_FREESTYLE, result.getTrialName());
+        verify(trialRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when getting non-existent trial")
+    void testGetTrialById_NotFound() {
+        // Arrange
+        when(trialRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.getById(999L);
+        });
+
+        assertTrue(exception.getMessage().contains("Épreuve introuvable avec l'ID: 999"));
+        verify(trialRepository, times(1)).findById(999L);
+    }
+
+    @Test
+    @DisplayName("Should get all trials successfully")
+    void testGetAllTrials_Success() {
+        // Arrange
+        Trial trial2 = new Trial();
+        trial2.setId(2L);
+        trial2.setName("200m Sprint");
+        trial2.setSite(testSite);
+
+        List<Trial> trials = Arrays.asList(testTrial, trial2);
+        when(trialRepository.findAll()).thenReturn(trials);
+
+        // Act
+        List<TrialResponse> result = trialService.getAll();
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals("100m nage libre - Finale", result.get(0).getName());
+        assertEquals("200m Sprint", result.get(1).getName());
+        verify(trialRepository, times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return empty list when no trials exist")
+    void testGetAllTrials_EmptyList() {
+        // Arrange
+        when(trialRepository.findAll()).thenReturn(Arrays.asList());
+
+        // Act
+        List<TrialResponse> result = trialService.getAll();
+
+        // Assert
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(trialRepository, times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("Should delete trial successfully")
+    void testDeleteTrial_Success() {
+        // Arrange
+        when(trialRepository.existsById(1L)).thenReturn(true);
+        doNothing().when(trialRepository).deleteById(1L);
+
+        // Act
+        assertDoesNotThrow(() -> trialService.delete(1L));
+
+        // Assert
+        verify(trialRepository, times(1)).existsById(1L);
+        verify(trialRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deleting non-existent trial")
+    void testDeleteTrial_NotFound() {
+        // Arrange
+        when(trialRepository.existsById(999L)).thenReturn(false);
+
+        // Act & Assert
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+            trialService.delete(999L);
+        });
+
+        assertTrue(exception.getMessage().contains("Épreuve introuvable avec l'ID: 999"));
+        verify(trialRepository, times(1)).existsById(999L);
+        verify(trialRepository, never()).deleteById(999L);
+    }
+}
