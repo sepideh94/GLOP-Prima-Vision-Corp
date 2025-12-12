@@ -6,20 +6,31 @@ import { Outlet } from "react-router-dom";
 
 export default function Layout() {
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
-      
-      <Sidebar />
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily:
+          "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        background: `
+          radial-gradient(circle at 20% 30%, rgba(163,230,53,0.18), transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(34,211,238,0.15), transparent 55%),
+          linear-gradient(135deg, #F1F5F9, #CBD5E1)
+        `,
+      }}
+    >
+      <Navbar />
 
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        
-        <Navbar />
+      <Box sx={{ display: "flex", flex: 1 }}>
+        <Sidebar />
 
-        <Box sx={{ flexGrow: 1, p: 3, bgcolor: "#f5f5f5" }}>
+        <Box component="main" sx={{ flex: 1, px: 6, py: 5 }}>
           <Outlet />
         </Box>
-
-        <Footer />
       </Box>
+
+      <Footer />
     </Box>
   );
 }
