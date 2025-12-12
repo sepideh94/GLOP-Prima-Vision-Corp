@@ -208,10 +208,9 @@ export default function TrialListPage() {
     <Box sx={{ p: 4 }}>
       {/* Breadcrumb */}
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        Gestion des compétitions
-        {eventInfo && ` / ${eventInfo.name}`}
+        {eventInfo?.name}
         {competition && ` / ${competition.name}`}
-        {" / Épreuves"}
+      {" / Épreuves"}
       </Typography>
 
       {/* Titre */}
