@@ -171,7 +171,6 @@ class TrialServiceImplTest {
         // Arrange
         when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
         when(competitionRepository.findById(999L)).thenReturn(Optional.empty());
-        when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
         createRequest.setCompetitionId(999L);
 
         // Act & Assert
