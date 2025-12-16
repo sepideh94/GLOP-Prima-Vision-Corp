@@ -5,7 +5,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ciblorgasport.core.StatusChecker;
@@ -25,7 +25,8 @@ public class Competition implements StatusChecker {
 
  private String name;
  private String description;
- private LocalDate startDate;
+ private LocalDateTime startDate;
+ private LocalDateTime endDate;
 
 
  @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -39,7 +40,7 @@ public class Competition implements StatusChecker {
 
 @Override
 public boolean hasStarted() {
-	return this.startDate.isBefore(LocalDate.now());
+	return this.startDate.isBefore(LocalDateTime.now());
 }
 
 
