@@ -1,4 +1,4 @@
-package com.ciblorgasport.config;
+package com.ciblorgasport.security.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

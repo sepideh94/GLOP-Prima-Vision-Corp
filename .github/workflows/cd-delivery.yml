@@ -1,4 +1,4 @@
-name: CD - Build Spring Boot JAR (Delivery only)
+name: CD - Build Spring Boot JAR (cosBack only)
 
 on:
   push:
@@ -7,28 +7,26 @@ on:
 jobs:
   build-jar:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cosBack
 
     steps:
-      #  Récupérer le code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      #  Installer JDK 21 (même que ton pom.xml)
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'maven'
 
-      #  Compiler le projet et créer le .jar
       - name: Package Spring Boot JAR
-        run: |
-          cd back
-          mvn -B clean package -DskipTests
+        run: mvn -B -ntp clean package -DskipTests
 
-      #  Sauvegarder le livrable .jar
       - name: Upload built JAR
         uses: actions/upload-artifact@v4
         with:
           name: springboot-app
-          path: back/target/*.jar
+          path: cosBack/target/*.jar
