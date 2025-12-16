@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -6,7 +7,6 @@ import {
   Paper,
   List,
   ListItem,
-  ListItemText,
   CircularProgress,
   Alert,
   Dialog,
@@ -14,7 +14,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Chip,
 } from "@mui/material";
 import {
   Add,
@@ -24,45 +23,36 @@ import {
 import eventService from "../../../common/api/eventService";
 import { useAuth } from "../../../common/contexts/AuthContext";
 
-const filterOptions = [
-  { label: "Today", value: "today" },
-  { label: "Tomorrow", value: "tomorrow" },
-  { label: "This Week", value: "thisWeek" },
-  { label: "Next Week", value: "nextWeek" },
-  { label: "This Month", value: "thisMonth" },
-  { label: "Next Month", value: "nextMonth" },
-];
-
 export default function EventsList() {
   const { user, role } = useAuth();
   const isAdmin = role === "ADMIN" || role === "ROLE_ADMIN";
+  const navigate = useNavigate();
 
   const [events, setEvents] = useState([]);
-  const [filteredEvents, setFilteredEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeFilter, setActiveFilter] = useState(["today", "thisWeek"]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     startDate: "",
+    endDate: "",
   });
 
   useEffect(() => {
     loadEvents();
   }, []);
 
-  useEffect(() => {
-    filterEvents();
-  }, [events, activeFilter]);
-
   const loadEvents = async () => {
     try {
       setLoading(true);
       const data = await eventService.getAllEvents();
-      setEvents(data);
+      // Sort events by start date ascending
+      const sorted = [...data].sort(
+        (a, b) => new Date(a.startDate) - new Date(b.startDate)
+      );
+      setEvents(sorted);
     } catch (err) {
       setError("Erreur lors du chargement des événements");
       console.error(err);
@@ -71,73 +61,30 @@ export default function EventsList() {
     }
   };
 
-  const filterEvents = () => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextWeek = new Date(today);
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    const thisMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
-
-    let filtered = events;
-
-    if (activeFilter.length > 0) {
-      filtered = events.filter((event) => {
-        const eventDate = new Date(event.startDate);
-        return activeFilter.some((filter) => {
-          switch (filter) {
-            case "today":
-              return (
-                eventDate >= today && eventDate < tomorrow
-              );
-            case "tomorrow":
-              const tomorrowEnd = new Date(tomorrow);
-              tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
-              return eventDate >= tomorrow && eventDate < tomorrowEnd;
-            case "thisWeek":
-              return eventDate >= today && eventDate < nextWeek;
-            case "nextWeek":
-              const nextWeekEnd = new Date(nextWeek);
-              nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
-              return eventDate >= nextWeek && eventDate < nextWeekEnd;
-            case "thisMonth":
-              return eventDate >= today && eventDate <= thisMonthEnd;
-            case "nextMonth":
-              return eventDate > thisMonthEnd && eventDate <= nextMonthEnd;
-            default:
-              return true;
-          }
-        });
-      });
-    }
-
-    filtered.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-    setFilteredEvents(filtered);
-  };
-
-  const handleFilterClick = (filterValue) => {
-    setActiveFilter((prev) => {
-      if (prev.includes(filterValue)) {
-        return prev.filter((f) => f !== filterValue);
-      } else {
-        return [...prev, filterValue];
-      }
-    });
-  };
-
   const handleOpenDialog = (event = null) => {
     if (event) {
       setEditingEvent(event);
       const date = new Date(event.startDate);
-      const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+      // Pour les inputs type="date", on ne garde que la partie yyyy-MM-dd
+      const localDate = new Date(
+        date.getTime() - date.getTimezoneOffset() * 60000
+      )
         .toISOString()
-        .slice(0, 16);
+        .slice(0, 10);
+      let localEndDate = "";
+      if (event.endDate) {
+        const end = new Date(event.endDate);
+        localEndDate = new Date(
+          end.getTime() - end.getTimezoneOffset() * 60000
+        )
+          .toISOString()
+          .slice(0, 10);
+      }
       setFormData({
         name: event.name,
         description: event.description || "",
-        startDate: localDateTime,
+        startDate: localDate,
+        endDate: localEndDate,
       });
     } else {
       setEditingEvent(null);
@@ -145,6 +92,7 @@ export default function EventsList() {
         name: "",
         description: "",
         startDate: "",
+        endDate: "",
       });
     }
     setOpenDialog(true);
@@ -157,6 +105,7 @@ export default function EventsList() {
       name: "",
       description: "",
       startDate: "",
+      endDate: "",
     });
   };
 
@@ -166,10 +115,12 @@ export default function EventsList() {
         name: formData.name,
         description: formData.description || null,
         startDate: formData.startDate ? new Date(formData.startDate).toISOString() : null,
+        endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
       };
 
       if (editingEvent) {
-        await eventService.updateEvent(editingEvent.idEvent, submitData);
+        const eventId = editingEvent.id ?? editingEvent.idEvent;
+        await eventService.updateEvent(eventId, submitData);
       } else {
         await eventService.createEvent(submitData);
       }
@@ -183,21 +134,6 @@ export default function EventsList() {
       );
       console.error(err);
     }
-  };
-
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const month = date.toLocaleString("fr-FR", { month: "short" }).toUpperCase();
-    return `${day} ${month}`;
-  };
-
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   if (loading) {
@@ -246,30 +182,18 @@ export default function EventsList() {
         </Alert>
       )}
 
-      <Box sx={{ mb: 3, display: "flex", gap: 1, flexWrap: "wrap" }}>
-        {filterOptions.map((option) => (
-          <Chip
-            key={option.value}
-            label={option.label}
-            onClick={() => handleFilterClick(option.value)}
-            color={activeFilter.includes(option.value) ? "primary" : "default"}
-            variant={activeFilter.includes(option.value) ? "filled" : "outlined"}
-            sx={{
-              cursor: "pointer",
-              fontWeight: activeFilter.includes(option.value) ? "bold" : "normal",
-            }}
-          />
-        ))}
-      </Box>
-
       <Paper sx={{ p: 2, borderRadius: 2 }}>
-        {filteredEvents.length === 0 ? (
-          <Typography variant="body1" color="text.secondary" sx={{ p: 3, textAlign: "center" }}>
-            Aucun événement trouvé pour les filtres sélectionnés.
+        {events.length === 0 ? (
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ p: 3, textAlign: "center" }}
+          >
+            Aucun événement disponible.
           </Typography>
         ) : (
           <List>
-            {filteredEvents.map((event) => (
+            {events.map((event) => (
               <ListItem
                 key={event.idEvent}
                 sx={{
@@ -290,19 +214,28 @@ export default function EventsList() {
                 }
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-                  <CalendarToday sx={{ color: "#1976d2", fontSize: 32 }} />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                    }}
+                    onClick={() =>
+                      navigate(`/admin/competitions?eventId=${event.idEvent}`)
+                    }
+                  >
+                    <CalendarToday sx={{ color: "#1976d2", fontSize: 32 }} />
+                  </Box>
                   <Box>
                     <Typography variant="h6" fontWeight="bold">
-                      {formatDate(event.startDate)}: {event.name}
+                      {event.name}
                     </Typography>
                     {event.description && (
                       <Typography variant="body2" color="text.secondary">
                         {event.description}
                       </Typography>
                     )}
-                    <Typography variant="caption" color="text.secondary">
-                      {formatTime(event.startDate)}
-                    </Typography>
                   </Box>
                 </Box>
               </ListItem>
@@ -335,13 +268,26 @@ export default function EventsList() {
               }
             />
             <TextField
-              label="Date et heure de début"
-              type="datetime-local"
+              label="Date de début"
+              type="date"
               fullWidth
               required
               value={formData.startDate}
               onChange={(e) =>
                 setFormData({ ...formData, startDate: e.target.value })
+              }
+              InputLabelProps={{
+                shrink: true,
+              }}
+            />
+            <TextField
+              label="Date de fin"
+              type="date"
+              fullWidth
+              required
+              value={formData.endDate}
+              onChange={(e) =>
+                setFormData({ ...formData, endDate: e.target.value })
               }
               InputLabelProps={{
                 shrink: true,
@@ -354,7 +300,9 @@ export default function EventsList() {
           <Button
             onClick={handleSubmit}
             variant="contained"
-            disabled={!formData.name || !formData.startDate}
+            disabled={
+              !formData.name || !formData.startDate || !formData.endDate
+            }
           >
             {editingEvent ? "Modifier" : "Créer"}
           </Button>
