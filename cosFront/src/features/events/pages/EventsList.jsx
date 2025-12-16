@@ -39,6 +39,7 @@ export default function EventsList() {
     startDate: "",
     endDate: "",
   });
+  const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
     loadEvents();
@@ -48,7 +49,6 @@ export default function EventsList() {
     try {
       setLoading(true);
       const data = await eventService.getAllEvents();
-      // Sort events by start date ascending
       const sorted = [...data].sort(
         (a, b) => new Date(a.startDate) - new Date(b.startDate)
       );
@@ -107,10 +107,34 @@ export default function EventsList() {
       startDate: "",
       endDate: "",
     });
+    setFormErrors({});
   };
 
   const handleSubmit = async () => {
+    // Validation du formulaire
+    const errors = {};
+    if (!formData.name.trim()) errors.name = "Le nom est obligatoire";
+    if (!formData.startDate) errors.startDate = "La date de début est obligatoire";
+    if (!formData.endDate) errors.endDate = "La date de fin est obligatoire";
+    
+    // Validation : la date de fin doit être après la date de début
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+      if (end < start) {
+        errors.endDate = "La date de fin doit être après la date de début";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setFormErrors({});
+    
     try {
+
       const submitData = {
         name: formData.name,
         description: formData.description || null,
@@ -227,15 +251,41 @@ export default function EventsList() {
                   >
                     <CalendarToday sx={{ color: "#1976d2", fontSize: 32 }} />
                   </Box>
-                  <Box>
+                  <Box sx={{ flex: 1 }}>
                     <Typography variant="h6" fontWeight="bold">
                       {event.name}
                     </Typography>
                     {event.description && (
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
                         {event.description}
                       </Typography>
                     )}
+                    <Box sx={{ display: "flex", gap: 2, mt: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        <strong>Début:</strong>{" "}
+                        {event.startDate
+                          ? new Date(event.startDate).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Non définie"}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        <strong>Fin:</strong>{" "}
+                        {event.endDate
+                          ? new Date(event.endDate).toLocaleDateString("fr-FR", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "Non définie"}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Box>
               </ListItem>
@@ -255,7 +305,14 @@ export default function EventsList() {
               fullWidth
               required
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value });
+                if (formErrors.name) {
+                  setFormErrors({ ...formErrors, name: "" });
+                }
+              }}
+              error={Boolean(formErrors.name)}
+              helperText={formErrors.name}
             />
             <TextField
               label="Description"
@@ -273,12 +330,18 @@ export default function EventsList() {
               fullWidth
               required
               value={formData.startDate}
-              onChange={(e) =>
-                setFormData({ ...formData, startDate: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, startDate: e.target.value });
+                // Réinitialiser l'erreur de endDate si on change startDate
+                if (formErrors.endDate) {
+                  setFormErrors({ ...formErrors, endDate: "" });
+                }
+              }}
               InputLabelProps={{
                 shrink: true,
               }}
+              error={Boolean(formErrors.startDate)}
+              helperText={formErrors.startDate}
             />
             <TextField
               label="Date de fin"
@@ -286,12 +349,18 @@ export default function EventsList() {
               fullWidth
               required
               value={formData.endDate}
-              onChange={(e) =>
-                setFormData({ ...formData, endDate: e.target.value })
-              }
+              onChange={(e) => {
+                setFormData({ ...formData, endDate: e.target.value });
+                // Réinitialiser l'erreur si on change endDate
+                if (formErrors.endDate) {
+                  setFormErrors({ ...formErrors, endDate: "" });
+                }
+              }}
               InputLabelProps={{
                 shrink: true,
               }}
+              error={Boolean(formErrors.endDate)}
+              helperText={formErrors.endDate}
             />
           </Box>
         </DialogContent>
