@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
   Button,
-  Paper,
-  List,
-  ListItem,
   CircularProgress,
   Alert,
   Dialog,
@@ -15,18 +11,15 @@ import {
   DialogActions,
   TextField,
 } from "@mui/material";
-import {
-  Add,
-  Edit,
-  CalendarToday,
-} from "@mui/icons-material";
+import { Add } from "@mui/icons-material";
 import eventService from "../../../common/api/eventService";
 import { useAuth } from "../../../common/contexts/AuthContext";
+import EventCard from "../components/EventCard";
 
 export default function EventsList() {
-  const { user, role } = useAuth();
+
+  const { role } = useAuth();
   const isAdmin = role === "ADMIN" || role === "ROLE_ADMIN";
-  const navigate = useNavigate();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -161,223 +154,144 @@ export default function EventsList() {
   };
 
   if (loading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "400px",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box sx={{ p: 3, bgcolor: "#f9fafb", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
+}
+
+return (
+  <Box sx={{ p: 4 }}>
+    <Box sx={{ mb: 5 }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 3,
         }}
       >
-        <Typography variant="h4" fontWeight="bold">
-          Events List
-        </Typography>
+        <Box>
+          <Typography
+            sx={{
+              fontSize: 32,
+              fontWeight: 900,
+              color: "#0f172a",
+              letterSpacing: "-0.5px",
+              lineHeight: 1.1,
+            }}
+          >
+            Gestion des Événements
+          </Typography>
+
+          <Box
+            sx={{
+              mt: 0.5,
+              width: "100%",
+              height: 4,
+              borderRadius: 2,
+              background: "linear-gradient(90deg, #22d3ee, #4ade80)",
+            }}
+          />
+        </Box>
+
         {isAdmin && (
           <Button
             variant="contained"
             startIcon={<Add />}
             onClick={() => handleOpenDialog()}
-            sx={{ bgcolor: "#1976d2" }}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1.2,
+              borderRadius: "999px",
+              background: "linear-gradient(135deg, #22d3ee, #3b82f6)",
+              boxShadow: "0 8px 20px rgba(59,130,246,0.35)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #0ea5e9, #2563eb)",
+              },
+            }}
           >
-            Créer un événement
+            Ajouter un événement
           </Button>
         )}
       </Box>
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
-
-      <Paper sx={{ p: 2, borderRadius: 2 }}>
-        {events.length === 0 ? (
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            sx={{ p: 3, textAlign: "center" }}
-          >
-            Aucun événement disponible.
-          </Typography>
-        ) : (
-          <List>
-            {events.map((event) => (
-              <ListItem
-                key={event.idEvent}
-                sx={{
-                  borderBottom: "1px solid #e0e0e0",
-                  "&:last-child": { borderBottom: "none" },
-                  py: 2,
-                }}
-                secondaryAction={
-                  isAdmin && (
-                    <Button
-                      size="small"
-                      startIcon={<Edit />}
-                      onClick={() => handleOpenDialog(event)}
-                    >
-                      Modifier
-                    </Button>
-                  )
-                }
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2, flex: 1 }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                    }}
-                    onClick={() =>
-                      navigate(`/admin/competitions?eventId=${event.idEvent}`)
-                    }
-                  >
-                    <CalendarToday sx={{ color: "#1976d2", fontSize: 32 }} />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                      {event.name}
-                    </Typography>
-                    {event.description && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        {event.description}
-                      </Typography>
-                    )}
-                    <Box sx={{ display: "flex", gap: 2, mt: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
-                        <strong>Début:</strong>{" "}
-                        {event.startDate
-                          ? new Date(event.startDate).toLocaleDateString("fr-FR", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Non définie"}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        <strong>Fin:</strong>{" "}
-                        {event.endDate
-                          ? new Date(event.endDate).toLocaleDateString("fr-FR", {
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "Non définie"}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
-              </ListItem>
-            ))}
-          </List>
-        )}
-      </Paper>
-
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingEvent ? "Modifier l'événement" : "Créer un événement"}
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-            <TextField
-              label="Nom de l'événement"
-              fullWidth
-              required
-              value={formData.name}
-              onChange={(e) => {
-                setFormData({ ...formData, name: e.target.value });
-                if (formErrors.name) {
-                  setFormErrors({ ...formErrors, name: "" });
-                }
-              }}
-              error={Boolean(formErrors.name)}
-              helperText={formErrors.name}
-            />
-            <TextField
-              label="Description"
-              fullWidth
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-            />
-            <TextField
-              label="Date de début"
-              type="date"
-              fullWidth
-              required
-              value={formData.startDate}
-              onChange={(e) => {
-                setFormData({ ...formData, startDate: e.target.value });
-                // Réinitialiser l'erreur de endDate si on change startDate
-                if (formErrors.endDate) {
-                  setFormErrors({ ...formErrors, endDate: "" });
-                }
-              }}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              error={Boolean(formErrors.startDate)}
-              helperText={formErrors.startDate}
-            />
-            <TextField
-              label="Date de fin"
-              type="date"
-              fullWidth
-              required
-              value={formData.endDate}
-              onChange={(e) => {
-                setFormData({ ...formData, endDate: e.target.value });
-                // Réinitialiser l'erreur si on change endDate
-                if (formErrors.endDate) {
-                  setFormErrors({ ...formErrors, endDate: "" });
-                }
-              }}
-              InputLabelProps={{
-                shrink: true,
-              }}
-              error={Boolean(formErrors.endDate)}
-              helperText={formErrors.endDate}
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Annuler</Button>
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={
-              !formData.name || !formData.startDate || !formData.endDate
-            }
-          >
-            {editingEvent ? "Modifier" : "Créer"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
-  );
-}
 
+    {error && <Alert severity="error">{error}</Alert>}
+
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: "1fr",
+        gap: 3,
+      }}
+    >
+      {events.map((event) => (
+        <EventCard
+          key={event.idEvent}
+          event={event}
+          isAdmin={isAdmin}
+          onEdit={handleOpenDialog}
+        />
+      ))}
+    </Box>
+
+    <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
+      <DialogTitle>
+        {editingEvent ? "Modifier l’événement" : "Créer un événement"}
+      </DialogTitle>
+
+      <DialogContent>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+          <TextField
+            label="Nom"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData({ ...formData, name: e.target.value })
+            }
+          />
+
+          <TextField
+            label="Description"
+            multiline
+            rows={3}
+            value={formData.description}
+            onChange={(e) =>
+              setFormData({ ...formData, description: e.target.value })
+            }
+          />
+
+          <TextField
+            type="date"
+            label="Date de début"
+            InputLabelProps={{ shrink: true }}
+            value={formData.startDate}
+            onChange={(e) =>
+              setFormData({ ...formData, startDate: e.target.value })
+            }
+          />
+
+          <TextField
+            type="date"
+            label="Date de fin"
+            InputLabelProps={{ shrink: true }}
+            value={formData.endDate}
+            onChange={(e) =>
+              setFormData({ ...formData, endDate: e.target.value })
+            }
+          />
+        </Box>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
+        <Button variant="contained" onClick={handleSubmit}>
+          Enregistrer
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </Box>
+);
+}
