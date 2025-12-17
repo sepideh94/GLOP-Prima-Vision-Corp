@@ -23,6 +23,11 @@ const formatDate = (value) => {
   return date.toLocaleDateString("fr-FR");
 };
 
+const toLocalDateTime = (date) => {
+  if (!date) return null;
+  return `${date}T00:00:00`;
+};
+
 export default function CompetitionListPage() {
 
   const navigate = useNavigate();
@@ -77,13 +82,18 @@ export default function CompetitionListPage() {
 
   const name = (c.name || "").toLowerCase();
   const description = (c.description || "").toLowerCase();
-  const date = formatDate(c.startDate).toLowerCase(); 
+  const startDate = formatDate(c.startDate || "").toLowerCase();
+  const endDate = formatDate(c.endDate || "").toLowerCase();
+  const status = (c.statusLabel || "").toLowerCase();
 
   return (
-    name.includes(normalizedSearch) ||
-    description.includes(normalizedSearch) ||
-    date.includes(normalizedSearch)
+  name.includes(normalizedSearch) ||
+  description.includes(normalizedSearch) ||
+  startDate.includes(normalizedSearch) ||
+  endDate.includes(normalizedSearch) ||
+  status.includes(normalizedSearch) 
   );
+
 });
 
   // Pagination
@@ -120,7 +130,8 @@ export default function CompetitionListPage() {
       const payload = {
         name: form.name,
         description: form.description,
-        startDate: form.startDate,
+        startDate: toLocalDateTime(form.startDate),
+        endDate: toLocalDateTime(form.endDate),
       };
 
       console.log("Payload UPDATE :", payload);
@@ -138,7 +149,8 @@ export default function CompetitionListPage() {
       const payload = {
         name: form.name,
         description: form.description,
-        startDate: form.startDate,
+        startDate: toLocalDateTime(form.startDate),
+        endDate: toLocalDateTime(form.endDate),
         parentEventId: selectedEventId,
       };
 
@@ -275,6 +287,7 @@ return (
                           <td>Nom</td>
                           <td>Description</td>
                           <td>Date de début</td>
+                          <td>Date de fin</td>
                           <td>Statut</td>
                           <td>Actions</td>
                         </tr>
@@ -284,7 +297,7 @@ return (
                         {filteredCompetitions.length === 0 ? (
                           <tr>
                             <td
-                              colSpan="4"
+                              colSpan="6"
                               className="text-center text-muted py-4"
                             >
                               Aucune compétition pour cet événement.
@@ -312,6 +325,9 @@ return (
 
                               {/* Date de début */}
                               <td>{formatDate(c.startDate)}</td>
+
+                              {/* Date de fin */}
+                              <td>{formatDate(c.endDate)}</td> 
 
                               {/* Badge statut */}                      
                               <td>
