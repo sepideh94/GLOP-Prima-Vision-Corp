@@ -43,4 +43,34 @@ class CompetitionControllerTest {
                 .content("{\"name\":\"\"}")) 
                 .andExpect(status().isInternalServerError()); 
     }
+    
+    @Autowired
+    private com.ciblorgasport.event.infrastructure.EventRepository eventRepository;
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createCompetition_AsAdmin_WithValidData_ShouldReturnCreated() throws Exception {
+
+    	com.ciblorgasport.event.domain.Event event = new com.ciblorgasport.event.domain.Event();
+        event.setName("JO 2025");
+        event.setStartDate(java.time.LocalDateTime.of(2025, 1, 1, 0, 0));
+        event.setEndDate(java.time.LocalDateTime.of(2025, 12, 31, 23, 59));
+        event = eventRepository.save(event); 
+
+        String competitionJson = String.format("""
+            {
+                "name": "Tournoi de Judo",
+                "description": "Compétition de judo junior",
+                "startDate": "2025-08-01T10:00:00",
+                "endDate": "2025-08-05T18:00:00",
+                "parentEventId": %d
+            }
+            """, event.getId());
+
+        mockMvc.perform(post("/api/admin/competitions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(competitionJson))
+                .andExpect(status().isCreated());
+    }
 }
