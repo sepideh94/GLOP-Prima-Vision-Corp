@@ -66,7 +66,9 @@ export default function EventCard({ event, isAdmin, onEdit }) {
               variant="body2"
               sx={{ color: "#cbd5f5", mt: 0.5 }}
             >
-              {event.description}
+              {event.description.length > 250
+                ? `${event.description.substring(0, 250)}...`
+                : event.description}
             </Typography>
           )}
 

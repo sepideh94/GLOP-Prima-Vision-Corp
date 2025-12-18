@@ -10,6 +10,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Snackbar,
+  Slide,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import eventService from "../../../common/api/eventService";
@@ -17,13 +19,13 @@ import { useAuth } from "../../../common/contexts/AuthContext";
 import EventCard from "../components/EventCard";
 
 export default function EventsList() {
-
   const { role } = useAuth();
   const isAdmin = role === "ADMIN" || role === "ROLE_ADMIN";
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [formData, setFormData] = useState({
@@ -38,6 +40,14 @@ export default function EventsList() {
     loadEvents();
   }, []);
 
+  const SlideTransition = (props) => {
+    return <Slide {...props} direction="up" />;
+  };
+
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+  };
+
   const loadEvents = async () => {
     try {
       setLoading(true);
@@ -48,6 +58,7 @@ export default function EventsList() {
       setEvents(sorted);
     } catch (err) {
       setError("Erreur lors du chargement des événements");
+      setOpenSnackbar(true);
       console.error(err);
     } finally {
       setLoading(false);
@@ -109,7 +120,7 @@ export default function EventsList() {
     if (!formData.name.trim()) errors.name = "Le nom est obligatoire";
     if (!formData.startDate) errors.startDate = "La date de début est obligatoire";
     if (!formData.endDate) errors.endDate = "La date de fin est obligatoire";
-    
+
     // Validation : la date de fin doit être après la date de début
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
@@ -149,6 +160,7 @@ export default function EventsList() {
           ? "Erreur lors de la modification de l'événement"
           : "Erreur lors de la création de l'événement"
       );
+      setOpenSnackbar(true);
       console.error(err);
     }
   };
@@ -209,8 +221,6 @@ return (
       </Box>
     </Box>
 
-    {error && <Alert severity="error">{error}</Alert>}
-
     <Box
       sx={{
         display: "grid",
@@ -228,6 +238,18 @@ return (
       ))}
     </Box>
 
+    <Snackbar
+      open={openSnackbar}
+      autoHideDuration={6000}
+      onClose={handleCloseSnackbar}
+      TransitionComponent={SlideTransition}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+    >
+      <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: "100%" }}>
+        {error}
+      </Alert>
+    </Snackbar>
+
     <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
       <DialogTitle>
         {editingEvent ? "Modifier l’événement" : "Créer un événement"}
@@ -238,9 +260,15 @@ return (
           <TextField
             label="Nom"
             value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value });
+              if (formErrors.name) {
+                setFormErrors({ ...formErrors, name: undefined });
+              }
+            }}
+            error={!!formErrors.name}
+            helperText={formErrors.name}
+            required
           />
 
           <TextField
@@ -248,35 +276,58 @@ return (
             multiline
             rows={3}
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={(e) => {
+              setFormData({ ...formData, description: e.target.value });
+              if (formErrors.description) {
+                setFormErrors({ ...formErrors, description: undefined });
+              }
+            }}
+            error={!!formErrors.description}
+            helperText={formErrors.description}
           />
 
           <TextField
             type="date"
             label="Date de début"
             InputLabelProps={{ shrink: true }}
+            inputProps={{
+              min: new Date().toISOString().split('T')[0]
+            }}
             value={formData.startDate}
-            onChange={(e) =>
-              setFormData({ ...formData, startDate: e.target.value })
-            }
+            onChange={(e) => {
+              setFormData({ ...formData, startDate: e.target.value });
+              if (formErrors.startDate) {
+                setFormErrors({ ...formErrors, startDate: undefined });
+              }
+            }}
+            error={!!formErrors.startDate}
+            helperText={formErrors.startDate}
+            required
           />
 
           <TextField
             type="date"
             label="Date de fin"
             InputLabelProps={{ shrink: true }}
+            inputProps={{
+              min: formData.startDate || new Date().toISOString().split('T')[0]
+            }}
             value={formData.endDate}
-            onChange={(e) =>
-              setFormData({ ...formData, endDate: e.target.value })
-            }
+            onChange={(e) => {
+              setFormData({ ...formData, endDate: e.target.value });
+              if (formErrors.endDate) {
+                setFormErrors({ ...formErrors, endDate: undefined });
+              }
+            }}
+            error={!!formErrors.endDate}
+            helperText={formErrors.endDate}
+            required
           />
         </Box>
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={() => setOpenDialog(false)}>Annuler</Button>
+        <Button onClick={handleCloseDialog}>Annuler</Button>
         <Button variant="contained" onClick={handleSubmit}>
           Enregistrer
         </Button>
