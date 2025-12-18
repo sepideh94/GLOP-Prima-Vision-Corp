@@ -6,9 +6,11 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
@@ -86,5 +88,14 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage()) 
                 .build();
         return new ResponseEntity<>(apiError, HttpStatus.BAD_REQUEST);
+    }
+    
+    @ExceptionHandler(BadCredentialsException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleBadCredentialsException(BadCredentialsException ex) {
+        return ApiError.builder()
+                .status(HttpStatus.UNAUTHORIZED.value())
+                .message("Email ou mot de passe incorrect")
+                .build();
     }
 }
