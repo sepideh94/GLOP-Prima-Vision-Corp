@@ -37,12 +37,23 @@ class SecurityAccessIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
+    @org.springframework.test.annotation.DirtiesContext 
     void testCreateSuccess() throws Exception {
-        String validUser = "{\"firstName\":\"Jean\", \"lastName\":\"Test\", \"email\":\"unique@test.com\", \"password\":\"pass\"}";
+        String uniqueEmail = "commissaire_" + System.currentTimeMillis() + "@test.com";
+        
+        String userJson = String.format("""
+            {
+                "firstName": "Jean",
+                "lastName": "Test",
+                "email": "%s",
+                "password": "pass"
+            }
+            """, uniqueEmail);
+
         mockMvc.perform(post("/api/admin/create-commissaire")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(validUser))
-                .andExpect(status().isCreated());
+                .content(userJson))
+                .andExpect(status().isCreated()); 
     }
 
     @Test
