@@ -8,6 +8,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ciblorgasport.security.dto.SignInRequest;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,11 +37,12 @@ class SecurityAccessIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void protectedRoute_Admin_ShouldBeAllowedForAdmin() throws Exception {
+    void testCreateSuccess() throws Exception {
+        String validUser = "{\"firstName\":\"Jean\", \"lastName\":\"Test\", \"email\":\"unique@test.com\", \"password\":\"pass\"}";
         mockMvc.perform(post("/api/admin/create-commissaire")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"email\":\"test@test.com\", \"password\":\"pass123\"}")) 
-                .andExpect(status().isCreated()); 
+                .content(validUser))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -46,5 +50,15 @@ class SecurityAccessIntegrationTest {
     void createEvent_ShouldBeForbiddenForSpectator() throws Exception {
         mockMvc.perform(post("/api/events"))
                 .andExpect(status().isForbidden()); 
+    }
+    
+    @Test
+    void signin_WithWrongCredentials_ShouldReturnUnauthorized() throws Exception {
+        SignInRequest loginRequest = new SignInRequest("inconnu@test.com", "mauvais_pass");
+
+        mockMvc.perform(post("/api/auth/signin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(loginRequest)))
+                .andExpect(status().isUnauthorized()); 
     }
 }
