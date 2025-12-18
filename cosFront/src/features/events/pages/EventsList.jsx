@@ -183,16 +183,6 @@ return (
           >
             Gestion des Événements
           </Typography>
-
-          <Box
-            sx={{
-              mt: 0.5,
-              width: "100%",
-              height: 4,
-              borderRadius: 2,
-              background: "linear-gradient(90deg, #22d3ee, #4ade80)",
-            }}
-          />
         </Box>
 
         {isAdmin && (

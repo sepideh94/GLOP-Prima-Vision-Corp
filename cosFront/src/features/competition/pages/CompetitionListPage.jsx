@@ -6,11 +6,13 @@ import {
   Card,
   Button,
   Chip,
+  TextField,
 } from "@mui/material";
 
+import appTheme from "../../../common/theme/appTheme";
 import AddIcon from "@mui/icons-material/Add";
 import EventIcon from "@mui/icons-material/Event";
-import { TextField } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 import CompetitionFormDialog from "./CompetitionFormDialog";
 import competitionService from "../services/competitionService";
 
@@ -175,243 +177,192 @@ export default function CompetitionListPage() {
 };
 
 return (
-    <Box sx={{ p: 4 }}>
-      {/* Titre page */}
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold">
+    <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+
+      {/* TITRE + BOUTON */}
+      <Box
+        sx={{
+          mb: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: 32,
+            fontWeight: 900,
+            color: appTheme.colors.dark,
+            letterSpacing: "-0.5px",
+          }}
+        >
           Gestion des compétitions
         </Typography>
+
+        <Button
+          startIcon={<AddIcon />}
+          onClick={handleOpenCreate}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            px: 3,
+            py: 1.1,
+            borderRadius: appTheme.radius.pill,
+            background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+            color: appTheme.colors.dark,
+          }}
+        >
+          Ajouter une compétition
+        </Button>
       </Box>
 
-      {/* Si aucun évènement */}
       {!hasEvents ? (
-        <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 2, p: 2 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <EventIcon color="primary" />
-            <Box>
-              <Typography variant="subtitle2" color="text.secondary">
-                Événement sélectionné
-              </Typography>
-              <Typography variant="h6" fontWeight="bold">
-                Aucun événement disponible pour le moment
-              </Typography>
-            </Box>
-          </Box>
+        <Card sx={{ p: 4 }}>
+          <Typography>Aucun événement disponible</Typography>
         </Card>
       ) : (
         <>
-          {/* Bouton ajouter */}
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
-            >
-              Ajouter une compétition
-            </Button>
-          </Box>
-
-          {/* Sélecteur d'événement */}
+          {/* SELECTEUR EVENEMENT */}
           <Card
             sx={{
-              mb: 3,
-              borderRadius: 3,
-              boxShadow: 2,
-              p: 2,
+              mb: 4,
+              p: 3,
+              borderRadius: appTheme.radius.lg,
+              background: appTheme.gradients.card,
+              boxShadow: appTheme.shadows.card,
+              color: appTheme.colors.textPrimary,
               display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              alignItems: { xs: "flex-start", md: "center" },
               justifyContent: "space-between",
+              flexWrap: "wrap",
               gap: 2,
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <EventIcon color="primary" />
+              <EventIcon sx={{ color: appTheme.colors.cyan }} />
               <Box>
-                <Typography variant="subtitle2" color="text.secondary">
+                <Typography variant="subtitle2" color={appTheme.colors.textMuted}>
                   Événement sélectionné
                 </Typography>
-                <Typography variant="h6" fontWeight="bold">
+                <Typography fontWeight={800}>
                   {currentEvent?.name}
                 </Typography>
               </Box>
             </Box>
 
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
               {events.map((event) => (
                 <Chip
                   key={event.id}
                   label={event.name}
-                  color={
-                    event.id === selectedEventId ? "primary" : "default"
-                  }
-                  variant={
-                    event.id === selectedEventId ? "filled" : "outlined"
-                  }
                   onClick={() => setSelectedEventId(event.id)}
-                  sx={{ borderRadius: 999 }}
+                  sx={{
+                    fontWeight: 700,
+                    borderRadius: appTheme.radius.pill,
+                    background:
+                      event.id === selectedEventId
+                        ? appTheme.gradients.navbar
+                        : appTheme.colors.darkSoft,
+                    color:
+                      event.id === selectedEventId
+                        ? appTheme.colors.dark
+                        : appTheme.colors.textPrimary,
+                  }}
                 />
               ))}
             </Box>
           </Card>
 
-          {/* Tableau des compétitions */}
-          <div className="row gx-3">
-            <div className="col-sm-12 col-12">
-              <div className="card">
-                {/* En-tête */}
-                <div className="card-header d-flex justify-content-between align-items-center">
-                <div className="card-title">Liste des compétitions</div>
-
-                {/* Barre de recherche  */}
-                <div style={{ width: 300 }}>
-                <TextField
-                  size="small"
-                  fullWidth
-                  placeholder="Rechercher par nom, description ou date"
-                  value={searchTerm} 
-                  onChange={(e) => {
+          {/* TABLE */}
+          <div className="card" style={{ borderRadius: 22, overflow: "hidden" }}>
+            <div className="card-header d-flex justify-content-between align-items-center">
+              <strong>Liste des compétitions</strong>
+              <TextField
+                size="small"
+                placeholder="Rechercher..."
+                value={searchTerm}
+                onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setCurrentPage(1); 
-                  }}            
-               />
-               </div>
-               </div>
-               
-                {/* Corps */}
-                <div className="card-body">
-                  <div className="table-responsive">
-                    <table className="table align-middle">
-                      <thead>
-                        <tr>
-                          <td>Nom</td>
-                          <td>Description</td>
-                          <td>Date de début</td>
-                          <td>Date de fin</td>
-                          <td>Statut</td>
-                          <td>Actions</td>
-                        </tr>
-                      </thead>
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
 
-                      <tbody>
-                        {filteredCompetitions.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan="6"
-                              className="text-center text-muted py-4"
-                            >
-                              Aucune compétition pour cet événement.
-                            </td>
-                          </tr>
-                        ) : (
-                            currentCompetitions.map((c) => (
-                              <tr key={c.id}
-                                  onClick={() => 
-                                    navigate(`/admin/competitions/${c.id}/trials`)
-                                  }
-                                  style={{ cursor: "pointer" }}
-                              >
+            <div className="card-body">
+              <table className="table align-middle">
+                <thead>
+                  <tr style={{ color: appTheme.colors.dark }}>
+                    <td><strong>Nom</strong></td>
+                    <td><strong>Description</strong></td>
+                    <td><strong>Début</strong></td>
+                    <td><strong>Fin</strong></td>
+                    <td><strong>Statut</strong></td>
+                    <td><strong>Actions</strong></td>
+                  </tr>
+                </thead>
 
-                              {/* Nom */}
-                              <td>
-                                <div className="d-flex align-items-center">
-                                  <i className="bi bi-flag me-3 fs-4 text-primary"></i>
-                                  <p className="m-0 fw-bold">{c.name}</p>
-                                </div>
-                              </td>
-
-                              {/* Description */}
-                              <td>{c.description}</td>
-
-                              {/* Date de début */}
-                              <td>{formatDate(c.startDate)}</td>
-
-                              {/* Date de fin */}
-                              <td>{formatDate(c.endDate)}</td> 
-
-                              {/* Badge statut */}                      
-                              <td>
-                              {/* Style du badge selon le texte du statut */}
-                              <span
-                                className={`badge ${
-                                c.statusLabel === "Terminée" ? "bg-success" :
-                                c.statusLabel === "En cours" ? "bg-primary" :
-                                c.statusLabel === "À venir" ? "bg-warning text-dark" :
-                                "bg-secondary"
-                                }`}
-                                >
-                               {c.statusLabel}
-                               </span>
-                               </td>
-                               
-                              {/* Actions */}
-                              <td>
-                                <button
-                                  className="btn btn-primary me-2"
-                                  onClick={(e) => {
-                                     e.stopPropagation();
-                                     handleOpenEdit(c);
-                                  }}
-                                >
-                                Modifier
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                    <div className="d-flex justify-content-center mt-3">
-                    <ul className="pagination">
-                    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button 
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    disabled={currentPage === 1}
+                <tbody>
+                  {currentCompetitions.map((c) => (
+                    <tr
+                      key={c.id}
+                      onClick={() =>
+                        navigate(`/admin/competitions/${c.id}/trials`)
+                      }
+                      style={{ cursor: "pointer" }}
                     >
-                    ←
-                    </button>
-                    </li>
+                      <td className="fw-bold">{c.name}</td>
+                      <td>{c.description}</td>
+                      <td>{formatDate(c.startDate)}</td>
+                      <td>{formatDate(c.endDate)}</td>
 
-                    {/* Numéros de pages */}
-                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                    <li 
-                    key={page}
-                    className={`page-item ${currentPage === page ? "active" : ""}`}
-                    >
-                    <button 
-                      className="page-link"
-                      onClick={() => setCurrentPage(page)}
-                    >
-                   {page}
-                   </button>
-                  </li>
-               ))}
+                      <td>
+                        <span
+                          style={{
+                            padding: "4px 12px",
+                            borderRadius: appTheme.radius.pill,
+                            fontWeight: 600,
+                            fontSize: 13,
+                            background:
+                              c.statusLabel === "À venir"
+                                ? "rgba(250,204,21,0.25)"
+                                : c.statusLabel === "En cours"
+                                ? "rgba(34,211,238,0.25)"
+                                : "rgba(34,197,94,0.25)",
+                            color: appTheme.colors.dark,
+                          }}
+                        >
+                          {c.statusLabel}
+                        </span>
+                      </td>
 
-                  <li
-                   className={`page-item ${
-                   currentPage === totalPages || totalPages === 0 ? "disabled" : ""
-                   }`}
-                   >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage(currentPage + 1)}
-                    disabled={currentPage === totalPages || totalPages === 0}
-                  >
-                  →
-                  </button>
-                  </li>
-                  </ul>
-                  </div>
-                  </div>
-                </div>
-              </div>
+                      <td>
+                        <button
+                          className="btn d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: appTheme.radius.pill,
+                            background: appTheme.gradients.navbar,
+                            color: appTheme.colors.dark,
+                            fontWeight: 700,
+                            padding: "4px 12px",
+                            fontSize: 13,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenEdit(c);
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                          Modifier
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </>
       )}
 
-      {/* Popup création / édition */}
       <CompetitionFormDialog
         open={openForm}
         onClose={handleCloseForm}
