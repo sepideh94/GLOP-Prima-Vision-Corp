@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -31,5 +32,15 @@ class CompetitionControllerTest {
     void createCompetition_AsAnonymous_ShouldReturnUnauthorized() throws Exception {
         mockMvc.perform(post("/api/admin/competitions"))
                 .andExpect(status().isForbidden()); 
+    }
+    
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void createCompetition_AsAdmin_WithMissingData_ShouldReturnBadRequest() throws Exception {
+        mockMvc.perform(post("/api/admin/competitions")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"\"}")) 
+                .andExpect(status().isInternalServerError()); 
     }
 }
