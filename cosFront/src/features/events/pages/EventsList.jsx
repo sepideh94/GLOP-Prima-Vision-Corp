@@ -17,6 +17,7 @@ import { Add } from "@mui/icons-material";
 import eventService from "../../../common/api/eventService";
 import { useAuth } from "../../../common/contexts/AuthContext";
 import EventCard from "../components/EventCard";
+import DatePickerForm from "../../../common/components/DatePickerForm";
 
 export default function EventsList() {
   const { role } = useAuth();
@@ -286,13 +287,9 @@ return (
             helperText={formErrors.description}
           />
 
-          <TextField
-            type="date"
+          <DatePickerForm
             label="Date de début"
-            InputLabelProps={{ shrink: true }}
-            inputProps={{
-              min: new Date().toISOString().split('T')[0]
-            }}
+            name="startDate"
             value={formData.startDate}
             onChange={(e) => {
               setFormData({ ...formData, startDate: e.target.value });
@@ -302,16 +299,13 @@ return (
             }}
             error={!!formErrors.startDate}
             helperText={formErrors.startDate}
+            disablePast
             required
           />
 
-          <TextField
-            type="date"
+          <DatePickerForm
             label="Date de fin"
-            InputLabelProps={{ shrink: true }}
-            inputProps={{
-              min: formData.startDate || new Date().toISOString().split('T')[0]
-            }}
+            name="endDate"
             value={formData.endDate}
             onChange={(e) => {
               setFormData({ ...formData, endDate: e.target.value });
@@ -321,6 +315,8 @@ return (
             }}
             error={!!formErrors.endDate}
             helperText={formErrors.endDate}
+            minDate={formData.startDate}
+            disablePast={!formData.startDate}
             required
           />
         </Box>

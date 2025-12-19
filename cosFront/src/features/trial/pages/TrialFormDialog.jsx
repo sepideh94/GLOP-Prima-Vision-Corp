@@ -9,6 +9,7 @@ import {
   Grid,
   MenuItem,
 } from "@mui/material";
+import DatePickerForm from "../../../common/components/DatePickerForm";
 
 
 const TRIAL_NAME_OPTIONS = [
@@ -70,6 +71,7 @@ const emptyForm = {
 };
 
 export default function TrialFormDialog({ open, onClose, onSave, initialData }) {
+  const isEdit = Boolean(initialData);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
 
@@ -198,14 +200,13 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
 
           {/* Dates et heures */}
           <Grid item xs={12} sm={3}>
-            <TextField
+            <DatePickerForm
               fullWidth
               label="Date de début *"
-              type="date"
               name="startDate"
               value={form.startDate}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
+              disablePast
             />
           </Grid>
 
@@ -222,14 +223,14 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
           </Grid>
 
           <Grid item xs={12} sm={3}>
-            <TextField
+            <DatePickerForm
               fullWidth
               label="Date de fin *"
-              type="date"
               name="endDate"
               value={form.endDate}
               onChange={handleChange}
-              InputLabelProps={{ shrink: true }}
+              minDate={form.startDate}
+              disablePast={!form.startDate}
             />
           </Grid>
 

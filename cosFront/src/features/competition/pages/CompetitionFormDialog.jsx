@@ -8,6 +8,7 @@ import {
   Box,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import DatePickerForm from "../../../common/components/DatePickerForm";
 
 export default function CompetitionFormDialog({
   open,
@@ -116,27 +117,26 @@ export default function CompetitionFormDialog({
             error={Boolean(errors.description)}
             helperText={errors.description}
           />
-          <TextField
+          <DatePickerForm
             label="Date de début"
             name="startDate"
-            type="date"
             value={form.startDate}
             onChange={handleChange}
             fullWidth
-            InputLabelProps={{ shrink: true }}
             error={Boolean(errors.startDate)}
             helperText={errors.startDate}
+            disablePast
           />
-          <TextField
+          <DatePickerForm
             label="Date de fin"
             name="endDate"
-            type="date"
             value={form.endDate}
             onChange={handleChange}
             fullWidth
-            InputLabelProps={{ shrink: true }}
             error={Boolean(errors.endDate)}
             helperText={errors.endDate}
+            minDate={form.startDate}
+            disablePast={!form.startDate}
           />
 
         </Box>
