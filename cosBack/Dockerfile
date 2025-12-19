@@ -29,5 +29,8 @@ ENV DB_NAME=ciblorgasport
 ENV DB_USER=postgres
 ENV DB_PASSWORD=postgres123
 
+# CORS par défaut (modifiable via docker-compose)
+ENV CORS_ALLOWED_ORIGINS=http://localhost:3000,http://frontend,http://frontend:80,http://ciblorgasport-frontend
+
 # Lancer l'application
 ENTRYPOINT ["java", "-jar", "app.jar"]

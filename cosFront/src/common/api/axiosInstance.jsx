@@ -1,7 +1,6 @@
 import axios from "axios";
 
-// Le backend est accessible depuis le navigateur via localhost:8080
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,8 +11,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // on n’ajoute PAS de token pour /auth/signin
-    if (!config.url.includes("/auth/signin")) {
+    if (!config.url?.includes("/auth/signin")) {
       const token = localStorage.getItem("token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
