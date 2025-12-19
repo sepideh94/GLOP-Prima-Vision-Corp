@@ -73,7 +73,7 @@ class TrialServiceImplTest {
         testRound = new Round();
         testRound.setId(1L);
         testRound.setName(RoundName.FINALE);
-        // orderNumber is now auto-calculated from RoundName.FINALE.getOrder() = 5
+        
 
         testTrial = new Trial();
         testTrial.setId(1L);
@@ -123,16 +123,16 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should create trial successfully with competition and round")
     void testCreateTrial_WithCompetitionAndRound_Success() {
-        // Arrange
+        
         when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
         when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
         when(trialRepository.save(any(Trial.class))).thenReturn(testTrial);
 
-        // Act
+        
         TrialResponse result = trialService.create(createRequest);
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals("100m nage libre - Finale", result.getName());
         assertEquals(TrialName.HUNDRED_M_FREESTYLE, result.getTrialName());
@@ -151,11 +151,11 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when creating trial with non-existent site")
     void testCreateTrial_SiteNotFound() {
-        // Arrange
+        
         when(siteRepository.findById(999L)).thenReturn(Optional.empty());
         createRequest.setSiteId(999L);
 
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.create(createRequest);
         });
@@ -168,12 +168,12 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when creating trial with non-existent competition")
     void testCreateTrial_CompetitionNotFound() {
-        // Arrange
+        
         when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
         when(competitionRepository.findById(999L)).thenReturn(Optional.empty());
         createRequest.setCompetitionId(999L);
 
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.create(createRequest);
         });
@@ -186,13 +186,13 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when creating trial with non-existent round")
     void testCreateTrial_RoundNotFound() {
-        // Arrange
+        
         when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
         when(roundRepository.findById(999L)).thenReturn(Optional.empty());
         createRequest.setRoundId(999L);
 
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.create(createRequest);
         });
@@ -205,7 +205,7 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should update trial successfully")
     void testUpdateTrial_Success() {
-        // Arrange
+        
         Trial updatedTrial = new Trial();
         updatedTrial.setId(1L);
         updatedTrial.setName("200m nage libre - Finale");
@@ -222,10 +222,10 @@ class TrialServiceImplTest {
         when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
         when(trialRepository.save(any(Trial.class))).thenReturn(updatedTrial);
 
-        // Act
+        
         TrialResponse result = trialService.update(1L, updateRequest);
 
-        // Assert
+       
         assertNotNull(result);
         assertEquals("200m nage libre - Finale", result.getName());
         assertEquals(TrialName.TWO_HUNDRED_M_FREESTYLE, result.getTrialName());
@@ -239,10 +239,10 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when updating non-existent trial")
     void testUpdateTrial_NotFound() {
-        // Arrange
+        
         when(trialRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.update(999L, updateRequest);
         });
@@ -255,13 +255,13 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should get trial by id successfully")
     void testGetTrialById_Success() {
-        // Arrange
+        
         when(trialRepository.findById(1L)).thenReturn(Optional.of(testTrial));
 
-        // Act
+        
         TrialResponse result = trialService.getById(1L);
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals(1L, result.getId());
         assertEquals("100m nage libre - Finale", result.getName());
@@ -272,10 +272,10 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when getting non-existent trial")
     void testGetTrialById_NotFound() {
-        // Arrange
+        
         when(trialRepository.findById(999L)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.getById(999L);
         });
@@ -287,7 +287,7 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should get all trials successfully")
     void testGetAllTrials_Success() {
-        // Arrange
+        
         Trial trial2 = new Trial();
         trial2.setId(2L);
         trial2.setName("200m Sprint");
@@ -296,10 +296,10 @@ class TrialServiceImplTest {
         List<Trial> trials = Arrays.asList(testTrial, trial2);
         when(trialRepository.findAll()).thenReturn(trials);
 
-        // Act
+        
         List<TrialResponse> result = trialService.getAll();
 
-        // Assert
+        
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals("100m nage libre - Finale", result.get(0).getName());
@@ -310,13 +310,13 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should return empty list when no trials exist")
     void testGetAllTrials_EmptyList() {
-        // Arrange
+        
         when(trialRepository.findAll()).thenReturn(Arrays.asList());
 
-        // Act
+        
         List<TrialResponse> result = trialService.getAll();
 
-        // Assert
+        
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(trialRepository, times(1)).findAll();
@@ -325,14 +325,14 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should delete trial successfully")
     void testDeleteTrial_Success() {
-        // Arrange
+        
         when(trialRepository.existsById(1L)).thenReturn(true);
         doNothing().when(trialRepository).deleteById(1L);
 
-        // Act
+        
         assertDoesNotThrow(() -> trialService.delete(1L));
 
-        // Assert
+        
         verify(trialRepository, times(1)).existsById(1L);
         verify(trialRepository, times(1)).deleteById(1L);
     }
@@ -340,10 +340,10 @@ class TrialServiceImplTest {
     @Test
     @DisplayName("Should throw exception when deleting non-existent trial")
     void testDeleteTrial_NotFound() {
-        // Arrange
-        when(trialRepository.existsById(999L)).thenReturn(false);
 
-        // Act & Assert
+    	when(trialRepository.existsById(999L)).thenReturn(false);
+
+        
         RuntimeException exception = assertThrows(RuntimeException.class, () -> {
             trialService.delete(999L);
         });
