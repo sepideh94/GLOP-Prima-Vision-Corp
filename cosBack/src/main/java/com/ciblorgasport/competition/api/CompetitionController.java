@@ -37,7 +37,7 @@ public class CompetitionController {
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<CompetitionResponse> updateCompetition(@PathVariable("id") Long id, // CHANGEMENT DE RETOUR
+    public ResponseEntity<CompetitionResponse> updateCompetition(@PathVariable("id") Long id, 
                                                         @Valid @RequestBody CompetitionUpdateRequest request) {
         CompetitionResponse updatedCompetition = competitionService.updateCompetition(id, request);
         return ResponseEntity.ok(updatedCompetition);
