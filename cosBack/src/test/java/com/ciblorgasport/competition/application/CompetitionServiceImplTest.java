@@ -14,7 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
+import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
+import com.ciblorgasport.competition.dto.CompetitionUpdateRequest;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.event.infrastructure.EventRepository;
@@ -67,6 +69,43 @@ class CompetitionServiceImplTest {
 
         assertThrows(CompetitionDateIntegrityException.class, () -> {
             competitionService.createCompetition(createRequest);
+        });
+    }
+    @Test
+    void updateCompetition_ShouldSuccess_WhenDataIsValid() {
+        
+        Long compId = 10L;
+        parentEvent.setEndDate(LocalDateTime.of(2025, 6, 30, 23, 59));
+        
+        Competition existingComp = new Competition();
+        existingComp.setId(compId);
+        existingComp.setParentEvent(parentEvent);
+
+        CompetitionUpdateRequest updateRequest = new CompetitionUpdateRequest();
+        updateRequest.setName("Nom Modifié");
+        updateRequest.setStartDate(LocalDateTime.of(2025, 6, 10, 10, 0));
+        updateRequest.setEndDate(LocalDateTime.of(2025, 6, 15, 10, 0));
+
+        when(competitionRepository.findById(compId)).thenReturn(Optional.of(existingComp));
+        when(competitionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        
+        var result = competitionService.updateCompetition(compId, updateRequest);
+
+        
+        assertEquals("Nom Modifié", result.getName());
+        verify(competitionRepository).save(existingComp);
+    }
+
+    @Test
+    void updateCompetition_ShouldThrowException_WhenCompetitionNotFound() {
+
+    	Long compId = 99L;
+        when(competitionRepository.findById(compId)).thenReturn(Optional.empty());
+
+        
+        assertThrows(RuntimeException.class, () -> {
+            competitionService.updateCompetition(compId, new CompetitionUpdateRequest());
         });
     }
 }
