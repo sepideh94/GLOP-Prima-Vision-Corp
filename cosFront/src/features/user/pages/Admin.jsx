@@ -1,3 +1,4 @@
+
 import {
   Box,
   Typography,
@@ -8,19 +9,26 @@ import {
 } from "@mui/material";
 import { Event, EmojiEvents } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import appTheme from "../../../common/theme/appTheme";
+
 
 export default function Admin() {
+
   const navigate = useNavigate();
 
   const sections = [
     {
       title: "Gestion des événements",
-      icon: <Event sx={{ fontSize: 40 }} />,
+      subtitle: "Créer, planifier et organiser",
+      icon: <Event sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.cyan,
       route: "/events",
     },
     {
       title: "Gestion des compétitions",
-      icon: <EmojiEvents sx={{ fontSize: 40 }} />,
+      subtitle: "Suivi sportif et résultats",
+      icon: <EmojiEvents sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.green,
       route: "/admin/competitions",
     },
   ];
@@ -28,53 +36,76 @@ export default function Admin() {
   return (
     <Box>
       <Typography
-        sx={{
-          fontSize: "26px",
-          fontWeight: 700,
-          mb: 4,
-          color: "#020617",
-        }}
+       sx={{
+       fontSize: 32,
+       fontWeight: 900,
+       mb: 7,   
+      }}
       >
         Tableau de bord
       </Typography>
 
       <Grid container spacing={4}>
-        {sections.map((section) => (
-          <Grid item xs={12} md={6} key={section.title}>
+        {sections.map((s) => (
+          <Grid item xs={12} md={6} key={s.title}>
             <Card
               sx={{
-                height: 180,
-                borderRadius: "22px",
-                background:
-                  "linear-gradient(135deg, #E0F2FE 0%, #DCFCE7 100%)",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.18)",
-                transition: "0.3s",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                },
+                height: 200,
+                borderRadius: appTheme.radius.lg,
+                background: appTheme.gradients.card,
+                boxShadow: appTheme.shadows.card,
+                position: "relative",
+                overflow: "hidden",
               }}
             >
-              <CardActionArea
-                onClick={() => navigate(section.route)}
-                sx={{ height: "100%" }}
-              >
-                <CardContent
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    color: "#020617",
-                  }}
-                >
-                  {section.icon}
-                  <Typography sx={{ mt: 2, fontWeight: 600 }}>
-                    {section.title}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
+            <Box
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: 36,      
+                bottom: 36,    
+                width: 4,      
+                borderRadius: 6,
+                background: s.color,
+              }}
+            />
+            <CardActionArea
+              onClick={() => navigate(s.route)}
+              sx={{ height: "100%" }}
+            >
+            <CardContent
+              sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  color: appTheme.colors.textPrimary,
+              }}
+            >
+           <Box
+              sx={{
+                  width: 54,
+                  height: 54,
+                  borderRadius: "50%",
+                  background: s.color,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mb: 2,
+                  color: "#020617",
+              }}
+            >
+               {s.icon}
+           </Box>
+           <Typography sx={{ fontWeight: 700 }}>
+              {s.title}
+           </Typography>
+           <Typography sx={{ fontSize: 13, color: appTheme.colors.textMuted }}>
+              {s.subtitle}
+           </Typography>
+           </CardContent>
+           </CardActionArea>
+           </Card>
           </Grid>
         ))}
       </Grid>

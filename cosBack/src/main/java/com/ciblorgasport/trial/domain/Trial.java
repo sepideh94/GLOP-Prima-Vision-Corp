@@ -8,6 +8,7 @@ import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.round.domain.Round;
 import com.ciblorgasport.site.domain.Site;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,6 +66,7 @@ public class Trial implements StatusChecker {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_competition")
+    @JsonBackReference
     private Competition competition;
 
     @ManyToOne(fetch = FetchType.LAZY)

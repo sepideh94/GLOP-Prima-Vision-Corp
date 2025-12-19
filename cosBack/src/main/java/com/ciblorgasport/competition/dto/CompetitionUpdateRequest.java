@@ -1,7 +1,7 @@
 package com.ciblorgasport.competition.dto;
 
 import lombok.Data;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -17,5 +17,9 @@ public class CompetitionUpdateRequest {
 
     @NotNull(message = "La date de début est obligatoire.")
     @FutureOrPresent(message = "La date de début doit être dans le présent ou le futur.")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
+    
+    @NotNull(message = "La date de fin est obligatoire.")
+    @FutureOrPresent(message = "La date de début doit être dans le présent ou le futur.")
+    private LocalDateTime endDate;
 }

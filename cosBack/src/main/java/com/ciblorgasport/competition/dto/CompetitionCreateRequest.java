@@ -1,14 +1,16 @@
 package com.ciblorgasport.competition.dto;
 
+import java.time.LocalDateTime;
+
 import lombok.Data;
-import java.time.LocalDate;
 
 @Data
 public class CompetitionCreateRequest {
  
  private String name;
  private String description;
- private LocalDate startDate;
+ private LocalDateTime startDate;
+ private LocalDateTime endDate;
  private Long parentEventId; 
  
 
