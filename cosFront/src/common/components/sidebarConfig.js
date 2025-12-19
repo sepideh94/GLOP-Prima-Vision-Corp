@@ -4,7 +4,7 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 
 const sidebarConfig = {
   ADMIN: [
-    { label: "Menu", icon: HomeIcon, path: "/admin" },
+    { label: "Accueil", icon: HomeIcon, path: "/admin" },
     { label: "Gestion des événements", icon: EventIcon, path: "/events" },
     {
       label: "Gestion des compétitions",

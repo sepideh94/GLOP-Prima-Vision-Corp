@@ -13,5 +13,7 @@ public class EventUpdateRequest {
 
     private String description;
 
-    private LocalDateTime startDate; 
+    private LocalDateTime startDate;
+
+    private LocalDateTime endDate; 
 }

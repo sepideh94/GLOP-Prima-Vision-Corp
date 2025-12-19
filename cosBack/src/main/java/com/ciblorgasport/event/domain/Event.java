@@ -1,11 +1,18 @@
 package com.ciblorgasport.event.domain;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
+import com.ciblorgasport.competition.domain.Competition;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,8 +30,16 @@ public class Event {
     @NotBlank(message = "Event name is required")
     private String name;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     @NotNull(message = "Start date is required")
     private LocalDateTime startDate;
+
+    @NotNull(message = "End date is required")
+    private LocalDateTime endDate; 
+    
+    @OneToMany(mappedBy = "parentEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<Competition> competitions;
 }

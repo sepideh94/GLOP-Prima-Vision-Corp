@@ -3,18 +3,18 @@ services:
     image: postgres:16-alpine
     container_name: ciblorgasport-postgres
     environment:
-      POSTGRES_DB: ciblorgasport
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${DB_NAME:-ciblorgasport}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - "${DB_PORT_PUBLISHED:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - ciblorgasport-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d ciblorgasport || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-ciblorgasport} || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -28,13 +28,13 @@ services:
     container_name: ciblorgasport-backend
     environment:
       DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ciblorgasport
-      DB_USER: postgres
-      DB_PASSWORD: postgres123
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://frontend:80,http://frontend,http://ciblorgasport-frontend
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-ciblorgasport}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres123}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://frontend:80,http://frontend,http://ciblorgasport-frontend}
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT_PUBLISHED:-8080}:8080"
     depends_on:
       postgres:
         condition: service_healthy
@@ -46,9 +46,11 @@ services:
     build:
       context: ./cosFront
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080}
     container_name: ciblorgasport-frontend
     ports:
-      - "3000:80"
+      - "${FRONTEND_PORT_PUBLISHED:-3000}:80"
     depends_on:
       - backend
     networks:
@@ -59,11 +61,11 @@ services:
     image: dpage/pgadmin4:latest
     container_name: ciblorgasport-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@ciblorgasport.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@ciblorgasport.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
-      - "5050:80"
+      - "${PGADMIN_PORT_PUBLISHED:-5050}:80"
     networks:
       - ciblorgasport-network
     restart: unless-stopped

@@ -8,15 +8,14 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import sidebarConfig from "./sidebarConfig";
+import appTheme from "../theme/appTheme";
 
 const drawerWidth = 240;
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { user } = useAuth();
-
   const role = user?.role || "GUEST";
-  const menuItems = sidebarConfig[role] || [];
 
   return (
     <Drawer
@@ -25,13 +24,15 @@ export default function Sidebar() {
         width: drawerWidth,
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
-          background: "#ECFDF5",
-          borderRight: "1px solid rgba(0,0,0,0.05)",
+          background: appTheme.gradients.sidebar,
+          color: appTheme.colors.textSecondary,
+          mt: "64px",          
+          height: "calc(100% - 64px)",
         },
       }}
     >
       <List sx={{ mt: 2 }}>
-        {menuItems.map((item) => (
+        {(sidebarConfig[role] || []).map((item) => (
           <ListItemButton
             key={item.label}
             onClick={() => navigate(item.path)}
@@ -43,7 +44,7 @@ export default function Sidebar() {
               },
             }}
           >
-            <ListItemIcon sx={{ color: "#65A30D" }}>
+            <ListItemIcon sx={{ color: appTheme.colors.green }}>
               <item.icon />
             </ListItemIcon>
             <ListItemText primary={item.label} />

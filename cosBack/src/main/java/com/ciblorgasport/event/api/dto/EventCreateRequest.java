@@ -1,6 +1,7 @@
 package com.ciblorgasport.event.api.dto;
 
 import java.time.LocalDateTime;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -15,4 +16,7 @@ public class EventCreateRequest {
 
     @NotNull(message = "Start date is required")
     private LocalDateTime startDate;
+
+    @NotNull(message = "End date is required")
+    private LocalDateTime endDate;  
 }

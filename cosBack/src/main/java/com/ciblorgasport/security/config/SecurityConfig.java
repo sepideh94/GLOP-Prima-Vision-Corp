@@ -1,7 +1,10 @@
 package com.ciblorgasport.security.config;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -35,6 +38,9 @@ public class SecurityConfig {
     private final UserAccountService userService;
     private final PasswordEncoder pwdEncoder;
 
+    @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://frontend,http://frontend:80,http://ciblorgasport-frontend}")
+    private String corsAllowedOrigins;
+
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userService.userDetailsService());
@@ -47,42 +53,40 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
 
-   @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
+        List<String> origins = Arrays.stream(corsAllowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
 
-    config.setAllowedOrigins(List.of(
-        "http://localhost:3000",   
-        "http://frontend",         
-        "http://frontend:80",
-        "http://ciblorgasport-frontend", 
-        "http://backend:8080"      
-    ));
+        config.setAllowedOrigins(origins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
 
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("*"));
-    config.setAllowCredentials(true);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-}
-
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
-             // Events
-        .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()      
-        .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN") 
-        .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
+
+                // Events
+                .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
@@ -95,5 +99,4 @@ public CorsConfigurationSource corsConfigurationSource() {
 
         return http.build();
     }
-    
 }

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ciblorgasport.event.api.dto.EventCreateRequest;
+import com.ciblorgasport.event.api.dto.EventListResponse;
 import com.ciblorgasport.event.api.dto.EventUpdateRequest;
 import com.ciblorgasport.event.application.EventService;
 import com.ciblorgasport.event.domain.Event;
@@ -33,10 +34,15 @@ public class EventController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @GetMapping
-    public ResponseEntity<List<Event>> getAll() {
-        return ResponseEntity.ok(service.getAll());
-    }
+   @GetMapping
+public ResponseEntity<List<EventListResponse>> getAll() {
+  return ResponseEntity.ok(
+      service.getAll().stream()
+          .map(EventListResponse::fromEntity)
+          .toList()
+  );
+}
+
 
     @GetMapping("/{id}")
 public ResponseEntity<Event> getById(@PathVariable("id") Long id) {
