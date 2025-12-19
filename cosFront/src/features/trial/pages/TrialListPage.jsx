@@ -8,6 +8,9 @@ import {
   TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import appTheme from "../../../common/theme/appTheme";
 
 import trialService from "../services/trialService";
 import competitionService from "../../competition/services/competitionService";
@@ -203,215 +206,143 @@ export default function TrialListPage() {
     startIndex,
     startIndex + itemsPerPage
   );
-
-  return (
-    <Box sx={{ p: 4 }}>
-      {/* Breadcrumb */}
+  
+ return (
+    <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      
+      {/* ===== Breadcrumbs ===== */}
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-        {eventInfo?.name}
-        {competition && ` / ${competition.name}`}
-      {" / Épreuves"}
+        {eventInfo?.name} / {competition?.name} / Épreuves
       </Typography>
 
-      {/* Titre */}
-      <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
-        Épreuves — {competition?.name}
-      </Typography>
+      {/* ===== Titre + bouton ===== */}
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: 32,
+            fontWeight: 900,
+            color: appTheme.colors.dark,
+          }}
+        >
+          Gestion des épreuves
+        </Typography>
 
-      {/* Bouton ajouter */}
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
         <Button
-          variant="contained"
           startIcon={<AddIcon />}
-          onClick={handleOpenCreate}
+          onClick={() => setOpenForm(true)}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            px: 3,
+            py: 1.2,
+            borderRadius: appTheme.radius.pill,
+            background: appTheme.gradients.navbar,
+            color: appTheme.colors.dark,
+          }}
         >
           Ajouter une épreuve
         </Button>
       </Box>
 
-      {/* Tableau des épreuves */}
-      {trials.length === 0 ? (
-        <Card sx={{ p: 3, textAlign: "center" }}>
-          <Typography>Aucune épreuve pour cette compétition.</Typography>
-        </Card>
-      ) : (
-        <div className="row gx-3">
-          <div className="col-sm-12 col-12">
-            <div className="card">
-              {/* En-tête */}
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <div className="card-title">Liste des épreuves</div>
+      {/* ===== BARRE COMPÉTITION (GRISE) ===== */}
+      <Box
+        sx={{
+          mb: 4,
+          p: 3,
+          borderRadius: appTheme.radius.lg,
+          background: appTheme.colors.darkSoft,
+          display: "flex",
+          alignItems: "center",
+          gap: 2,
+        }}
+      >
+        <EmojiEventsIcon sx={{ color: appTheme.colors.green, fontSize: 28 }} />
 
-                {/* Barre de recherche */}
-                <div style={{ width: 320 }}>
-                  <TextField
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: 20,
+            color: "#fff",
+          }}
+        >
+          {competition?.name}
+        </Typography>
+      </Box>
+
+      {/* ===== TABLE ===== */}
+      <Card sx={{ borderRadius: 4 }}>
+        <Box
+          sx={{
+            p: 2,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Typography fontWeight={800}>Liste des épreuves</Typography>
+
+          <TextField
+            size="small"
+            placeholder="Rechercher..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </Box>
+
+        <table className="table align-middle">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Type</th>
+              <th>Début</th>
+              <th>Fin</th>
+              <th>Mode</th>
+              <th>Catégorie</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {trials.map((t) => (
+              <tr key={t.id}>
+                <td className="fw-bold">{t.name}</td>
+                <td>{getLabelFromEnum(t.trialName, TRIAL_NAME_OPTIONS)}</td>
+                <td>{formatDateTime(t.startDate, t.startHour)}</td>
+                <td>{formatDateTime(t.endDate, t.endHour)}</td>
+                <td>{getLabelFromEnum(t.mode, MODE_OPTIONS)}</td>
+                <td>{getLabelFromEnum(t.categoryGender, CATEGORY_OPTIONS)}</td>
+                <td>
+                  <Button
                     size="small"
-                    fullWidth
-                    placeholder="Rechercher par nom, type, date, mode..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setCurrentPage(1);
+                    variant="outlined"
+                    onClick={() => {
+                      setEditingTrial(t);
+                      setOpenForm(true);
                     }}
-                  />
-                </div>
-              </div>
+                  >
+                    Modifier
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
 
-              {/* Corps */}
-              <div className="card-body">
-                <div className="table-responsive">
-                  <table className="table align-middle">
-                    <thead>
-                      <tr>
-                        <td>Nom généré</td>
-                        <td>Type</td>
-                        <td>Round</td>
-                        <td>Début</td>
-                        <td>Fin</td>
-                        <td>Mode</td>
-                        <td>Catégorie</td>
-                        <td>Actions</td>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {filteredTrials.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan="8"
-                            className="text-center text-muted py-4"
-                          >
-                            Aucune épreuve ne correspond à la recherche.
-                          </td>
-                        </tr>
-                      ) : (
-                        currentTrials.map((t) => (
-                          <tr key={t.id}>
-                            {/* Nom généré */}
-                            <td>
-                              <div className="d-flex align-items-center">
-                                <i className="bi bi-flag me-3 fs-4 text-primary"></i>
-                                <p className="m-0 fw-bold">{t.name}</p>
-                              </div>
-                            </td>
-
-                            {/* Type */}
-                            <td>
-                              {getLabelFromEnum(
-                                t.trialName,
-                                TRIAL_NAME_OPTIONS
-                              )}
-                            </td>
-
-                            {/* Round */}
-                            <td>
-                              {t.roundNumber
-                                ? `Round ${t.roundNumber}`
-                                : "-"}
-                            </td>
-
-                            {/* Début */}
-                            <td>
-                              {formatDateTime(t.startDate, t.startHour)}
-                            </td>
-
-                            {/* Fin */}
-                            <td>{formatDateTime(t.endDate, t.endHour)}</td>
-
-                            {/* Mode */}
-                            <td>
-                              {getLabelFromEnum(t.mode, MODE_OPTIONS)}
-                            </td>
-
-                            {/* Catégorie */}
-                            <td>
-                              {getLabelFromEnum(
-                                t.categoryGender,
-                                CATEGORY_OPTIONS
-                              )}
-                            </td>
-
-                            {/* Actions */}
-                            <td>
-                              <button
-                                className="btn btn-primary me-2"
-                                onClick={() => handleOpenEdit(t)}
-                              >
-                                Modifier
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-
-                  {/* Pagination */}
-                  <div className="d-flex justify-content-center mt-3">
-                    <ul className="pagination">
-                      <li
-                        className={`page-item ${
-                          currentPage === 1 ? "disabled" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setCurrentPage(currentPage - 1)}
-                          disabled={currentPage === 1}
-                        >
-                          ←
-                        </button>
-                      </li>
-
-                      {Array.from(
-                        { length: totalPages },
-                        (_, index) => index + 1
-                      ).map((page) => (
-                        <li
-                          key={page}
-                          className={`page-item ${
-                            currentPage === page ? "active" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() => setCurrentPage(page)}
-                          >
-                            {page}
-                          </button>
-                        </li>
-                      ))}
-
-                      <li
-                        className={`page-item ${
-                          currentPage === totalPages || totalPages === 0
-                            ? "disabled"
-                            : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setCurrentPage(currentPage + 1)}
-                          disabled={
-                            currentPage === totalPages || totalPages === 0
-                          }
-                        >
-                          →
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Popup création / édition */}
+      {/* ===== POPUP ===== */}
       <TrialFormDialog
         open={openForm}
-        onClose={handleCloseForm}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingTrial(null);
+        }}
         onSave={handleSave}
         initialData={editingTrial}
       />
