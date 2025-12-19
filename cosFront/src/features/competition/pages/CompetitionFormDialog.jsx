@@ -21,6 +21,7 @@ export default function CompetitionFormDialog({
     name: "",
     description: "",
     startDate: "",
+    endDate: "", 
   });
 
   const [errors, setErrors] = useState({});
@@ -33,17 +34,20 @@ export default function CompetitionFormDialog({
       startDate: initialData.startDate
         ? String(initialData.startDate).slice(0, 10)
         : "",
+      endDate: initialData.endDate 
+        ? String(initialData.endDate).slice(0, 10)
+        : "",
     });
   } else {
     setForm({
       name: "",
       description: "",
       startDate: "",
+      endDate: "", 
     });
   }
   setErrors({});
 }, [initialData, open]);
-
 
   const handleChange = (e) => {
     setForm({
@@ -58,6 +62,16 @@ export default function CompetitionFormDialog({
     if (!form.description.trim())
       newErrors.description = "Description obligatoire";
     if (!form.startDate) newErrors.startDate = "Date obligatoire";
+    if (!form.endDate) newErrors.endDate = "Date de fin obligatoire";
+
+    if (
+    form.startDate &&
+    form.endDate &&
+    new Date(form.endDate) < new Date(form.startDate)
+    ) {
+    newErrors.endDate =
+      "La date de fin doit être après la date de début";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -113,6 +127,18 @@ export default function CompetitionFormDialog({
             error={Boolean(errors.startDate)}
             helperText={errors.startDate}
           />
+          <TextField
+            label="Date de fin"
+            name="endDate"
+            type="date"
+            value={form.endDate}
+            onChange={handleChange}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            error={Boolean(errors.endDate)}
+            helperText={errors.endDate}
+          />
+
         </Box>
       </DialogContent>
       <DialogActions>

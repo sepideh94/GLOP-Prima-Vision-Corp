@@ -6,11 +6,16 @@ export default function Footer() {
       sx={{
         py: 2,
         textAlign: "center",
-        background: "#ECFDF5",
-        borderTop: "1px solid rgba(0,0,0,0.05)",
+        background: "#E2E8F0", 
+        borderTop: "1px solid rgba(0,0,0,0.08)",
       }}
     >
-      <Typography variant="body2" sx={{ color: "#64748B" }}>
+      <Typography
+        sx={{
+          color: "#475569",
+          fontSize: 13,
+        }}
+      >
         © 2025 CiblOrgaSport — Plateforme de gestion sportive
       </Typography>
     </Box>
