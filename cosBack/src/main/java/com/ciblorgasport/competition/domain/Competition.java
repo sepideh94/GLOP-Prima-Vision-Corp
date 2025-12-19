@@ -11,6 +11,8 @@ import java.util.List;
 import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.trial.domain.Trial;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 @Entity
 @Table(name = "competition")
@@ -30,11 +32,13 @@ public class Competition implements StatusChecker {
 
 
  @OneToMany(mappedBy = "competition", cascade = CascadeType.ALL, orphanRemoval = true)
+ @JsonManagedReference
  private List<Trial> trials;
 
 
  @ManyToOne(fetch = FetchType.LAZY)
  @JoinColumn(name = "id_event", nullable = false) 
+ @JsonBackReference
  private Event parentEvent;
 
 
