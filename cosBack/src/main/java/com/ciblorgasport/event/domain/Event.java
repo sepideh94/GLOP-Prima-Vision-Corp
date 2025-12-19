@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -37,5 +38,6 @@ public class Event {
     private LocalDateTime endDate; 
     
     @OneToMany(mappedBy = "parentEvent", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private List<Competition> competitions;
 }
