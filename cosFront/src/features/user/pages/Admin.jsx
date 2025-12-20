@@ -25,7 +25,7 @@ export default function Admin() {
       route: "/events",
     },
     {
-      title: "Gestion des compétitions",
+      title: "Gestion des compétitions et épreuves",
       subtitle: "Suivi sportif et résultats",
       icon: <EmojiEvents sx={{ fontSize: 42 }} />,
       color: appTheme.colors.green,

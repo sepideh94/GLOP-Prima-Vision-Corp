@@ -11,6 +11,7 @@ import {
 
 import appTheme from "../../../common/theme/appTheme";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventIcon from "@mui/icons-material/Event";
 import EditIcon from "@mui/icons-material/Edit";
 import CompetitionFormDialog from "./CompetitionFormDialog";
@@ -178,6 +179,22 @@ export default function CompetitionListPage() {
 
 return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate("/admin")}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+      >
+        Retour au tableau de bord
+      </Button>
 
       {/* TITRE + BOUTON */}
       <Box
@@ -196,7 +213,7 @@ return (
             letterSpacing: "-0.5px",
           }}
         >
-          Gestion des compétitions
+          Gestion des compétitions et épreuves
         </Typography>
 
         <Button
@@ -307,7 +324,16 @@ return (
                       onClick={() =>
                         navigate(`/admin/competitions/${c.id}/trials`)
                       }
-                      style={{ cursor: "pointer" }}
+                      style={{
+                        cursor: "pointer",
+                        transition: "background-color 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "rgba(34, 211, 238, 0.1)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "";
+                      }}
                     >
                       <td className="fw-bold">{c.name}</td>
                       <td>{c.description}</td>

@@ -7,7 +7,7 @@ const sidebarConfig = {
     { label: "Accueil", icon: HomeIcon, path: "/admin" },
     { label: "Gestion des événements", icon: EventIcon, path: "/events" },
     {
-      label: "Gestion des compétitions",
+      label: "Gestion des compétitions et épreuves",
       icon: EmojiEventsIcon,
       path: "/admin/competitions",
     },
