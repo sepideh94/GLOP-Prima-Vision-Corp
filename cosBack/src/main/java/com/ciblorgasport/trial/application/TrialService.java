@@ -19,4 +19,6 @@ public interface TrialService {
     List<TrialResponse> getByCompetitionId(Long competitionId);
 
     void delete(Long id);
+
+    TrialResponse cancelTrial(Long id, String userEmail);
 }

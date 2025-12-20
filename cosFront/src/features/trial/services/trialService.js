@@ -20,6 +20,11 @@ const trialService = {
     const res = await api.put(`/api/trials/${id}`, data);
     return res.data;
   },
+
+  cancelTrial: async (id) => {
+    const res = await api.patch(`/api/admin/trials/${id}/cancel`);
+    return res.data;
+  },
 };
 
 export default trialService;

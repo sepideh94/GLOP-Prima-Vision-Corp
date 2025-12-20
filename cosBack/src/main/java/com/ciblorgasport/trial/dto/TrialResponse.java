@@ -1,8 +1,10 @@
 package com.ciblorgasport.trial.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.ciblorgasport.core.Status;
 import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialMode;
@@ -29,6 +31,13 @@ public class TrialResponse {
     private Long siteId;
     private Long competitionId;
     private Long roundId;
+
+    private Status status;
+    private String statusLabel;
+
+    private boolean cancelled;
+    private LocalDateTime cancelledAt;
+
     private boolean hasStarted;
     private boolean hasEnded;
 
@@ -36,6 +45,8 @@ public class TrialResponse {
      * Méthode de conversion statique depuis l'entité Trial.
      */
     public static TrialResponse fromEntity(Trial trial) {
+        Status status = trial.getStatus();
+
         return TrialResponse.builder()
                 .id(trial.getId())
                 .name(trial.getName())
@@ -52,6 +63,10 @@ public class TrialResponse {
                 .siteId(trial.getSite() != null ? trial.getSite().getId() : null)
                 .competitionId(trial.getCompetition() != null ? trial.getCompetition().getId() : null)
                 .roundId(trial.getRound() != null ? trial.getRound().getId() : null)
+                .status(status)
+                .statusLabel(status.getLabel())
+                .cancelled(trial.isCancelled())
+                .cancelledAt(trial.getCancelledAt())
                 .hasStarted(trial.hasStarted())
                 .hasEnded(trial.hasEnded())
                 .build();

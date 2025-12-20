@@ -5,9 +5,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.core.Status;
 import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.round.domain.Round;
 import com.ciblorgasport.site.domain.Site;
+import com.ciblorgasport.user.domain.UserAccount;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
 import jakarta.persistence.Column;
@@ -64,6 +66,27 @@ public class Trial implements StatusChecker {
     @Enumerated(EnumType.STRING)
     private CategoryGender categoryGender;
 
+    /**
+     * Indicates whether this trial has been cancelled.
+     * Once cancelled, the trial cannot be reactivated.
+     */
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean cancelled = false;
+
+    /**
+     * Timestamp when the trial was cancelled.
+     * Null if not cancelled.
+     */
+    private LocalDateTime cancelledAt;
+
+    /**
+     * User who cancelled the trial (Admin or Commissioner).
+     * Null if not cancelled.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cancelled_by")
+    private UserAccount cancelledBy;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_competition")
     @JsonBackReference
@@ -83,7 +106,8 @@ public class Trial implements StatusChecker {
             return false;
         }
         LocalDateTime startDateTime = LocalDateTime.of(startDate, startHour);
-        return LocalDateTime.now().isAfter(startDateTime) || LocalDateTime.now().isEqual(startDateTime);
+        LocalDateTime now = LocalDateTime.now();
+        return !now.isBefore(startDateTime);
     }
 
     @Override
@@ -92,6 +116,56 @@ public class Trial implements StatusChecker {
             return false;
         }
         LocalDateTime endDateTime = LocalDateTime.of(endDate, endHour);
-        return LocalDateTime.now().isAfter(endDateTime) || LocalDateTime.now().isEqual(endDateTime);
+        LocalDateTime now = LocalDateTime.now();
+        return !now.isBefore(endDateTime);
+    }
+
+    /**
+     * Determines the current status of this trial.
+     * Status is calculated dynamically based on:
+     * - Whether it has been cancelled
+     * - Start date/time and end date/time compared to current time
+     *
+     * @return The current status of the trial
+     */
+    public Status getStatus() {
+        // Cancelled status takes priority
+        if (cancelled) {
+            return Status.CANCELED;
+        }
+
+        // Check if dates/times are set
+        if (startDate == null || startHour == null || endDate == null || endHour == null) {
+            return Status.UPCOMING;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startDateTime = LocalDateTime.of(startDate, startHour);
+        LocalDateTime endDateTime = LocalDateTime.of(endDate, endHour);
+
+        // Check if trial hasn't started yet
+        if (now.isBefore(startDateTime)) {
+            return Status.UPCOMING;
+        }
+
+        // Check if trial has ended
+        if (now.isAfter(endDateTime) || now.isEqual(endDateTime)) {
+            return Status.COMPLETED;
+        }
+
+        // Trial is between start and end times
+        return Status.IN_PROGRESS;
+    }
+
+    /**
+     * Marks this trial as cancelled by the specified user.
+     * This operation is permanent and cannot be undone.
+     *
+     * @param cancelledBy The user (Admin or Commissioner) who cancelled the trial
+     */
+    public void cancel(UserAccount cancelledBy) {
+        this.cancelled = true;
+        this.cancelledAt = LocalDateTime.now();
+        this.cancelledBy = cancelledBy;
     }
 }

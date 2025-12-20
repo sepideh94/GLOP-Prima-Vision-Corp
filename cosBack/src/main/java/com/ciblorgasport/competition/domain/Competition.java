@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.ciblorgasport.core.Status;
 import com.ciblorgasport.core.StatusChecker;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.trial.domain.Trial;
@@ -50,7 +51,36 @@ public boolean hasStarted() {
 
 @Override
 public boolean hasEnded() {
-	return false;
+	return this.endDate.isBefore(LocalDateTime.now());
+}
+
+/**
+ * Determines the current status of this competition.
+ * Status is calculated dynamically based on:
+ * - Start and end dates compared to current time
+ * - Whether all trials are completed (for COMPLETED status)
+ *
+ * @return The current status of the competition
+ */
+public Status getStatus() {
+	LocalDateTime now = LocalDateTime.now();
+
+	// Check if competition hasn't started yet
+	if (startDate.isAfter(now)) {
+		return Status.UPCOMING;
+	}
+
+	// Check if competition has ended OR all trials are completed
+	boolean endDatePassed = endDate.isBefore(now);
+	boolean allTrialsCompleted = trials != null && !trials.isEmpty() &&
+		trials.stream().allMatch(trial -> trial.getStatus() == Status.COMPLETED);
+
+	if (endDatePassed || allTrialsCompleted) {
+		return Status.COMPLETED;
+	}
+
+	// Competition is between start and end dates
+	return Status.IN_PROGRESS;
 }
  
 }

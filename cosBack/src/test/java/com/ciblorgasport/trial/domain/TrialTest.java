@@ -3,12 +3,15 @@ package com.ciblorgasport.trial.domain;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import com.ciblorgasport.admin.domain.Admin;
+import com.ciblorgasport.core.Status;
 import com.ciblorgasport.site.domain.Site;
 
 @DisplayName("Trial Entity Unit Tests")
@@ -105,7 +108,7 @@ class TrialTest {
     @DisplayName("Should return true when trial has ended - today but past hour")
     void testHasEnded_TodayPastHour() {
         trial.setEndDate(LocalDate.now());
-        trial.setEndHour(LocalTime.of(0, 0)); // End at midnight
+        trial.setEndHour(LocalTime.of(0, 0));
 
         assertTrue(trial.hasEnded());
     }
@@ -123,7 +126,7 @@ class TrialTest {
     @DisplayName("Should return false when trial has not ended - today but future hour")
     void testHasNotEnded_TodayFutureHour() {
         trial.setEndDate(LocalDate.now());
-        trial.setEndHour(LocalTime.of(23, 59)); // Almost end of day
+        trial.setEndHour(LocalTime.of(23, 59));
 
         assertFalse(trial.hasEnded());
     }
@@ -147,5 +150,219 @@ class TrialTest {
     void testMixteCategoryGender() {
         trial.setCategoryGender(CategoryGender.MIXTE);
         assertEquals(CategoryGender.MIXTE, trial.getCategoryGender());
+    }
+
+    //  TrialName Tests 
+
+    @Test
+    @DisplayName("Should set and get trialName")
+    void testTrialName() {
+        trial.setTrialName(TrialName.HUNDRED_M_FREESTYLE);
+        assertEquals(TrialName.HUNDRED_M_FREESTYLE, trial.getTrialName());
+    }
+
+    @Test
+    @DisplayName("Should work with different trialName values")
+    void testDifferentTrialNames() {
+        trial.setTrialName(TrialName.RELAY_4X100M_FREESTYLE);
+        assertEquals(TrialName.RELAY_4X100M_FREESTYLE, trial.getTrialName());
+
+        trial.setTrialName(TrialName.TWO_HUNDRED_M_BUTTERFLY);
+        assertEquals(TrialName.TWO_HUNDRED_M_BUTTERFLY, trial.getTrialName());
+    }
+
+    //  RoundNumber Tests 
+
+    @Test
+    @DisplayName("Should set and get roundNumber")
+    void testRoundNumber() {
+        trial.setRoundNumber(1);
+        assertEquals(1, trial.getRoundNumber());
+    }
+
+    @Test
+    @DisplayName("Should handle multiple heats with roundNumber")
+    void testMultipleHeats() {
+        trial.setTrialName(TrialName.HUNDRED_M_FREESTYLE);
+        trial.setRoundNumber(3); // Heat 3
+
+        assertEquals(TrialName.HUNDRED_M_FREESTYLE, trial.getTrialName());
+        assertEquals(3, trial.getRoundNumber());
+    }
+
+    //  Cancellation Tests 
+
+    @Test
+    @DisplayName("Should not be cancelled by default")
+    void testNotCancelledByDefault() {
+        assertFalse(trial.isCancelled());
+        assertNull(trial.getCancelledAt());
+        assertNull(trial.getCancelledBy());
+    }
+
+    @Test
+    @DisplayName("Should cancel trial with user")
+    void testCancelTrial() {
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+
+        trial.cancel(admin);
+
+        assertTrue(trial.isCancelled());
+        assertNotNull(trial.getCancelledAt());
+        assertEquals(admin, trial.getCancelledBy());
+    }
+
+    @Test
+    @DisplayName("Should record cancellation timestamp")
+    void testCancellationTimestamp() {
+        Admin admin = Admin.builder()
+                .id(2L)
+                .email("admin2@test.com")
+                .firstName("Admin")
+                .lastName("Two")
+                .password("password")
+                .build();
+
+        LocalDateTime beforeCancel = LocalDateTime.now();
+        trial.cancel(admin);
+        LocalDateTime afterCancel = LocalDateTime.now();
+
+        assertNotNull(trial.getCancelledAt());
+        assertFalse(trial.getCancelledAt().isBefore(beforeCancel));
+        assertFalse(trial.getCancelledAt().isAfter(afterCancel));
+    }
+
+    //  Status Tests 
+
+    @Test
+    @DisplayName("Should return CANCELED status when trial is cancelled")
+    void testStatusCanceled() {
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+        trial.cancel(admin);
+
+        assertEquals(Status.CANCELED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should return UPCOMING status when dates are null")
+    void testStatusUpcomingWhenDatesNull() {
+        trial.setStartDate(null);
+        trial.setStartHour(null);
+        trial.setEndDate(null);
+        trial.setEndHour(null);
+
+        assertEquals(Status.UPCOMING, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should return UPCOMING status when trial has not started")
+    void testStatusUpcomingWhenNotStarted() {
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        assertEquals(Status.UPCOMING, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should return IN_PROGRESS status when trial is ongoing")
+    void testStatusInProgress() {
+        trial.setStartDate(LocalDate.now());
+        trial.setStartHour(LocalTime.of(0, 0)); // Started at midnight
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(23, 59)); // Ends at end of day
+
+        assertEquals(Status.IN_PROGRESS, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should return COMPLETED status when trial has ended")
+    void testStatusCompleted() {
+        trial.setStartDate(LocalDate.now().minusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().minusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        assertEquals(Status.COMPLETED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should return COMPLETED status when trial ends exactly now")
+    void testStatusCompletedAtEndTime() {
+        trial.setStartDate(LocalDate.now().minusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(0, 0)); // Ended at midnight
+
+        assertEquals(Status.COMPLETED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Cancelled status takes priority over time-based status")
+    void testCancelledStatusPriority() {
+        // Set trial as in progress
+        trial.setStartDate(LocalDate.now());
+        trial.setStartHour(LocalTime.of(0, 0));
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(23, 59));
+
+        // Verify it's in progress before cancellation
+        assertEquals(Status.IN_PROGRESS, trial.getStatus());
+
+        // Cancel it
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+        trial.cancel(admin);
+
+        // Status should now be CANCELED regardless of time
+        assertEquals(Status.CANCELED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should handle complete trial lifecycle status transitions")
+    void testTrialLifecycleStatuses() {
+        // Future trial - UPCOMING
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+        assertEquals(Status.UPCOMING, trial.getStatus());
+
+        // Current trial - IN_PROGRESS
+        trial.setStartDate(LocalDate.now());
+        trial.setStartHour(LocalTime.of(0, 0));
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(23, 59));
+        assertEquals(Status.IN_PROGRESS, trial.getStatus());
+
+        // Past trial - COMPLETED
+        trial.setStartDate(LocalDate.now().minusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().minusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+        assertEquals(Status.COMPLETED, trial.getStatus());
     }
 }

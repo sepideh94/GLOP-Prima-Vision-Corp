@@ -27,13 +27,21 @@ public class CompetitionServiceImpl implements CompetitionService{
     private final EventRepository eventRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    private void validateCompetitionDate(LocalDateTime competitionStartDate, Event parentEvent) {
+    private void validateCompetitionDate(LocalDateTime competitionStartDate, LocalDateTime competitionEndDate, Event parentEvent) {
 
         if (competitionStartDate.isBefore(parentEvent.getStartDate())) {
             throw new CompetitionDateIntegrityException(
                 "La date de début de la compétition (" + competitionStartDate.format(DATE_FORMATTER) +
                 ") ne peut pas être antérieure à la date de début de l'événement parent (" +
                 parentEvent.getStartDate().format(DATE_FORMATTER) + ")."
+            );
+        }
+
+        if (parentEvent.getEndDate() != null && competitionEndDate.isAfter(parentEvent.getEndDate())) {
+            throw new CompetitionDateIntegrityException(
+                "La date de fin de la compétition (" + competitionEndDate.format(DATE_FORMATTER) +
+                ") ne peut pas être postérieure à la date de fin de l'événement parent (" +
+                parentEvent.getEndDate().format(DATE_FORMATTER) + ")."
             );
         }
     }
@@ -50,22 +58,22 @@ public class CompetitionServiceImpl implements CompetitionService{
     
     @Transactional
     public CompetitionResponse createCompetition(CompetitionCreateRequest request) {
-        
+
         Event parentEvent = eventRepository.findById(request.getParentEventId())
                 .orElseThrow(() -> new IllegalArgumentException("Événement parent introuvable avec l'ID: " + request.getParentEventId()));
 
-        validateCompetitionDate(request.getStartDate(), parentEvent);
         validateDatesOrder(request.getStartDate(), request.getEndDate());
-        
+        validateCompetitionDate(request.getStartDate(), request.getEndDate(), parentEvent);
+
         Competition newCompetition = new Competition();
         newCompetition.setName(request.getName());
         newCompetition.setDescription(request.getDescription());
         newCompetition.setStartDate(request.getStartDate());
         newCompetition.setEndDate(request.getEndDate());
         newCompetition.setParentEvent(parentEvent);
-        
+
         Competition savedCompetition = competitionRepository.save(newCompetition);
-        
+
         return CompetitionResponse.fromEntity(savedCompetition);
     }
 
@@ -79,10 +87,10 @@ public class CompetitionServiceImpl implements CompetitionService{
     @Override
     public CompetitionResponse updateCompetition(Long id, CompetitionUpdateRequest request) {
         Competition existingCompetition = getCompetitionByIdOrThrow(id);
-        
+
         Event parentEvent = existingCompetition.getParentEvent();
-        validateCompetitionDate(request.getStartDate(), parentEvent);
         validateDatesOrder(request.getStartDate(), request.getEndDate());
+        validateCompetitionDate(request.getStartDate(), request.getEndDate(), parentEvent);
 
         existingCompetition.setName(request.getName());
         existingCompetition.setDescription(request.getDescription());
@@ -90,7 +98,7 @@ public class CompetitionServiceImpl implements CompetitionService{
         existingCompetition.setEndDate(request.getEndDate());
 
         Competition updatedCompetition = competitionRepository.save(existingCompetition);
-        
+
         return CompetitionResponse.fromEntity(updatedCompetition);    }
 
 
@@ -102,16 +110,15 @@ public class CompetitionServiceImpl implements CompetitionService{
 
 	@Override
     public List<CompetitionResponse> getCompetitionsByEventId(Long eventId) {
-        
+
         Event parentEvent = eventRepository.findById(eventId)
-                .orElseThrow(() -> new EventNotFoundException(eventId)); 
-                
+                .orElseThrow(() -> new EventNotFoundException(eventId));
+
         List<Competition> competitions = competitionRepository.findByParentEvent(parentEvent);
-        
+
         return competitions.stream()
             .map(CompetitionResponse::fromEntity)
             .collect(Collectors.toList());
     }
-
 
 }
