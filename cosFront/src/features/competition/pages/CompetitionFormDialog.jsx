@@ -31,6 +31,7 @@ export default function CompetitionFormDialog({
   });
 
   const [errors, setErrors] = useState({});
+  const [backendError, setBackendError] = useState("");
 
   useEffect(() => {
   if (initialData) {
@@ -40,7 +41,7 @@ export default function CompetitionFormDialog({
       startDate: initialData.startDate
         ? String(initialData.startDate).slice(0, 10)
         : "",
-      endDate: initialData.endDate 
+      endDate: initialData.endDate
         ? String(initialData.endDate).slice(0, 10)
         : "",
     });
@@ -49,10 +50,11 @@ export default function CompetitionFormDialog({
       name: "",
       description: "",
       startDate: "",
-      endDate: "", 
+      endDate: "",
     });
   }
   setErrors({});
+  setBackendError("");
 }, [initialData, open]);
 
   const handleChange = (e) => {
@@ -83,9 +85,14 @@ export default function CompetitionFormDialog({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    onSave(form);
+    setBackendError("");
+    try {
+      await onSave(form);
+    } catch (err) {
+      setBackendError(err.message || "Une erreur s'est produite");
+    }
   };
 
   const formatEventDate = (dateString) => {
@@ -115,6 +122,11 @@ export default function CompetitionFormDialog({
             gap: 2,
           }}
         >
+          {backendError && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {backendError}
+            </Alert>
+          )}
           {currentEvent && (
             <Alert
               severity="info"

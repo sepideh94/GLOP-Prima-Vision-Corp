@@ -128,18 +128,24 @@ export default function TrialListPage() {
       roundId: Number(form.roundId),
     };
 
-    if (editingTrial) {
-      const updated = await trialService.updateTrial(editingTrial.id, payload);
-      setTrials((prev) =>
-        prev.map((t) => (t.id === editingTrial.id ? updated : t))
-      );
-    } else {
-      const created = await trialService.createTrial(payload);
-      setTrials((prev) => [...prev, created]);
-    }
+    try {
+      if (editingTrial) {
+        const updated = await trialService.updateTrial(editingTrial.id, payload);
+        setTrials((prev) =>
+          prev.map((t) => (t.id === editingTrial.id ? updated : t))
+        );
+      } else {
+        const created = await trialService.createTrial(payload);
+        setTrials((prev) => [...prev, created]);
+      }
 
-    setOpenForm(false);
-    setEditingTrial(null);
+      setOpenForm(false);
+      setEditingTrial(null);
+    } catch (error) {
+      // Return the error message from backend to the dialog
+      const errorMessage = error.response?.data?.message || error.message || "Une erreur s'est produite";
+      throw new Error(errorMessage);
+    }
   };
 
   if (loading) return <p>Chargement...</p>;

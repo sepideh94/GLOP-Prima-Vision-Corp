@@ -197,10 +197,10 @@ export default function CompetitionListPage() {
     if (err.response) {
       console.error("STATUS :", err.response.status);
       console.error("BODY   :", err.response.data);
-      alert(`Erreur lors de la sauvegarde (status ${err.response.status})`);
-    } else {
-      alert("Erreur réseau lors de la sauvegarde");
     }
+    // Return the error message from backend to the dialog
+    const errorMessage = err.response?.data?.message || err.message || "Une erreur s'est produite lors de la sauvegarde";
+    throw new Error(errorMessage);
   }
 };
 

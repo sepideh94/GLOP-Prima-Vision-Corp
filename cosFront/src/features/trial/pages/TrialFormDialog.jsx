@@ -10,6 +10,7 @@ import {
  MenuItem,
 } from "@mui/material";
 import DatePickerForm from "../../../common/components/DatePickerForm";
+import appTheme from "../../../common/theme/appTheme";
 
 
 
@@ -126,7 +127,7 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
  };
 
 
- const handleSubmit = () => {
+ const handleSubmit = async () => {
    if (
      !form.trialName ||
      !form.startDate ||
@@ -144,7 +145,11 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
 
 
    setError("");
-   onSave(form);
+   try {
+     await onSave(form);
+   } catch (err) {
+     setError(err.message || "Une erreur s'est produite");
+   }
  };
 
 
