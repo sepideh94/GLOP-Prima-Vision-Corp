@@ -164,7 +164,7 @@ export default function TrialListPage() {
           color: appTheme.colors.dark,
         }}
       >
-        Retour aux compétitions
+        Retour
       </Button>
 
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>

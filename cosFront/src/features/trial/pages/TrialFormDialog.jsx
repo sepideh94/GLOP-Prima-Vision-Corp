@@ -493,13 +493,20 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
        <Button onClick={onClose} variant="outlined">
          Annuler
        </Button>
-       <Button onClick={handleSubmit} variant="contained">
+       <Button onClick={handleSubmit}
+       sx={{
+                 mb: 2,
+                 textTransform: "none",
+                 fontWeight: 700,
+                 px: 3,
+                 py: 1.1,
+                 borderRadius: appTheme.radius.pill,
+                 background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+                 color: appTheme.colors.dark,
+               }}>
          Enregistrer
        </Button>
      </DialogActions>
    </Dialog>
  );
 }
-
-
-

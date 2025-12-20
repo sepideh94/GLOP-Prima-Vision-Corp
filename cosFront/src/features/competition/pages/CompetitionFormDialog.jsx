@@ -12,6 +12,7 @@ import {
 import { useEffect, useState } from "react";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import EventIcon from "@mui/icons-material/Event";
+import appTheme from "../../../common/theme/appTheme";
 
 export default function CompetitionFormDialog({
   open,
@@ -182,7 +183,18 @@ export default function CompetitionFormDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Annuler</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button 
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+        onClick={handleSubmit}>
           {isEdit ? "Enregistrer" : "Créer"}
         </Button>
       </DialogActions>

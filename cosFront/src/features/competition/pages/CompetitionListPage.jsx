@@ -220,7 +220,7 @@ return (
           color: appTheme.colors.dark,
         }}
       >
-        Retour au tableau de bord
+        Retour
       </Button>
 
       {/* TITRE + BOUTON */}
@@ -303,7 +303,7 @@ return (
                     label={event.name}
                     onClick={() => {
                       setSelectedEventId(eventId);
-                      // Mettre à jour l'URL pour refléter la sélection
+                      // URL pour refléter la sélection de l'évènement
                       navigate(`/admin/competitions?eventId=${eventId}`, { replace: true });
                     }}
                     sx={{
@@ -369,7 +369,11 @@ return (
                       }}
                     >
                       <td className="fw-bold">{c.name}</td>
-                      <td>{c.description}</td>
+                      <td>
+                        {c.description && c.description.length > 70
+                          ? `${c.description.substring(0, 70)}...`
+                          : c.description}
+                      </td>
                       <td>{formatDate(c.startDate)}</td>
                       <td>{formatDate(c.endDate)}</td>
 

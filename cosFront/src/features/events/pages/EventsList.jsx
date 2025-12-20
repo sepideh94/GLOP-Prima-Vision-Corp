@@ -193,7 +193,7 @@ return (
         color: appTheme.colors.dark,
       }}
     >
-      Retour au tableau de bord
+      Retour
     </Button>
 
     <Box sx={{ mb: 5 }}>
@@ -344,7 +344,18 @@ return (
 
       <DialogActions>
         <Button onClick={handleCloseDialog}>Annuler</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button 
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+        onClick={handleSubmit}>
           Enregistrer
         </Button>
       </DialogActions>
