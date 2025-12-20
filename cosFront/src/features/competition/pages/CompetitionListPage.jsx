@@ -368,6 +368,7 @@ return (
         onClose={handleCloseForm}
         onSave={handleSave}
         initialData={editingCompetition}
+        currentEvent={currentEvent}
       />
     </Box>
   );

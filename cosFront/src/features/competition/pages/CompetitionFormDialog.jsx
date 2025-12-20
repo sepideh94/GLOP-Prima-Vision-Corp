@@ -6,15 +6,19 @@ import {
   TextField,
   Button,
   Box,
+  Typography,
+  Alert,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import DatePickerForm from "../../../common/components/DatePickerForm";
+import EventIcon from "@mui/icons-material/Event";
 
 export default function CompetitionFormDialog({
   open,
   onClose,
   onSave,
   initialData,
+  currentEvent,
 }) {
   const isEdit = Boolean(initialData);
 
@@ -83,6 +87,19 @@ export default function CompetitionFormDialog({
     onSave(form);
   };
 
+  const formatEventDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
@@ -97,6 +114,28 @@ export default function CompetitionFormDialog({
             gap: 2,
           }}
         >
+          {currentEvent && (
+            <Alert
+              severity="info"
+              icon={<EventIcon />}
+              sx={{
+                borderRadius: 2,
+                "& .MuiAlert-message": {
+                  width: "100%",
+                },
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                Événement : {currentEvent.name}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                <strong>Début :</strong> {formatEventDate(currentEvent.startDate)}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                <strong>Fin :</strong> {formatEventDate(currentEvent.endDate)}
+              </Typography>
+            </Alert>
+          )}
           <TextField
             label="Nom"
             name="name"
