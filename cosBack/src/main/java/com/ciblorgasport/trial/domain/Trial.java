@@ -160,10 +160,23 @@ public class Trial implements StatusChecker {
     /**
      * Marks this trial as cancelled by the specified user.
      * This operation is permanent and cannot be undone.
+     * Only trials with UPCOMING or IN_PROGRESS status can be cancelled.
      *
      * @param cancelledBy The user (Admin or Commissioner) who cancelled the trial
+     * @throws IllegalStateException if the trial is already cancelled or completed
      */
     public void cancel(UserAccount cancelledBy) {
+        Status currentStatus = getStatus();
+
+        if (currentStatus == Status.CANCELED) {
+            throw new IllegalStateException("Ce trial est déjà annulé.");
+        }
+
+        if (currentStatus == Status.COMPLETED) {
+            throw new IllegalStateException("Impossible d'annuler un trial terminé.");
+        }
+
+        // Only UPCOMING and IN_PROGRESS can be cancelled
         this.cancelled = true;
         this.cancelledAt = LocalDateTime.now();
         this.cancelledBy = cancelledBy;

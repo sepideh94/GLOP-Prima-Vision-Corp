@@ -13,7 +13,7 @@ import com.ciblorgasport.trial.dto.TrialResponse;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Controller for trial operations available to commissioners.
+ * Controller for trial: accès Commissaire.
  */
 @RestController
 @RequestMapping("/api/commissaire/trials")

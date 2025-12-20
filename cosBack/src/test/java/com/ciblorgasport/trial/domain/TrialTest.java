@@ -203,6 +203,12 @@ class TrialTest {
     @Test
     @DisplayName("Should cancel trial with user")
     void testCancelTrial() {
+        // Set trial as upcoming to allow cancellation
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
         Admin admin = Admin.builder()
                 .id(1L)
                 .email("admin@test.com")
@@ -221,6 +227,12 @@ class TrialTest {
     @Test
     @DisplayName("Should record cancellation timestamp")
     void testCancellationTimestamp() {
+        // Set trial as in progress to allow cancellation
+        trial.setStartDate(LocalDate.now());
+        trial.setStartHour(LocalTime.of(0, 0));
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(23, 59));
+
         Admin admin = Admin.builder()
                 .id(2L)
                 .email("admin2@test.com")
@@ -236,6 +248,113 @@ class TrialTest {
         assertNotNull(trial.getCancelledAt());
         assertFalse(trial.getCancelledAt().isBefore(beforeCancel));
         assertFalse(trial.getCancelledAt().isAfter(afterCancel));
+    }
+
+    @Test
+    @DisplayName("Should allow cancellation of UPCOMING trial")
+    void testCancelUpcomingTrial() {
+        // Set trial as upcoming
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        assertEquals(Status.UPCOMING, trial.getStatus());
+
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+
+        // Should not throw exception
+        trial.cancel(admin);
+        assertTrue(trial.isCancelled());
+        assertEquals(Status.CANCELED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should allow cancellation of IN_PROGRESS trial")
+    void testCancelInProgressTrial() {
+        // Set trial as in progress
+        trial.setStartDate(LocalDate.now());
+        trial.setStartHour(LocalTime.of(0, 0));
+        trial.setEndDate(LocalDate.now());
+        trial.setEndHour(LocalTime.of(23, 59));
+
+        assertEquals(Status.IN_PROGRESS, trial.getStatus());
+
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+
+        // Should not throw exception
+        trial.cancel(admin);
+        assertTrue(trial.isCancelled());
+        assertEquals(Status.CANCELED, trial.getStatus());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cancelling COMPLETED trial")
+    void testCannotCancelCompletedTrial() {
+        // Set trial as completed
+        trial.setStartDate(LocalDate.now().minusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().minusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        assertEquals(Status.COMPLETED, trial.getStatus());
+
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+
+        // Should throw IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            trial.cancel(admin);
+        });
+
+        assertEquals("Impossible d'annuler un trial terminé.", exception.getMessage());
+        assertFalse(trial.isCancelled());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when cancelling already CANCELED trial")
+    void testCannotCancelAlreadyCanceledTrial() {
+        // Set trial as upcoming first
+        trial.setStartDate(LocalDate.now().plusDays(1));
+        trial.setStartHour(LocalTime.of(10, 0));
+        trial.setEndDate(LocalDate.now().plusDays(1));
+        trial.setEndHour(LocalTime.of(12, 0));
+
+        Admin admin = Admin.builder()
+                .id(1L)
+                .email("admin@test.com")
+                .firstName("Admin")
+                .lastName("Test")
+                .password("password")
+                .build();
+
+        // Cancel it first time
+        trial.cancel(admin);
+        assertTrue(trial.isCancelled());
+
+        // Try to cancel again - should throw IllegalStateException
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            trial.cancel(admin);
+        });
+
+        assertEquals("Ce trial est déjà annulé.", exception.getMessage());
     }
 
     //  Status Tests 
