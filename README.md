@@ -10,6 +10,7 @@
 - [Identifiants de connexion](#identifiants-de-connexion)
 - [Tests](#tests)
 - [Structure du projet](#structure-du-projet)
+- [Déploiement](#déploiement)
 
 ## Périmètre du MVP
 
@@ -312,6 +313,16 @@ Vous pouvez personnaliser l'application via des variables d'environnement dans `
 - **Backend** : 8080
 - **PostgreSQL** : 5432
 - **PgAdmin** : 5050
+
+## Déploiement
+
+L'application est déployée en production sur AWS EC2.
+
+### Accès à l'application
+
+L'application est accessible (lorsque l'instance de démonstration est active) à l'adresse suivante :
+
+- **URL de l'application** : http://51.21.16.8:3000/
 
 ## Notes importantes
 
