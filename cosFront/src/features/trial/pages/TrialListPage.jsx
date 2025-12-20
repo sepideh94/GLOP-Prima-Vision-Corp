@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -7,6 +7,7 @@ import {
   TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import EditIcon from "@mui/icons-material/Edit";
 import appTheme from "../../../common/theme/appTheme";
@@ -75,6 +76,7 @@ const getStatusStyle = (statusLabel) => ({
 
 export default function TrialListPage() {
   const { competitionId } = useParams();
+  const navigate = useNavigate();
 
   const [competition, setCompetition] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
@@ -126,18 +128,24 @@ export default function TrialListPage() {
       roundId: Number(form.roundId),
     };
 
-    if (editingTrial) {
-      const updated = await trialService.updateTrial(editingTrial.id, payload);
-      setTrials((prev) =>
-        prev.map((t) => (t.id === editingTrial.id ? updated : t))
-      );
-    } else {
-      const created = await trialService.createTrial(payload);
-      setTrials((prev) => [...prev, created]);
-    }
+    try {
+      if (editingTrial) {
+        const updated = await trialService.updateTrial(editingTrial.id, payload);
+        setTrials((prev) =>
+          prev.map((t) => (t.id === editingTrial.id ? updated : t))
+        );
+      } else {
+        const created = await trialService.createTrial(payload);
+        setTrials((prev) => [...prev, created]);
+      }
 
-    setOpenForm(false);
-    setEditingTrial(null);
+      setOpenForm(false);
+      setEditingTrial(null);
+    } catch (error) {
+      // Return the error message from backend to the dialog
+      const errorMessage = error.response?.data?.message || error.message || "Une erreur s'est produite";
+      throw new Error(errorMessage);
+    }
   };
 
   if (loading) return <p>Chargement...</p>;
@@ -148,6 +156,23 @@ export default function TrialListPage() {
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate("/admin/competitions")}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+      >
+        Retour
+      </Button>
+
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         {eventInfo?.name} / {competition?.name} / Épreuves
       </Typography>

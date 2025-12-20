@@ -7,9 +7,10 @@ export default function EventCard({ event, isAdmin, onEdit }) {
 
   return (
     <Box
-      onClick={() =>
-        navigate(`/admin/competitions?eventId=${event.idEvent}`)
-      }
+      onClick={() => {
+        const eventId = event.idEvent || event.id;
+        navigate(`/admin/competitions?eventId=${eventId}`);
+      }}
       sx={{
         position: "relative",
         p: 4,            

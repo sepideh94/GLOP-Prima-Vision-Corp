@@ -3,6 +3,7 @@ package com.ciblorgasport.competition.application;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
@@ -24,24 +25,25 @@ public class CompetitionServiceImpl implements CompetitionService{
 
     private final CompetitionRepository competitionRepository;
     private final EventRepository eventRepository;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
     private void validateCompetitionDate(LocalDateTime competitionStartDate, Event parentEvent) {
-    	
+
         if (competitionStartDate.isBefore(parentEvent.getStartDate())) {
             throw new CompetitionDateIntegrityException(
-                "La date de début de la compétition (" + competitionStartDate + 
-                ") ne peut pas être antérieure à la date de début de l'événement parent (" + 
-                parentEvent.getStartDate() + ")."
+                "La date de début de la compétition (" + competitionStartDate.format(DATE_FORMATTER) +
+                ") ne peut pas être antérieure à la date de début de l'événement parent (" +
+                parentEvent.getStartDate().format(DATE_FORMATTER) + ")."
             );
         }
     }
-    
+
     private void validateDatesOrder(LocalDateTime startDate, LocalDateTime endDate) {
         if (endDate.isBefore(startDate)) {
             throw new CompetitionDateIntegrityException(
-                "La date de fin de la compétition (" + endDate + 
-                ") ne peut pas être antérieure à la date de début (" + 
-                startDate + ")."
+                "La date de fin de la compétition (" + endDate.format(DATE_FORMATTER) +
+                ") ne peut pas être antérieure à la date de début (" +
+                startDate.format(DATE_FORMATTER) + ")."
             );
         }
     }

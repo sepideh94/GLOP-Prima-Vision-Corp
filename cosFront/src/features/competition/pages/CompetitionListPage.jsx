@@ -1,5 +1,5 @@
 import  { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -11,6 +11,7 @@ import {
 
 import appTheme from "../../../common/theme/appTheme";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventIcon from "@mui/icons-material/Event";
 import EditIcon from "@mui/icons-material/Edit";
 import CompetitionFormDialog from "./CompetitionFormDialog";
@@ -33,6 +34,7 @@ const toLocalDateTime = (date) => {
 export default function CompetitionListPage() {
 
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitions, setCompetitions] = useState([]);
@@ -49,15 +51,39 @@ export default function CompetitionListPage() {
     .then((data) => {
       const safeData = Array.isArray(data) ? data : [];
       setEvents(safeData);
-      if (safeData.length > 0) {
-        setSelectedEventId(safeData[0].id);
+      
+      const eventIdFromUrl = searchParams.get("eventId");
+      console.log("EventId from URL:", eventIdFromUrl);
+      console.log("Events data:", safeData);
+      
+      if (eventIdFromUrl && safeData.length > 0) {
+        const event = safeData.find((e) => {
+          const eventId = e.idEvent || e.id;
+          return String(eventId) === String(eventIdFromUrl);
+        });
+        
+        console.log("Found event:", event);
+        
+        if (event) {
+          const selectedId = event.idEvent || event.id;
+          console.log("Setting selectedEventId to:", selectedId);
+          setSelectedEventId(selectedId);
+        } else if (safeData.length > 0) {
+          const firstId = safeData[0].idEvent || safeData[0].id;
+          console.log("Event not found, using first event:", firstId);
+          setSelectedEventId(firstId);
+        }
+      } else if (safeData.length > 0) {
+        const firstId = safeData[0].idEvent || safeData[0].id;
+        console.log("No URL param, using first event:", firstId);
+        setSelectedEventId(firstId);
       }
     })
     .catch((err) => {
       console.error("Erreur lors du chargement des événements", err);
       setEvents([]);
     });
-}, []);
+}, [searchParams]);
 
  // Charger les compétitions 
  useEffect(() => {
@@ -73,7 +99,9 @@ export default function CompetitionListPage() {
     });
   }, [selectedEventId]);
 
-  const currentEvent = events.find((e) => e.id  === selectedEventId);
+  const currentEvent = events.find(
+    (e) => String(e.idEvent || e.id) === String(selectedEventId)
+  );
 
   const hasEvents = events.length > 0;
 
@@ -169,15 +197,31 @@ export default function CompetitionListPage() {
     if (err.response) {
       console.error("STATUS :", err.response.status);
       console.error("BODY   :", err.response.data);
-      alert(`Erreur lors de la sauvegarde (status ${err.response.status})`);
-    } else {
-      alert("Erreur réseau lors de la sauvegarde");
     }
+    // Return the error message from backend to the dialog
+    const errorMessage = err.response?.data?.message || err.message || "Une erreur s'est produite lors de la sauvegarde";
+    throw new Error(errorMessage);
   }
 };
 
 return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate("/admin")}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+      >
+        Retour
+      </Button>
 
       {/* TITRE + BOUTON */}
       <Box
@@ -196,7 +240,7 @@ return (
             letterSpacing: "-0.5px",
           }}
         >
-          Gestion des compétitions
+          Gestion des compétitions et épreuves
         </Typography>
 
         <Button
@@ -250,25 +294,31 @@ return (
             </Box>
 
             <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {events.map((event) => (
-                <Chip
-                  key={event.id}
-                  label={event.name}
-                  onClick={() => setSelectedEventId(event.id)}
-                  sx={{
-                    fontWeight: 700,
-                    borderRadius: appTheme.radius.pill,
-                    background:
-                      event.id === selectedEventId
+              {events.map((event) => {
+                const eventId = event.idEvent || event.id;
+                const isSelected = String(eventId) === String(selectedEventId);
+                return (
+                  <Chip
+                    key={eventId}
+                    label={event.name}
+                    onClick={() => {
+                      setSelectedEventId(eventId);
+                      // URL pour refléter la sélection de l'évènement
+                      navigate(`/admin/competitions?eventId=${eventId}`, { replace: true });
+                    }}
+                    sx={{
+                      fontWeight: 700,
+                      borderRadius: appTheme.radius.pill,
+                      background: isSelected
                         ? appTheme.gradients.navbar
                         : appTheme.colors.darkSoft,
-                    color:
-                      event.id === selectedEventId
+                      color: isSelected
                         ? appTheme.colors.dark
                         : appTheme.colors.textPrimary,
-                  }}
-                />
-              ))}
+                    }}
+                  />
+                );
+              })}
             </Box>
           </Card>
 
@@ -307,10 +357,23 @@ return (
                       onClick={() =>
                         navigate(`/admin/competitions/${c.id}/trials`)
                       }
-                      style={{ cursor: "pointer" }}
+                      style={{
+                        cursor: "pointer",
+                        transition: "background-color 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = "rgba(34, 211, 238, 0.1)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = "";
+                      }}
                     >
                       <td className="fw-bold">{c.name}</td>
-                      <td>{c.description}</td>
+                      <td>
+                        {c.description && c.description.length > 70
+                          ? `${c.description.substring(0, 70)}...`
+                          : c.description}
+                      </td>
                       <td>{formatDate(c.startDate)}</td>
                       <td>{formatDate(c.endDate)}</td>
 
@@ -368,6 +431,7 @@ return (
         onClose={handleCloseForm}
         onSave={handleSave}
         initialData={editingCompetition}
+        currentEvent={currentEvent}
       />
     </Box>
   );

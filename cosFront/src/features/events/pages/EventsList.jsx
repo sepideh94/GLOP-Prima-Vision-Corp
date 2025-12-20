@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -13,13 +14,15 @@ import {
   Snackbar,
   Slide,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, ArrowBack } from "@mui/icons-material";
 import eventService from "../../../common/api/eventService";
 import { useAuth } from "../../../common/contexts/AuthContext";
 import EventCard from "../components/EventCard";
 import DatePickerForm from "../../../common/components/DatePickerForm";
+import appTheme from "../../../common/theme/appTheme";
 
 export default function EventsList() {
+  const navigate = useNavigate();
   const { role } = useAuth();
   const isAdmin = role === "ADMIN" || role === "ROLE_ADMIN";
 
@@ -176,6 +179,23 @@ export default function EventsList() {
 
 return (
   <Box sx={{ p: 4 }}>
+    <Button
+      startIcon={<ArrowBack />}
+      onClick={() => navigate("/admin")}
+      sx={{
+        mb: 2,
+        textTransform: "none",
+        fontWeight: 700,
+        px: 3,
+        py: 1.1,
+        borderRadius: appTheme.radius.pill,
+        background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+        color: appTheme.colors.dark,
+      }}
+    >
+      Retour
+    </Button>
+
     <Box sx={{ mb: 5 }}>
       <Box
         sx={{
@@ -231,7 +251,7 @@ return (
     >
       {events.map((event) => (
         <EventCard
-          key={event.idEvent}
+          key={event.idEvent || event.id}
           event={event}
           isAdmin={isAdmin}
           onEdit={handleOpenDialog}
@@ -324,7 +344,18 @@ return (
 
       <DialogActions>
         <Button onClick={handleCloseDialog}>Annuler</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button 
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+        onClick={handleSubmit}>
           Enregistrer
         </Button>
       </DialogActions>
