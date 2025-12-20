@@ -285,7 +285,7 @@ export default function TrialListPage() {
                           Modifier
                         </button>
 
-                        {!t.cancelled && (
+                        {!t.cancelled && t.status !== "COMPLETED" && (
                           <button
                             className="btn d-flex align-items-center gap-1"
                             style={{
@@ -320,6 +320,7 @@ export default function TrialListPage() {
         }}
         onSave={handleSave}
         initialData={editingTrial}
+        competition={competition}
       />
     </Box>
   );
