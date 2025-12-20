@@ -103,12 +103,6 @@ L'application suit une architecture en couches :
 - `POST /api/rounds` - Créer un round (authentifié)
 - `DELETE /api/rounds/{id}` - Supprimer un round (authentifié)
 
-#### Utilisateurs
-- `POST /api/admin/create-commissaire` - Créer un commissaire (Admin uniquement)
-- `POST /api/commissaire/create-athlete` - Créer un athlète (Commissaire uniquement)
-- `POST /api/commissaire/create-volonteer` - Créer un volontaire (Commissaire uniquement)
-- `POST /api/user/change-password` - Changer son mot de passe (authentifié)
-
 ## Installation et lancement
 
 ### Prérequis
