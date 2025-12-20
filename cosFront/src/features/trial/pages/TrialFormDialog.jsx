@@ -8,7 +8,11 @@ import {
  TextField,
  Grid,
  MenuItem,
+ Alert,
+ Box,
+ Typography,
 } from "@mui/material";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -78,7 +82,6 @@ const emptyForm = {
  rules: "",
  startDate: "",
  startHour: "",
- endDate: "",
  endHour: "",
  mode: "",
  categoryGender: "",
@@ -87,7 +90,7 @@ const emptyForm = {
 };
 
 
-export default function TrialFormDialog({ open, onClose, onSave, initialData }) {
+export default function TrialFormDialog({ open, onClose, onSave, initialData, competition }) {
  const isEdit = Boolean(initialData);
  const [form, setForm] = useState(emptyForm);
  const [error, setError] = useState("");
@@ -103,7 +106,6 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
          rules: initialData.rules || "",
          startDate: initialData.startDate || "",
          startHour: initialData.startHour ? initialData.startHour.substring(0, 5) : "",
-         endDate: initialData.endDate || "",
          endHour: initialData.endHour ? initialData.endHour.substring(0, 5) : "",
          mode: initialData.mode || "",
          categoryGender: initialData.categoryGender || "",
@@ -132,7 +134,6 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
      !form.trialName ||
      !form.startDate ||
      !form.startHour ||
-     !form.endDate ||
      !form.endHour ||
      !form.mode ||
      !form.categoryGender ||
@@ -143,10 +144,15 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
      return;
    }
 
+   // Use the single date for both start and end date
+   const payload = {
+     ...form,
+     endDate: form.startDate,
+   };
 
    setError("");
    try {
-     await onSave(form);
+     await onSave(payload);
    } catch (err) {
      setError(err.message || "Une erreur s'est produite");
    }
@@ -157,6 +163,12 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
    ? "Modifier une épreuve"
    : "Créer une épreuve";
 
+ const formatCompDate = (dateString) => {
+   if (!dateString) return "";
+   const date = new Date(dateString);
+   if (Number.isNaN(date.getTime())) return dateString;
+   return date.toLocaleDateString("fr-FR");
+ };
 
  return (
    <Dialog
@@ -181,10 +193,33 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
          <p style={{ color: "red", marginBottom: 16 }}>{error}</p>
        )}
 
+       {competition && (
+         <Alert
+           severity="info"
+           icon={<EmojiEventsIcon />}
+           sx={{
+             mb: 3,
+             borderRadius: 2,
+             "& .MuiAlert-message": { width: "100%" },
+           }}
+         >
+           <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+             Compétition : {competition.name}
+           </Typography>
+           <Box sx={{ display: "flex", gap: 3 }}>
+             <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+               <strong>Début :</strong> {formatCompDate(competition.startDate)}
+             </Typography>
+             <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+               <strong>Fin :</strong> {formatCompDate(competition.endDate)}
+             </Typography>
+           </Box>
+         </Alert>
+       )}
 
        <Grid container spacing={2} sx={{ mt: 1 }}>
          {/* Type d'épreuve */}
-         <Grid item xs={12} sm={6} md={4}>
+         <Grid item xs={12} sm={6} md={6}>
            <TextField
              select
              fullWidth
@@ -296,20 +331,6 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData }) 
              }}
            />
          </Grid>
-
-
-         <Grid item xs={12} sm={6} md={3}>
-           <DatePickerForm
-             fullWidth
-             label="Date de fin *"
-             name="endDate"
-             value={form.endDate}
-             onChange={handleChange}
-             minDate={form.startDate}
-             disablePast={!form.startDate}
-           />
-         </Grid>
-
 
          <Grid item xs={12} sm={6} md={3}>
            <TextField

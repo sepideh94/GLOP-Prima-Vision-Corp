@@ -3,6 +3,7 @@ package com.ciblorgasport.competition.dto;
 import java.time.LocalDateTime;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.core.Status;
 import com.ciblorgasport.event.domain.Event;
 
 import lombok.Builder;
@@ -17,16 +18,18 @@ public class CompetitionResponse {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private Long parentEventId;
-    
+
+    private Status status;
     private String statusLabel;
 
     /**
      * Méthode de conversion statique depuis l'entité Competition.
      */
     public static CompetitionResponse fromEntity(Competition competition) {
-        
+
         Event parentEvent = competition.getParentEvent();
-        
+        Status status = competition.getStatus();
+
         return CompetitionResponse.builder()
                 .id(competition.getId())
                 .name(competition.getName())
@@ -34,19 +37,8 @@ public class CompetitionResponse {
                 .startDate(competition.getStartDate())
                 .endDate(competition.getEndDate())
                 .parentEventId(parentEvent.getId())
-                .statusLabel(determineStatusLabel(competition))
+                .status(status)
+                .statusLabel(status.getLabel())
                 .build();
-    }
-    
-    
-    private static String determineStatusLabel(Competition competition) {
-        if (competition.hasEnded()) {
-            return "Terminée";
-        }
-        if (competition.hasStarted()) {
-            return "En cours";
-        }
-        
-        return "À venir";
     }
 }

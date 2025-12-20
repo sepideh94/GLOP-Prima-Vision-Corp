@@ -18,6 +18,8 @@ import com.ciblorgasport.trial.dto.TrialCreateRequest;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
+import com.ciblorgasport.user.domain.UserAccount;
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class TrialServiceImpl implements TrialService {
     private final SiteRepository siteRepository;
     private final CompetitionRepository competitionRepository;
     private final RoundRepository roundRepository;
+    private final UserAccountRepository userAccountRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy à HH:mm");
@@ -187,5 +190,27 @@ public class TrialServiceImpl implements TrialService {
     private Trial getTrialByIdOrThrow(Long id) {
         return trialRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Épreuve introuvable avec l'ID: " + id));
+    }
+
+    @Transactional
+    @Override
+    public TrialResponse cancelTrial(Long id, String userEmail) {
+        Trial trial = getTrialByIdOrThrow(id);
+
+        // Check if already cancelled
+        if (trial.isCancelled()) {
+            throw new IllegalStateException("L'épreuve est déjà annulée.");
+        }
+
+        // Get the user who is cancelling
+        UserAccount user = userAccountRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable: " + userEmail));
+
+        // Cancel the trial
+        trial.cancel(user);
+
+        // Save and return
+        Trial cancelledTrial = trialRepository.save(trial);
+        return TrialResponse.fromEntity(cancelledTrial);
     }
 }

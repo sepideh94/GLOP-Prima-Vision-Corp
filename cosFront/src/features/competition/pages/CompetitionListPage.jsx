@@ -338,7 +338,7 @@ return (
             </div>
 
             <div className="card-body">
-              <table className="table align-middle">
+              <table className="table align-middle table-hover">
                 <thead>
                   <tr style={{ color: appTheme.colors.dark }}>
                     <td><strong>Nom</strong></td>
@@ -360,12 +360,6 @@ return (
                       style={{
                         cursor: "pointer",
                         transition: "background-color 0.2s ease",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "rgba(34, 211, 238, 0.1)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "";
                       }}
                     >
                       <td className="fw-bold">{c.name}</td>
