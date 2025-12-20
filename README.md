@@ -24,6 +24,7 @@ Le MVP (Minimum Viable Product) comprend les fonctionnalités suivantes :
 
 ### Gestion des épreuves (Trials)
 - Création, consultation et modification d'épreuves
+- Annulation d'une épreuve
 - Filtrage des épreuves par compétition
 
 ## Architecture
@@ -89,6 +90,7 @@ L'application suit une architecture en couches :
 - `GET /api/trials/{id}` - Détails d'une épreuve
 - `POST /api/trials` - Créer une épreuve (authentifié)
 - `PUT /api/trials/{id}` - Modifier une épreuve (authentifié)
+- `DELETE /api/trials/{id}` - Annuler une épreuve (authentifié)
 
 #### Sites (`/api/admin/sites`)
 - `GET /api/admin/sites` - Liste de tous les sites (Admin uniquement)
