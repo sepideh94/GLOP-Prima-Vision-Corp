@@ -15,18 +15,8 @@
 
 Le MVP (Minimum Viable Product) comprend les fonctionnalités suivantes :
 
-### Gestion des utilisateurs
-- **Système d'authentification** : Inscription et connexion avec JWT
-- **Rôles utilisateurs** : 
-  - **Admin** : Gestion complète de l'application
-  - **Commissaire** : Création d'athlètes et de volontaires
-  - **Athlète** : Consultation de ses informations
-  - **Volontaire** : Consultation de ses informations
-  - **Spectateur** : Consultation des événements publics
-
 ### Gestion des événements
 - Création, consultation, modification d'événements
-- Consultation publique de la liste des événements
 
 ### Gestion des compétitions
 - Création et modification de compétitions liées à un événement
@@ -43,7 +33,7 @@ L'application suit une architecture en couches :
 - **Backend** : API REST Spring Boot (Java 21)
 - **Frontend** : Application React avec Material-UI
 - **Base de données** : PostgreSQL
-- **Déploiement** : Docker Compose
+- **Déploiement** : Docker Compose, AWS EC2
 
 ## Technologies utilisées
 
@@ -265,15 +255,6 @@ mvn test -Dtest=NomDeLaClasseDeTest
 ### Configuration des tests
 
 Les tests utilisent une base de données H2 en mémoire (configuration dans `application-test.properties`), ce qui permet de les exécuter sans dépendance externe.
-
-### Tests Frontend
-
-Actuellement, aucun framework de test n'est configuré pour le frontend. Pour ajouter des tests :
-
-```bash
-cd cosFront
-npm install --save-dev @testing-library/react @testing-library/jest-dom vitest
-```
 
 ## Structure du projet
 
