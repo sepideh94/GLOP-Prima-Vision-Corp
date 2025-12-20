@@ -47,15 +47,18 @@ export default function Admin() {
 
       <Grid container spacing={4}>
         {sections.map((s) => (
-          <Grid item xs={12} md={6} key={s.title}>
+          <Grid item xs={12} md={6} key={s.title} sx={{ display: "flex" }}>
             <Card
               sx={{
-                height: 200,
+                width: "100%",
+                height: 220,
                 borderRadius: appTheme.radius.lg,
                 background: appTheme.gradients.card,
                 boxShadow: appTheme.shadows.card,
                 position: "relative",
                 overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
             <Box

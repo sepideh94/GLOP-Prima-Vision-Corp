@@ -251,7 +251,7 @@ return (
     >
       {events.map((event) => (
         <EventCard
-          key={event.idEvent}
+          key={event.idEvent || event.id}
           event={event}
           isAdmin={isAdmin}
           onEdit={handleOpenDialog}
