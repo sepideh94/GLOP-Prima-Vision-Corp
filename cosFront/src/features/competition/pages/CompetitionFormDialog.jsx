@@ -6,15 +6,20 @@ import {
   TextField,
   Button,
   Box,
+  Typography,
+  Alert,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import DatePickerForm from "../../../common/components/DatePickerForm";
+import EventIcon from "@mui/icons-material/Event";
+import appTheme from "../../../common/theme/appTheme";
 
 export default function CompetitionFormDialog({
   open,
   onClose,
   onSave,
   initialData,
+  currentEvent,
 }) {
   const isEdit = Boolean(initialData);
 
@@ -26,6 +31,7 @@ export default function CompetitionFormDialog({
   });
 
   const [errors, setErrors] = useState({});
+  const [backendError, setBackendError] = useState("");
 
   useEffect(() => {
   if (initialData) {
@@ -35,7 +41,7 @@ export default function CompetitionFormDialog({
       startDate: initialData.startDate
         ? String(initialData.startDate).slice(0, 10)
         : "",
-      endDate: initialData.endDate 
+      endDate: initialData.endDate
         ? String(initialData.endDate).slice(0, 10)
         : "",
     });
@@ -44,10 +50,11 @@ export default function CompetitionFormDialog({
       name: "",
       description: "",
       startDate: "",
-      endDate: "", 
+      endDate: "",
     });
   }
   setErrors({});
+  setBackendError("");
 }, [initialData, open]);
 
   const handleChange = (e) => {
@@ -78,9 +85,27 @@ export default function CompetitionFormDialog({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    onSave(form);
+    setBackendError("");
+    try {
+      await onSave(form);
+    } catch (err) {
+      setBackendError(err.message || "Une erreur s'est produite");
+    }
+  };
+
+  const formatEventDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+    return date.toLocaleDateString("fr-FR", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -97,6 +122,33 @@ export default function CompetitionFormDialog({
             gap: 2,
           }}
         >
+          {backendError && (
+            <Alert severity="error" sx={{ borderRadius: 2 }}>
+              {backendError}
+            </Alert>
+          )}
+          {currentEvent && (
+            <Alert
+              severity="info"
+              icon={<EventIcon />}
+              sx={{
+                borderRadius: 2,
+                "& .MuiAlert-message": {
+                  width: "100%",
+                },
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                Événement : {currentEvent.name}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                <strong>Début :</strong> {formatEventDate(currentEvent.startDate)}
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.85rem" }}>
+                <strong>Fin :</strong> {formatEventDate(currentEvent.endDate)}
+              </Typography>
+            </Alert>
+          )}
           <TextField
             label="Nom"
             name="name"
@@ -143,7 +195,18 @@ export default function CompetitionFormDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Annuler</Button>
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button 
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+        onClick={handleSubmit}>
           {isEdit ? "Enregistrer" : "Créer"}
         </Button>
       </DialogActions>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -7,8 +7,10 @@ import {
   TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import EditIcon from "@mui/icons-material/Edit";
+import CancelIcon from "@mui/icons-material/Cancel";
 import appTheme from "../../../common/theme/appTheme";
 
 import trialService from "../services/trialService";
@@ -45,29 +47,19 @@ const formatDateTime = (date, time) => {
 
 /*  STATUT */
 
-const getTrialStatusLabel = (trial) => {
-  if (!trial.startDate) return "À venir";
-
-  const now = new Date();
-  const start = new Date(trial.startDate);
-  const end = trial.endDate ? new Date(trial.endDate) : null;
-
-  if (now < start) return "À venir";
-  if (end && now > end) return "Terminé";
-  return "En cours";
-};
-
 const getStatusStyle = (statusLabel) => ({
   padding: "4px 12px",
   borderRadius: appTheme.radius.pill,
   fontWeight: 600,
   fontSize: 13,
-  whiteSpace: "nowrap", 
+  whiteSpace: "nowrap",
   background:
     statusLabel === "À venir"
       ? "rgba(250,204,21,0.25)"
       : statusLabel === "En cours"
       ? "rgba(34,211,238,0.25)"
+      : statusLabel === "Annulée"
+      ? "rgba(239,68,68,0.25)"
       : "rgba(34,197,94,0.25)",
   color: appTheme.colors.dark,
 });
@@ -75,6 +67,7 @@ const getStatusStyle = (statusLabel) => ({
 
 export default function TrialListPage() {
   const { competitionId } = useParams();
+  const navigate = useNavigate();
 
   const [competition, setCompetition] = useState(null);
   const [eventInfo, setEventInfo] = useState(null);
@@ -126,18 +119,42 @@ export default function TrialListPage() {
       roundId: Number(form.roundId),
     };
 
-    if (editingTrial) {
-      const updated = await trialService.updateTrial(editingTrial.id, payload);
-      setTrials((prev) =>
-        prev.map((t) => (t.id === editingTrial.id ? updated : t))
-      );
-    } else {
-      const created = await trialService.createTrial(payload);
-      setTrials((prev) => [...prev, created]);
-    }
+    try {
+      if (editingTrial) {
+        const updated = await trialService.updateTrial(editingTrial.id, payload);
+        setTrials((prev) =>
+          prev.map((t) => (t.id === editingTrial.id ? updated : t))
+        );
+      } else {
+        const created = await trialService.createTrial(payload);
+        setTrials((prev) => [...prev, created]);
+      }
 
-    setOpenForm(false);
-    setEditingTrial(null);
+      setOpenForm(false);
+      setEditingTrial(null);
+    } catch (error) {
+      // Return the error message from backend to the dialog
+      const errorMessage = error.response?.data?.message || error.message || "Une erreur s'est produite";
+      throw new Error(errorMessage);
+    }
+  };
+
+  const handleCancelTrial = async (trialId) => {
+    const confirmed = window.confirm(
+      "Êtes-vous sûr de vouloir annuler cette épreuve ? Cette action est irréversible."
+    );
+
+    if (!confirmed) return;
+
+    try {
+      const cancelled = await trialService.cancelTrial(trialId);
+      setTrials((prev) =>
+        prev.map((t) => (t.id === trialId ? cancelled : t))
+      );
+    } catch (err) {
+      console.error("Erreur lors de l'annulation de l'épreuve :", err);
+      alert(err.response?.data?.message || "Une erreur s'est produite lors de l'annulation");
+    }
   };
 
   if (loading) return <p>Chargement...</p>;
@@ -148,6 +165,23 @@ export default function TrialListPage() {
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate("/admin/competitions")}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+      >
+        Retour
+      </Button>
+
       <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
         {eventInfo?.name} / {competition?.name} / Épreuves
       </Typography>
@@ -218,8 +252,6 @@ export default function TrialListPage() {
 
             <tbody>
               {filteredTrials.map((t) => {
-                const statusLabel = getTrialStatusLabel(t);
-
                 return (
                   <tr key={t.id}>
                     <td className="fw-bold">{t.name}</td>
@@ -228,29 +260,49 @@ export default function TrialListPage() {
                     <td>{getLabelFromEnum(t.mode, MODE_OPTIONS)}</td>
                     <td>{getLabelFromEnum(t.categoryGender, CATEGORY_OPTIONS)}</td>
                     <td>
-                      <span style={getStatusStyle(statusLabel)}>
-                        {statusLabel}
+                      <span style={getStatusStyle(t.statusLabel)}>
+                        {t.statusLabel}
                       </span>
                     </td>
                     <td>
-                      <button
-                        className="btn d-flex align-items-center gap-1"
-                        style={{
-                          borderRadius: appTheme.radius.pill,
-                          background: appTheme.gradients.navbar,
-                          color: appTheme.colors.dark,
-                          fontWeight: 700,
-                          padding: "4px 12px",
-                          fontSize: 13,
-                        }}
-                        onClick={() => {
-                          setEditingTrial(t);
-                          setOpenForm(true);
-                        }}
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                        Modifier
-                      </button>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button
+                          className="btn d-flex align-items-center gap-1"
+                          style={{
+                            borderRadius: appTheme.radius.pill,
+                            background: appTheme.gradients.navbar,
+                            color: appTheme.colors.dark,
+                            fontWeight: 700,
+                            padding: "4px 12px",
+                            fontSize: 13,
+                          }}
+                          onClick={() => {
+                            setEditingTrial(t);
+                            setOpenForm(true);
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                          Modifier
+                        </button>
+
+                        {!t.cancelled && t.status !== "COMPLETED" && (
+                          <button
+                            className="btn d-flex align-items-center gap-1"
+                            style={{
+                              borderRadius: appTheme.radius.pill,
+                              background: "linear-gradient(135deg, #EF4444, #DC2626)",
+                              color: "#fff",
+                              fontWeight: 700,
+                              padding: "4px 12px",
+                              fontSize: 13,
+                            }}
+                            onClick={() => handleCancelTrial(t.id)}
+                          >
+                            <CancelIcon sx={{ fontSize: 16 }} />
+                            Annuler
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 );
@@ -268,6 +320,7 @@ export default function TrialListPage() {
         }}
         onSave={handleSave}
         initialData={editingTrial}
+        competition={competition}
       />
     </Box>
   );

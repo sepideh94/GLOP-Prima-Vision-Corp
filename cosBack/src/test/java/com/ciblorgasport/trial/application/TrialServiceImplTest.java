@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
@@ -70,6 +71,9 @@ class TrialServiceImplTest {
         testCompetition.setId(1L);
         testCompetition.setName("Test Competition");
 
+        testCompetition.setStartDate(LocalDateTime.of(2025, 12, 1, 0, 0));
+        testCompetition.setEndDate(LocalDateTime.of(2025, 12, 31, 23, 59));
+        
         testRound = new Round();
         testRound.setId(1L);
         testRound.setName(RoundName.FINALE);
