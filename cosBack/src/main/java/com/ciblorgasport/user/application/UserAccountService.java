@@ -2,6 +2,7 @@ package com.ciblorgasport.user.application;
 
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.user.domain.UserAccount;
+import com.ciblorgasport.user.dto.UserResponse;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 import jakarta.transaction.Transactional;
@@ -66,8 +68,16 @@ public class UserAccountService implements UserDetailsService{
         userRepo.save(user);
     }
 	
-	public List<UserAccount> getAllUsers(){
-		return this.userRepo.findAll();
+	public List<UserResponse> getAllUsersForAdmin() {
+	    return userRepo.findAll().stream()
+	            .map((UserAccount user) -> UserResponse.builder()
+	                    .firstName(user.getFirstName())
+	                    .lastName(user.getLastName())
+	                    .email(user.getEmail())
+	                    .role(user.getRoleName().replace("ROLE_", ""))
+	                    .isAccountActive(user.isEnabled()) 
+	                    .build())
+	            .collect(Collectors.toList());
 	}
 
 }
