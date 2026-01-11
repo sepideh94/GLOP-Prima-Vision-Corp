@@ -16,6 +16,7 @@ import com.ciblorgasport.commissionner.application.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
+import com.ciblorgasport.user.dto.UserResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,8 +46,8 @@ public class AdminController {
 	
 	
 	@GetMapping("/users")
-	public ResponseEntity<List<UserAccount>> getAllUsers(){
-		return ResponseEntity.ok(userAccountService.getAllUsers());
+	public ResponseEntity<List<UserResponse>> getAllUsers(){
+		return ResponseEntity.ok(userAccountService.getAllUsersForAdmin());
 	}
 	
 }
