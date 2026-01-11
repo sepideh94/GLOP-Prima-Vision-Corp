@@ -1,6 +1,8 @@
 package com.ciblorgasport.user.application;
 
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -63,5 +65,9 @@ public class UserAccountService implements UserDetailsService{
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepo.save(user);
     }
+	
+	public List<UserAccount> getAllUsers(){
+		return this.userRepo.findAll();
+	}
 
 }
