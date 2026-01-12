@@ -21,9 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
-import com.ciblorgasport.round.domain.Round;
-import com.ciblorgasport.round.domain.RoundName;
-import com.ciblorgasport.round.infrastructure.RoundRepository;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.domain.CategoryGender;
@@ -34,6 +31,9 @@ import com.ciblorgasport.trial.dto.TrialCreateRequest;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
+import com.ciblorgasport.trial.round.domain.Round;
+import com.ciblorgasport.trial.round.domain.RoundName;
+import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("TrialServiceImpl Unit Tests")
