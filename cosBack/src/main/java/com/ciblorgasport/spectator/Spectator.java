@@ -1,4 +1,4 @@
-package com.ciblorgasport.spectator.domain;
+package com.ciblorgasport.spectator;
 
 import com.ciblorgasport.user.domain.UserAccount;
 

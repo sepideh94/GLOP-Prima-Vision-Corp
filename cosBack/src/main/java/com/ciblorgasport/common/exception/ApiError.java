@@ -1,4 +1,4 @@
-package com.ciblorgasport.common.api;
+package com.ciblorgasport.common.exception;
 
 import java.time.LocalDateTime;
 import java.util.Map;

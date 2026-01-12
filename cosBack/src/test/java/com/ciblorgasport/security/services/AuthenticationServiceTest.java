@@ -3,7 +3,7 @@ package com.ciblorgasport.security.services;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
-import com.ciblorgasport.spectator.domain.Spectator;
+import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 import org.junit.jupiter.api.Test;

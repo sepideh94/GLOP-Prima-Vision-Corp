@@ -1,4 +1,4 @@
-package com.ciblorgasport.core;
+package com.ciblorgasport.common.model;
 
 /**
  * Représente le statut d'une compétition ou d'une épreuve.

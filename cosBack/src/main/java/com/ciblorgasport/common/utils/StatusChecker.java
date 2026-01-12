@@ -1,4 +1,4 @@
-package com.ciblorgasport.core;
+package com.ciblorgasport.common.utils;
 
 public interface StatusChecker {
 	

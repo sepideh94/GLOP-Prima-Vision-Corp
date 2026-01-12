@@ -8,8 +8,8 @@ import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.ciblorgasport.core.Status;
-import com.ciblorgasport.core.StatusChecker;
+import com.ciblorgasport.common.model.Status;
+import com.ciblorgasport.common.utils.StatusChecker;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.trial.domain.Trial;
 import com.fasterxml.jackson.annotation.JsonBackReference;

@@ -1,4 +1,4 @@
-package com.ciblorgasport.round.domain;
+package com.ciblorgasport.trial.round.domain;
 
 public enum RoundName {
     QUALIFICATION_HEAT("Qualification/Heat", 1),

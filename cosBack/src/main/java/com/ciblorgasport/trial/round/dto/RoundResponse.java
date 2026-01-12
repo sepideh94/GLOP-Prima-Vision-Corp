@@ -1,7 +1,7 @@
-package com.ciblorgasport.round.dto;
+package com.ciblorgasport.trial.round.dto;
 
-import com.ciblorgasport.round.domain.Round;
-import com.ciblorgasport.round.domain.RoundName;
+import com.ciblorgasport.trial.round.domain.Round;
+import com.ciblorgasport.trial.round.domain.RoundName;
 
 import lombok.Builder;
 import lombok.Data;

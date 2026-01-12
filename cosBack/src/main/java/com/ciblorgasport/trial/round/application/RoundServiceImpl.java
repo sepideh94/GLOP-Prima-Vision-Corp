@@ -1,14 +1,14 @@
-package com.ciblorgasport.round.application;
+package com.ciblorgasport.trial.round.application;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.ciblorgasport.round.domain.Round;
-import com.ciblorgasport.round.dto.RoundCreateRequest;
-import com.ciblorgasport.round.dto.RoundResponse;
-import com.ciblorgasport.round.infrastructure.RoundRepository;
+import com.ciblorgasport.trial.round.domain.Round;
+import com.ciblorgasport.trial.round.dto.RoundCreateRequest;
+import com.ciblorgasport.trial.round.dto.RoundResponse;
+import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
