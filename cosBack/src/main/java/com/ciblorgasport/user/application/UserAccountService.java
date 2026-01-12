@@ -2,8 +2,10 @@ package com.ciblorgasport.user.application;
 
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.apache.commons.csv.CSVRecord;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -12,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.user.domain.UserAccount;
+import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.dto.UserResponse;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
@@ -78,6 +81,24 @@ public class UserAccountService implements UserDetailsService{
 	                    .isAccountActive(user.isEnabled()) 
 	                    .build())
 	            .collect(Collectors.toList());
+	}
+	
+	public void createAndInviteUser(CSVRecord record, UserCreationService creationService) {
+	    String email = record.get("email");
+	    
+	    if (userRepo.findByEmail(email).isPresent()) return;
+
+	    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+	    
+	    CreateUserRequest request = CreateUserRequest.builder()
+	            .email(email)
+	            .firstName(record.get("firstName"))
+	            .lastName(record.get("lastName"))
+	            .password(tempPassword) 
+	            .build();
+
+	    creationService.createUser(request);
+
 	}
 
 }
