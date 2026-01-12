@@ -4,11 +4,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
+import com.ciblorgasport.common.model.Status;
+import com.ciblorgasport.common.utils.StatusChecker;
 import com.ciblorgasport.competition.domain.Competition;
-import com.ciblorgasport.core.Status;
-import com.ciblorgasport.core.StatusChecker;
-import com.ciblorgasport.round.domain.Round;
 import com.ciblorgasport.site.domain.Site;
+import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 

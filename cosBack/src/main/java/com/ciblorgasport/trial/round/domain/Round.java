@@ -1,4 +1,4 @@
-package com.ciblorgasport.round.domain;
+package com.ciblorgasport.trial.round.domain;
 
 import java.util.List;
 

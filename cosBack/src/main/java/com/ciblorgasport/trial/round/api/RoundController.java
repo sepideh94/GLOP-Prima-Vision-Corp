@@ -1,4 +1,4 @@
-package com.ciblorgasport.round.api;
+package com.ciblorgasport.trial.round.api;
 
 import java.util.List;
 
@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ciblorgasport.round.application.RoundService;
-import com.ciblorgasport.round.dto.RoundCreateRequest;
-import com.ciblorgasport.round.dto.RoundResponse;
+import com.ciblorgasport.trial.round.application.RoundService;
+import com.ciblorgasport.trial.round.dto.RoundCreateRequest;
+import com.ciblorgasport.trial.round.dto.RoundResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

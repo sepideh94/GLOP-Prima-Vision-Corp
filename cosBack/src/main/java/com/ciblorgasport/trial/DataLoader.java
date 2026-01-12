@@ -1,14 +1,14 @@
-package com.ciblorgasport.config;
+package com.ciblorgasport.trial;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import com.ciblorgasport.round.domain.Round;
-import com.ciblorgasport.round.domain.RoundName;
-import com.ciblorgasport.round.infrastructure.RoundRepository;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
+import com.ciblorgasport.trial.round.domain.Round;
+import com.ciblorgasport.trial.round.domain.RoundName;
+import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
 
 import lombok.extern.slf4j.Slf4j;
 

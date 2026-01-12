@@ -1,9 +1,9 @@
-package com.ciblorgasport.round.application;
+package com.ciblorgasport.trial.round.application;
 
 import java.util.List;
 
-import com.ciblorgasport.round.dto.RoundCreateRequest;
-import com.ciblorgasport.round.dto.RoundResponse;
+import com.ciblorgasport.trial.round.dto.RoundCreateRequest;
+import com.ciblorgasport.trial.round.dto.RoundResponse;
 
 public interface RoundService {
     RoundResponse create(RoundCreateRequest request);

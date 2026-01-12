@@ -2,8 +2,8 @@ package com.ciblorgasport.competition.dto;
 
 import java.time.LocalDateTime;
 
+import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.competition.domain.Competition;
-import com.ciblorgasport.core.Status;
 import com.ciblorgasport.event.domain.Event;
 
 import lombok.Builder;
