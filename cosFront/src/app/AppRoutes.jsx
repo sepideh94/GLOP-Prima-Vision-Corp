@@ -9,6 +9,7 @@ import Commissioner from '../features/user/pages/Commissioner';
 import Volunteer from '../features/user/pages/Volunteer';
 import EventsList from '../features/events/pages/EventsList';
 import CompetitionListPage from '../features/competition/pages/CompetitionListPage';
+import UsersManagementPage from '../features/user/pages/UsersManagementPage';
 import NotFound from '../features/home/pages/NotFound';
 
 export default function AppRoutes() {
@@ -21,6 +22,7 @@ export default function AppRoutes() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/competitions" element={<CompetitionListPage />} />
+        <Route path="/admin/users" element={<UsersManagementPage />} />
         <Route path="/events" element={<EventsList />} />
         <Route path="/spectator" element={<Spectator />} />
         <Route path="/athlete" element={<Athlete />} />
