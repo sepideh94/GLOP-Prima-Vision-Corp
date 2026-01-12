@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ciblorgasport.event.api.dto.EventCreateRequest;
 import com.ciblorgasport.event.api.dto.EventListResponse;
 import com.ciblorgasport.event.api.dto.EventUpdateRequest;
-import com.ciblorgasport.event.application.EventService;
+import com.ciblorgasport.event.application.EventServiceImpl;
 import com.ciblorgasport.event.domain.Event;
 
 import jakarta.validation.Valid;
@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EventController {
 
-    private final EventService service;
+    private final EventServiceImpl service;
 
     @PostMapping
     public ResponseEntity<Event> create(@Valid @RequestBody EventCreateRequest req) {

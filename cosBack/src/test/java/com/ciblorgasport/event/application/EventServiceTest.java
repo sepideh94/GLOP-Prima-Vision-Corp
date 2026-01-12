@@ -23,12 +23,12 @@ import com.ciblorgasport.event.infrastructure.EventRepository;
 public class EventServiceTest {
 
     private EventRepository repository;
-    private EventService service;
+    private EventServiceImpl service;
 
     @BeforeEach
     void setup() {
         repository = Mockito.mock(EventRepository.class);
-        service = new EventService(repository);
+        service = new EventServiceImpl(repository);
     }
 
     @Test
