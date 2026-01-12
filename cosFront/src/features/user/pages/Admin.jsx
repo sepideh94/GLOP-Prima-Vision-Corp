@@ -7,7 +7,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents } from "@mui/icons-material";
+import { Event, EmojiEvents, People } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -30,6 +30,13 @@ export default function Admin() {
       icon: <EmojiEvents sx={{ fontSize: 42 }} />,
       color: appTheme.colors.green,
       route: "/admin/competitions",
+    },
+    {
+      title: "Gestion des utilisateurs",
+      subtitle: "Contrôler les accès et maintenir la sécurité",
+      icon: <People sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.violet,
+      route: "/admin/users",
     },
   ];
 

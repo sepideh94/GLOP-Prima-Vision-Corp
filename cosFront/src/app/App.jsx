@@ -16,6 +16,7 @@ import Volunteer from "../features/user/pages/Volunteer.jsx";
 import EventsList from "../features/events/pages/EventsList.jsx";
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
+import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
 
 
 export default function App() {
@@ -37,6 +38,7 @@ export default function App() {
              <Route path="/events" element={<EventsList />} />
              <Route path="/admin/competitions" element={<CompetitionListPage />} />
              <Route path="/admin/competitions/:competitionId/trials" element={<TrialListPage />}/>
+             <Route path="/admin/users" element={<UsersManagementPage />} />
             </Route>
           </Route>
           
