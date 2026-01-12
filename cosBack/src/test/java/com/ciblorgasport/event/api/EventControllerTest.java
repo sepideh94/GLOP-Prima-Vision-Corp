@@ -3,7 +3,7 @@ package com.ciblorgasport.event.api;
 import com.ciblorgasport.config.SecurityDisabledConfig;
 import com.ciblorgasport.event.api.dto.EventCreateRequest;
 import com.ciblorgasport.event.api.dto.EventUpdateRequest;
-import com.ciblorgasport.event.application.EventService;
+import com.ciblorgasport.event.application.EventServiceImpl;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.security.services.JwtService;
 import com.ciblorgasport.user.application.UserAccountService;
@@ -33,7 +33,7 @@ class EventControllerTest {
     private MockMvc mockMvc;
 
     @MockitoBean
-    private EventService service;
+    private EventServiceImpl service;
 
     @MockitoBean
     private JwtService jwtService;
