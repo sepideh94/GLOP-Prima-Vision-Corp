@@ -88,7 +88,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
 
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/commissaire/**").hasRole("COMMISSIONNER")
+                .requestMatchers("/api/commissioner/**").hasRole("COMMISSIONNER")
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
                 .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
                 .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
