@@ -2,15 +2,9 @@ import api from "../../../common/api/axiosInstance";
 
 const userService = {
   async getUsers(params = {}) {
-    const queryParams = new URLSearchParams();
-    if (params.page !== undefined) queryParams.append("page", params.page);
-    if (params.size) queryParams.append("size", params.size);
-    if (params.role) queryParams.append("role", params.role);
-    if (params.status) queryParams.append("status", params.status);
-    if (params.search) queryParams.append("search", params.search);
-
-    const res = await api.get(`/api/admin/users?${queryParams.toString()}`);
-    return res.data;
+    // L'endpoint dans develop retourne une liste simple sans pagination
+    const res = await api.get("/api/admin/users");
+    return res.data; // Retourne directement la liste
   },
 
   async getUserDetails(id) {

@@ -45,7 +45,7 @@ const ITEMS_PER_PAGE = 20;
 export default function UsersManagementPage() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false); // Désactivé car l'endpoint n'existe pas encore
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
@@ -66,32 +66,24 @@ export default function UsersManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Désactivé temporairement car l'endpoint GET /api/admin/users n'existe pas encore côté backend
-  // useEffect(() => {
-  //   loadUsers();
-  // }, [currentPage, roleFilter, statusFilter, searchTerm]);
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  // Réinitialiser la page quand les filtres changent
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [roleFilter, statusFilter, searchTerm]);
 
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const params = {
-        page: currentPage - 1,
-        size: ITEMS_PER_PAGE,
-      };
-      if (roleFilter !== "ALL") params.role = roleFilter;
-      if (statusFilter !== "ALL") params.status = statusFilter;
-      if (searchTerm.trim()) params.search = searchTerm.trim();
-
-      const response = await userService.getUsers(params);
+      const response = await userService.getUsers();
       
-      // Gérer différentes structures de réponse possibles
+      // L'endpoint retourne une liste simple d'utilisateurs (List<UserResponse>)
       if (Array.isArray(response)) {
         setUsers(response);
         setTotalPages(Math.ceil(response.length / ITEMS_PER_PAGE));
-      } else if (response.content) {
-        // Pagination Spring Boot
-        setUsers(response.content || []);
-        setTotalPages(response.totalPages || 1);
       } else {
         setUsers([]);
         setTotalPages(1);
@@ -229,7 +221,8 @@ export default function UsersManagementPage() {
   };
 
   const handleToggleStatus = (user) => {
-    if (user.role === "ADMIN" || user.role === "ROLE_ADMIN") {
+    const userRole = (user.role || "").toUpperCase();
+    if (userRole === "ADMIN" || userRole === "ROLE_ADMIN") {
       setError("Le compte administrateur ne peut pas être désactivé");
       setOpenSnackbar(true);
       return;
@@ -238,9 +231,10 @@ export default function UsersManagementPage() {
     setConfirmActionType("toggle");
     setConfirmAction(() => async () => {
       try {
-        await userService.toggleUserStatus(user.id, !user.enabled);
+        const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+        await userService.toggleUserStatus(user.id, !isActive);
         setSuccessMessage(
-          user.enabled
+          isActive
             ? "Utilisateur désactivé avec succès"
             : "Utilisateur activé avec succès"
         );
@@ -308,7 +302,8 @@ export default function UsersManagementPage() {
     return roleMap[role] || role;
   };
 
-  const getStatusChip = (enabled) => {
+  const getStatusChip = (isActive) => {
+    const enabled = isActive !== undefined ? isActive : true;
     return enabled ? (
       <Chip
         label="Actif"
@@ -332,8 +327,9 @@ export default function UsersManagementPage() {
     );
   };
 
-  // Filtrage côté client si nécessaire (en complément de l'API)
-  const filteredUsers = users.filter((user) => {
+  // Filtrage côté client
+  const allFilteredUsers = users.filter((user) => {
+    // Filtre par recherche
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
       const name = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
@@ -342,8 +338,37 @@ export default function UsersManagementPage() {
         return false;
       }
     }
+    
+    // Filtre par rôle
+    if (roleFilter !== "ALL") {
+      const userRole = (user.role || "").toUpperCase();
+      const filterRole = roleFilter.toUpperCase();
+      if (userRole !== filterRole && userRole !== `ROLE_${filterRole}`) {
+        return false;
+      }
+    }
+    
+    // Filtre par statut (isAccountActive dans develop)
+    if (statusFilter !== "ALL") {
+      const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+      if (statusFilter === "ACTIVE" && !isActive) {
+        return false;
+      }
+      if (statusFilter === "INACTIVE" && isActive) {
+        return false;
+      }
+    }
+    
     return true;
   });
+
+  // Pagination côté client
+  const filteredUsers = allFilteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  
+  const totalFilteredPages = Math.ceil(allFilteredUsers.length / ITEMS_PER_PAGE);
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
@@ -500,7 +525,7 @@ export default function UsersManagementPage() {
                   <TableRow>
                     <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
                       <Typography color={appTheme.colors.textMuted}>
-                        La liste des utilisateurs n'est pas encore disponible. L'endpoint GET /api/admin/users doit être implémenté côté backend.
+                        Aucun utilisateur trouvé
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -524,7 +549,7 @@ export default function UsersManagementPage() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{getStatusChip(user.enabled)}</TableCell>
+                      <TableCell>{getStatusChip(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", gap: 1 }}>
                           <Tooltip title="Voir les détails">
@@ -538,7 +563,7 @@ export default function UsersManagementPage() {
                           </Tooltip>
                           <Tooltip
                             title={
-                              user.enabled ? "Désactiver" : "Activer"
+                              (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? "Désactiver" : "Activer"
                             }
                           >
                             <span>
@@ -546,16 +571,16 @@ export default function UsersManagementPage() {
                                 size="small"
                                 onClick={() => handleToggleStatus(user)}
                                 disabled={
-                                  user.role === "ADMIN" ||
-                                  user.role === "ROLE_ADMIN"
+                                  (user.role || "").toUpperCase() === "ADMIN" ||
+                                  (user.role || "").toUpperCase() === "ROLE_ADMIN"
                                 }
                                 sx={{
-                                  color: user.enabled
+                                  color: (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
                                     ? "#ef4444"
                                     : "#22c55e",
                                 }}
                               >
-                                {user.enabled ? (
+                                {(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? (
                                   <BlockIcon fontSize="small" />
                                 ) : (
                                   <CheckCircleIcon fontSize="small" />
@@ -582,10 +607,10 @@ export default function UsersManagementPage() {
           </TableContainer>
 
           {/* PAGINATION */}
-          {totalPages > 1 && (
+          {totalFilteredPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Pagination
-                count={totalPages}
+                count={totalFilteredPages}
                 page={currentPage}
                 onChange={(e, value) => setCurrentPage(value)}
                 color="primary"
