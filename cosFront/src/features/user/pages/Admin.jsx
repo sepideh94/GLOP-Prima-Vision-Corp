@@ -46,72 +46,105 @@ export default function Admin() {
       </Typography>
 
       <Grid container spacing={4}>
-        {sections.map((s) => (
-          <Grid item xs={12} md={6} key={s.title} sx={{ display: "flex" }}>
-            <Card
-              sx={{
-                width: "100%",
-                height: 220,
-                borderRadius: appTheme.radius.lg,
-                background: appTheme.gradients.card,
-                boxShadow: appTheme.shadows.card,
-                position: "relative",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
+      {sections.map((s) => (
+      <Grid
+        item
+        xs={12}
+        md={6}
+        key={s.title}
+        sx={{
+        display: "flex",
+        justifyContent: "center",
+      }}
+      >
+
+      <Card
+        sx={{
+          width: 260,            
+          height: 170,           
+          borderRadius: 4,
+          background: appTheme.gradients.card,
+          boxShadow: appTheme.shadows.card,
+          position: "relative",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Barre colorée */}
+        <Box
+          sx={{
+            position: "absolute",
+            left: 0,
+            top: 24,
+            bottom: 24,
+            width: 4,
+            borderRadius: 6,
+            background: s.color,
+          }}
+        />
+
+        <CardActionArea
+          onClick={() => navigate(s.route)}
+          sx={{ height: "100%" }}
+        >
+          <CardContent
+            sx={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "flex-start",
+              pt: 3,
+              pl: 3,
+              pr: 3,
+              color: appTheme.colors.textPrimary,
+            }}
+          >
+            {/* Icône */}
             <Box
               sx={{
-                position: "absolute",
-                left: 0,
-                top: 36,      
-                bottom: 36,    
-                width: 4,      
-                borderRadius: 6,
+                width: 44,
+                height: 44,
+                borderRadius: "50%",
                 background: s.color,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mb: 1.5,
+                color: "#020617",
               }}
-            />
-            <CardActionArea
-              onClick={() => navigate(s.route)}
-              sx={{ height: "100%" }}
             >
-            <CardContent
+              {s.icon}
+            </Box>
+
+            {/* Titre */}
+            <Typography
               sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "center",
-                  color: appTheme.colors.textPrimary,
+                fontWeight: 700,
+                fontSize: 14,
+                lineHeight: 1.3,
+                mb: 0.5,
               }}
             >
-           <Box
-              sx={{
-                  width: 54,
-                  height: 54,
-                  borderRadius: "50%",
-                  background: s.color,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mb: 2,
-                  color: "#020617",
-              }}
-            >
-               {s.icon}
-           </Box>
-           <Typography sx={{ fontWeight: 700 }}>
               {s.title}
-           </Typography>
-           <Typography sx={{ fontSize: 13, color: appTheme.colors.textMuted }}>
+            </Typography>
+
+            {/* Sous-titre */}
+            <Typography
+              sx={{
+                fontSize: 12.5,
+                color: appTheme.colors.textMuted,
+                lineHeight: 1.3,
+              }}
+            >
               {s.subtitle}
-           </Typography>
-           </CardContent>
-           </CardActionArea>
-           </Card>
-          </Grid>
-        ))}
-      </Grid>
-    </Box>
-  );
+            </Typography>
+          </CardContent>
+        </CardActionArea>
+      </Card>
+    </Grid>
+  ))}
+</Grid>
+</Box>
+);
 }
