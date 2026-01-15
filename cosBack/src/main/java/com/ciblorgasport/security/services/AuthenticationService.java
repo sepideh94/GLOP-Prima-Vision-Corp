@@ -1,11 +1,17 @@
 package com.ciblorgasport.security.services;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ciblorgasport.email.EmailService; 
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.security.ActivationToken;
+import com.ciblorgasport.security.ActivationTokenRepository;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
@@ -27,6 +33,10 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     private final EmailService emailService;
+    private final ActivationTokenRepository activationTokenRepository;
+
+    @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")
+    private String appBaseUrl;
 
     public JwtAuthenticationResponse signup(SignUpRequest request) {
 
@@ -37,28 +47,67 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 
-        user = userService.save(user);
+        user.setActive(false); 
 
-      
+        user = userService.save(user); 
+
+        String token = UUID.randomUUID().toString();
+
+        ActivationToken activationToken = ActivationToken.builder()
+                .token(token)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusHours(24))
+                .used(false)
+                .build();
+
+        activationTokenRepository.save(activationToken);
+
         try {
-            emailService.sendWelcomeEmail(user.getEmail(), user.getFirstName());
-        } 
-		catch (Exception e) {
-             e.printStackTrace();
+            emailService.sendActivationEmail(user.getEmail(), user.getFirstName(), token);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         var jwt = jwtService.generateToken(user);
-
         String role = user.getRoleName().replace("ROLE_", "");
-
         return JwtAuthenticationResponse.builder().token(jwt).role(role).build();
     }
+
+    public String activateAccount(String token) {
+    ActivationToken at = activationTokenRepository.findByToken(token)
+            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+
+    if (at.isUsed()) {
+        return appBaseUrl + "/login?activated=true&already=true";
+    }
+
+    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
+        return appBaseUrl + "/login?activated=false&reason=token_expired";
+    }
+
+    UserAccount user = at.getUser();
+
+    if (user.isActive()) {
+        return appBaseUrl + "/login?activated=true&already=true";
+    }
+
+    user.setActive(true);
+    userRepository.save(user);
+
+    at.setUsed(true);
+    activationTokenRepository.save(at);
+
+    return appBaseUrl + "/login?activated=true";
+}
+
 
     public JwtAuthenticationResponse signin(SignInRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
+
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
+
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
         return JwtAuthenticationResponse.builder().token(jwt).role(role).build();

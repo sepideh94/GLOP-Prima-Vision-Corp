@@ -13,6 +13,11 @@ import com.ciblorgasport.security.services.AuthenticationService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 
 @RestController
@@ -32,4 +37,13 @@ public class AuthenticationController {
     public JwtAuthenticationResponse signin(@RequestBody SignInRequest request) {
         return authenticationService.signin(request);
     }
+
+
+
+@GetMapping("/activate")
+public void activate(@RequestParam String token, HttpServletResponse response) throws IOException {
+    String redirectUrl = authenticationService.activateAccount(token);
+    response.sendRedirect(redirectUrl);
+}
+
 }
