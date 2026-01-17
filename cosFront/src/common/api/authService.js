@@ -18,6 +18,19 @@ const authService = {
     });
     return res.data;
   },
+  async forgotPassword(email) {
+    const res = await api.post("/api/auth/forgot-password", {
+      email,
+    });
+    return res.data;
+  },
+  async resetPassword(token, newPassword) {
+    const res = await api.post("/api/auth/reset-password", {
+      token,
+      newPassword,
+    });
+    return res.data;
+  },
 };
 
 export default authService;

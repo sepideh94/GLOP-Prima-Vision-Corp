@@ -117,6 +117,16 @@ return (
               required
             />
 
+            <div style={styles.forgotPasswordLink}>
+              <Link 
+                to="/forgot-password" 
+                style={styles.forgotLink}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+
             <button type="submit" disabled={loading} style={styles.button}>
               {loading ? "Connexion..." : "Se connecter"}
             </button>
@@ -326,6 +336,19 @@ const styles = {
     color: "#A3E635",
     textDecoration: "none",
     fontWeight: 600,
+  },
+  forgotPasswordLink: {
+    textAlign: "right",
+    marginTop: "8px",
+    marginBottom: "4px",
+  },
+  forgotLink: {
+    fontSize: "12px",
+    color: "#22D3EE",
+    textDecoration: "none",
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-block",
   },
 };
 

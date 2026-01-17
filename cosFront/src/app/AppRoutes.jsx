@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from '../features/home/pages/HomePage';
 import LoginPage from '../features/user/pages/LoginPage';
 import SignUpPage from '../features/user/pages/SignUpPage';
+import ForgotPasswordPage from '../features/user/pages/ForgotPasswordPage';
+import ResetPasswordPage from '../features/user/pages/ResetPasswordPage';
 import Admin from '../features/user/pages/Admin';
 import Spectator from '../features/user/pages/Spectator';
 import Athlete from '../features/user/pages/Athlete';
@@ -20,6 +22,8 @@ export default function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/competitions" element={<CompetitionListPage />} />
         <Route path="/admin/users" element={<UsersManagementPage />} />
