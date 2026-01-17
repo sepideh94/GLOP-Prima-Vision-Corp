@@ -47,8 +47,7 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 
-        user.setActive(false); 
-
+        user.setActive(true);  // remtter a faux apres 
         user = userService.save(user); 
 
         String token = UUID.randomUUID().toString();

@@ -121,6 +121,12 @@ return (
               {loading ? "Connexion..." : "Se connecter"}
             </button>
           </form>
+
+          <div style={styles.linkContainer}>
+            <p style={styles.linkText}>
+              Pas encore de compte ? <Link to="/signup" style={styles.link}>S'inscrire</Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -307,6 +313,19 @@ const styles = {
     border: "1px solid rgba(248,113,113,0.6)",
     color: "#FCA5A5",
     fontSize: "13px",
+  },
+  linkContainer: {
+    marginTop: "22px",
+    textAlign: "center",
+  },
+  linkText: {
+    fontSize: "13px",
+    color: "#9CA3AF",
+  },
+  link: {
+    color: "#A3E635",
+    textDecoration: "none",
+    fontWeight: 600,
   },
 };
 
