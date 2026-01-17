@@ -14,7 +14,10 @@ import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EventIcon from "@mui/icons-material/Event";
 import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import CompetitionFormDialog from "./CompetitionFormDialog";
+import CompetitionDetailDialog from "./CompetitionDetailDialog";
 import competitionService from "../services/competitionService";
 
 const formatDate = (value) => {
@@ -22,6 +25,12 @@ const formatDate = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleDateString("fr-FR");
+};
+
+const truncateText = (text, maxLength) => {
+  if (!text) return "";
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
 };
 
 const toLocalDateTime = (date) => {
@@ -37,9 +46,12 @@ export default function CompetitionListPage() {
   const [competitions, setCompetitions] = useState([]);
   const [openForm, setOpenForm] = useState(false);
   const [editingCompetition, setEditingCompetition] = useState(null);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [viewingCompetition, setViewingCompetition] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
 
   useEffect(() => {
     competitionService.getEvents().then((data) => {
@@ -76,6 +88,14 @@ export default function CompetitionListPage() {
     (e) => String(e.idEvent || e.id) === String(selectedEventId)
   );
 
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredCompetitions = competitions.filter((c) => {
     if (!normalizedSearch) return true;
@@ -88,8 +108,29 @@ export default function CompetitionListPage() {
     );
   });
 
+  const sortedCompetitions = [...filteredCompetitions].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Handle special cases for different column types
+    if (sortConfig.key === "startDate" || sortConfig.key === "endDate") {
+      aValue = new Date(a[sortConfig.key]).getTime();
+      bValue = new Date(b[sortConfig.key]).getTime();
+    }
+
+    // Convert to string for comparison if not already a number
+    if (typeof aValue === "string") aValue = aValue.toLowerCase();
+    if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+    return 0;
+  });
+
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentCompetitions = filteredCompetitions.slice(
+  const currentCompetitions = sortedCompetitions.slice(
     startIndex,
     startIndex + itemsPerPage
   );
@@ -205,11 +246,21 @@ export default function CompetitionListPage() {
           <table className="table align-middle table-hover">
             <thead>
               <tr>
-                <td><strong>Nom</strong></td>
-                <td><strong>Description</strong></td>
-                <td><strong>Début</strong></td>
-                <td><strong>Fin</strong></td>
-                <td><strong>Statut</strong></td>
+                <td style={{ cursor: "pointer" }} onClick={() => handleSort("name")}>
+                  <strong>Nom</strong> <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle", ml: 0.5 }} />
+                </td>
+                <td style={{ cursor: "pointer" }} onClick={() => handleSort("description")}>
+                  <strong>Description</strong> <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle", ml: 0.5 }} />
+                </td>
+                <td style={{ cursor: "pointer" }} onClick={() => handleSort("startDate")}>
+                  <strong>Début</strong> <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle", ml: 0.5 }} />
+                </td>
+                <td style={{ cursor: "pointer" }} onClick={() => handleSort("endDate")}>
+                  <strong>Fin</strong> <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle", ml: 0.5 }} />
+                </td>
+                <td style={{ cursor: "pointer" }} onClick={() => handleSort("statusLabel")}>
+                  <strong>Statut</strong> <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle", ml: 0.5 }} />
+                </td>
                 <td><strong>Actions</strong></td>
               </tr>
             </thead>
@@ -224,11 +275,29 @@ export default function CompetitionListPage() {
                   style={{ cursor: "pointer" }}
                 >
                   <td className="fw-bold">{c.name}</td>
-                  <td>{c.description}</td>
+                  <td title={c.description}>{truncateText(c.description, 50)}</td>
                   <td>{formatDate(c.startDate)}</td>
                   <td>{formatDate(c.endDate)}</td>
                   <td>{c.statusLabel}</td>
                   <td>
+                    <button
+                      className="btn"
+                      style={{
+                        borderRadius: appTheme.radius.pill,
+                        background: "linear-gradient(135deg, #a78bfa, #8b5cf6)",
+                        color: "#fff",
+                        fontWeight: 700,
+                        padding: "4px 12px",
+                        marginRight: 8,
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setViewingCompetition(c);
+                        setOpenDetail(true);
+                      }}
+                    >
+                      <VisibilityIcon sx={{ fontSize: 16 }} />
+                    </button>
                     <button
                       className="btn"
                       style={{
@@ -244,7 +313,7 @@ export default function CompetitionListPage() {
                         setOpenForm(true);
                       }}
                     >
-                      <EditIcon sx={{ fontSize: 16 }} /> Modifier
+                      <EditIcon sx={{ fontSize: 16 }} />
                     </button>
                   </td>
                 </tr>
@@ -259,6 +328,13 @@ export default function CompetitionListPage() {
         onClose={() => setOpenForm(false)}
         onSave={() => {}}
         initialData={editingCompetition}
+        currentEvent={currentEvent}
+      />
+
+      <CompetitionDetailDialog
+        open={openDetail}
+        onClose={() => setOpenDetail(false)}
+        competition={viewingCompetition}
         currentEvent={currentEvent}
       />
     </Box>
