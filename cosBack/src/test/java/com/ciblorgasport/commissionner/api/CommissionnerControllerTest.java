@@ -42,6 +42,8 @@ import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.trial.round.domain.RoundName;
 import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
+import com.ciblorgasport.commissionner.domain.Commissionner;
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -67,14 +69,26 @@ class CommissionnerControllerTest {
     @Autowired
     private RoundRepository roundRepository;
 
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+
     private Event testEvent;
     private Competition testCompetition;
     private Site testSite;
     private Round testRound;
     private Trial testTrial;
+    private Commissionner testCommissioner;
 
     @BeforeEach
     void setUp() {
+        // Créer un commissioner pour les tests d'annulation
+        testCommissioner = new Commissionner();
+        testCommissioner.setEmail("commissioner@test.com");
+        testCommissioner.setFirstName("Test");
+        testCommissioner.setLastName("Commissioner");
+        testCommissioner.setPassword("password123");
+        testCommissioner = userAccountRepository.save(testCommissioner);
+
         // Créer un événement
         testEvent = new Event();
         testEvent.setName("Championnats de France 2025");
