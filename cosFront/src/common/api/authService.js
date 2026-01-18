@@ -24,10 +24,11 @@ const authService = {
     });
     return res.data;
   },
-  async resetPassword(token, newPassword) {
-    const res = await api.post("/api/auth/reset-password", {
+  async resetPassword(token, newPassword, confirmNewPassword) {
+    const res = await api.post("/api/auth/forgot-password/complete", {
       token,
       newPassword,
+      confirmNewPassword,
     });
     return res.data;
   },

@@ -64,20 +64,14 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      const response = await authService.resetPassword(token, formData.newPassword);
+      await authService.resetPassword(
+        token, 
+        formData.newPassword, 
+        formData.confirmPassword
+      );
       
-      // Déterminer la route de redirection selon le rôle retourné par l'API
-      const userRole = response?.role || 'SPECTATOR';
-      const roleRoutes = {
-        'SPECTATOR': '/home',
-        'ADMIN': '/admin',
-        'ATHLETE': '/athlete',
-        'COMMISSIONNER': '/commissioner',
-        'VOLONTEER': '/volunteer',
-      };
-      const redirectPath = roleRoutes[userRole.toUpperCase()] || '/home';
-      
-      navigate(redirectPath);
+   
+      navigate('/login?passwordReset=true');
     } catch (err) {
       setError(err.response?.data?.message || 'Une erreur est survenue lors de la réinitialisation.');
     } finally {
