@@ -302,6 +302,7 @@ export default function EventsList() {
               },
             }}
           >
+            Annuler
           </Button>
 
           <Button
