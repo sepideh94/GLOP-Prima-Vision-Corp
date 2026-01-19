@@ -1,11 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../../../common/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import authService from '../../../common/api/authService';
 
 const SignUpPage = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -14,6 +11,8 @@ const SignUpPage = () => {
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [successEmail, setSuccessEmail] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -44,7 +43,7 @@ const SignUpPage = () => {
 
     try {
       // Forcer le rôle à SPECTATOR car seuls les spectateurs peuvent créer un compte
-      const res = await authService.signUp(
+      await authService.signUp(
         formData.firstName,
         formData.lastName,
         formData.email,
@@ -52,17 +51,19 @@ const SignUpPage = () => {
         'SPECTATOR'
       );
 
-      // Stocker dans AuthContext
-      login({
-        token: res.token,
-        user: {
-          email: formData.email,
-          role: 'SPECTATOR',
-        },
+      // Sauvegarder l'email avant de réinitialiser le formulaire
+      const userEmail = formData.email;
+      
+      // Afficher le message de succès et réinitialiser le formulaire
+      setSuccess(true);
+      setSuccessEmail(userEmail);
+      setFormData({
+        firstName: '',
+        lastName: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
       });
-
-      // Rediriger vers la page spectateur
-      navigate('/spectator');
 
     } catch (err) {
       setError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
@@ -109,8 +110,18 @@ const SignUpPage = () => {
           </p>
 
           {error && <div style={styles.error}>{error}</div>}
+          {success && (
+            <div style={styles.success}>
+              <div style={styles.successTitle}>Vérifiez votre boîte mail</div>
+              <div style={styles.successText}>
+                Un email d'activation a été envoyé à {successEmail}. 
+                Cliquez sur le lien dans l'email pour activer votre compte.
+              </div>
+            </div>
+          )}
 
-          <form onSubmit={handleSubmit} style={styles.form}>
+          {!success && (
+            <form onSubmit={handleSubmit} style={styles.form}>
             <label style={styles.label}>Prénom</label>
             <input
               type="text"
@@ -165,6 +176,7 @@ const SignUpPage = () => {
               {loading ? "Inscription..." : "S'inscrire"}
             </button>
           </form>
+          )}
 
           <div style={styles.loginContainer}>
             <p style={styles.loginText}>
@@ -351,6 +363,28 @@ const styles = {
     border: "1px solid rgba(248,113,113,0.6)",
     color: "#FCA5A5",
     fontSize: "13px",
+  },
+
+  success: {
+    marginBottom: "10px",
+    padding: "16px 20px",
+    borderRadius: "12px",
+    background: "rgba(34, 211, 238, 0.15)",
+    border: "1px solid rgba(34, 211, 238, 0.6)",
+    color: "#A3E635",
+  },
+
+  successTitle: {
+    fontSize: "16px",
+    fontWeight: 700,
+    marginBottom: "8px",
+    color: "#A3E635",
+  },
+
+  successText: {
+    fontSize: "13px",
+    lineHeight: 1.5,
+    color: "#CBD5F5",
   },
 
   loginContainer: {

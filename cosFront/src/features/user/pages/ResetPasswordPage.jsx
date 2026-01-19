@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import authService from '../../../common/api/authService';
 
 const ResetPasswordPage = () => {
   const navigate = useNavigate();
@@ -54,8 +55,11 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      // TODO: Implémenter l'appel API pour la réinitialisation du mot de passe
-      // await authService.resetPassword(token, formData.newPassword);
+      await authService.resetPassword(
+        token,
+        formData.newPassword,
+        formData.confirmPassword
+      );
       
       setMessage('Votre mot de passe a été réinitialisé avec succès.');
       

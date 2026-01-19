@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import authService from '../../../common/api/authService';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
@@ -14,12 +15,10 @@ const ForgotPasswordPage = () => {
     setMessage('');
 
     try {
-      // TODO: Implémenter l'appel API pour la réinitialisation du mot de passe
-      // await authService.forgotPassword(email);
-      
+      await authService.forgotPassword(email);
       setMessage('Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.');
     } catch (err) {
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError(err.response?.data?.message || 'Une erreur est survenue. Veuillez réessayer.');
     } finally {
       setLoading(false);
     }
