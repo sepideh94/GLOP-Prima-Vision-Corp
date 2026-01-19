@@ -85,6 +85,9 @@ public class SecurityConfig {
                 //  Activation link from email (public)
                  .requestMatchers(HttpMethod.GET, "/api/auth/activate").permitAll()
 
+                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password/complete").permitAll()
+
 
                 // Events
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
