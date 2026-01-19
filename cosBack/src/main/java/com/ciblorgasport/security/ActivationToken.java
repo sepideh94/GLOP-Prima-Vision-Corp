@@ -12,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "activation_token")
+@Table(name = "activation_token") 
 public class ActivationToken {
 
     @Id
@@ -21,6 +21,10 @@ public class ActivationToken {
 
     @Column(nullable = false, unique = true, length = 128)
     private String token;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 32)
+    private TokenType type;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
