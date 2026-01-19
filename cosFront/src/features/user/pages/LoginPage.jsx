@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate} from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 
@@ -12,6 +12,7 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -109,13 +110,6 @@ return (
             />
 
             <label style={styles.label}>Mot de passe</label>
-            <input
-              type="password"
-              name="password"
-              style={styles.input}
-              onChange={handleChange}
-              required
-            />
 
             <div style={styles.forgotPasswordLink}>
               <Link 

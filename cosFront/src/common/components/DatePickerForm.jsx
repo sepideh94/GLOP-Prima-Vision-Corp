@@ -65,6 +65,7 @@ export default function DatePickerForm({
       inputProps={{
         min: getMinDate(),
         max: getMaxDate(),
+        onKeyDown: (e) => e.preventDefault(),
       }}
       sx={sx}
       {...otherProps}
