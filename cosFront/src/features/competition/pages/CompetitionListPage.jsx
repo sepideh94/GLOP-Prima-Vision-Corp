@@ -325,8 +325,28 @@ export default function CompetitionListPage() {
 
       <CompetitionFormDialog
         open={openForm}
-        onClose={() => setOpenForm(false)}
-        onSave={() => {}}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingCompetition(null);
+        }}
+        onSave={async (form) => {
+          const payload = {
+            name: form.name,
+            description: form.description,
+            startDate: toLocalDateTime(form.startDate),
+            endDate: toLocalDateTime(form.endDate),
+            parentEventId: selectedEventId,
+          };
+          if (editingCompetition) {
+            await competitionService.updateCompetition(editingCompetition.id, payload);
+          } else {
+            await competitionService.createCompetition(payload);
+          }
+          const updated = await competitionService.getCompetitionsByEvent(selectedEventId);
+          setCompetitions(updated);
+          setOpenForm(false);
+          setEditingCompetition(null);
+        }}
         initialData={editingCompetition}
         currentEvent={currentEvent}
       />
