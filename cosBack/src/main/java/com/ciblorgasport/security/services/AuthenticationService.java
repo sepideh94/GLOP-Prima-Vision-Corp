@@ -48,7 +48,6 @@ public class AuthenticationService {
                 .build();
 
         user.setActive(false); 
-
         user = userService.save(user); 
 
         String token = UUID.randomUUID().toString();

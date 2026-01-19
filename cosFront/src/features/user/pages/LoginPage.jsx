@@ -111,54 +111,26 @@ return (
 
             <label style={styles.label}>Mot de passe</label>
 
-          <div style={styles.passwordWrapper}>
-           <input
-             type={showPassword ? "text" : "password"}
-             name="password"
-             style={styles.passwordInput}
-             onChange={handleChange}
-             required
-          />
+            <div style={styles.forgotPasswordLink}>
+              <Link 
+                to="/forgot-password" 
+                style={styles.forgotLink}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
 
-          <button
-             type="button"
-             onClick={() => setShowPassword(!showPassword)}
-             style={styles.eyeButton}
-             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-          >
-          <svg
-             xmlns="http://www.w3.org/2000/svg"
-             width="20"
-             height="20"
-             viewBox="0 0 24 24"
-             fill="none"
-             stroke="currentColor"
-             strokeWidth="1.8"
-             strokeLinecap="round"
-             strokeLinejoin="round"
-          >
-          {showPassword ? (
-          <>
-          {/* eye-off */}
-          <path d="M17.94 17.94A10.94 10.94 0 0112 20C7 20 2.73 16.11 1 12c.74-1.73 1.83-3.29 3.19-4.6" />
-          <path d="M9.9 4.24A10.94 10.94 0 0112 4c5 0 9.27 3.89 11 8a11.05 11.05 0 01-2.16 3.19" />
-          <path d="M1 1l22 22" />
-          </>
-          ) : (
-          <>
-          {/* eye */}
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-          <circle cx="12" cy="12" r="3" />
-          </>
-          )}
-          </svg>
-          </button>
-          </div>
-
-          <button type="submit" disabled={loading} style={styles.button}>
-           {loading ? "Connexion..." : "Se connecter"}
-          </button>
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? "Connexion..." : "Se connecter"}
+            </button>
           </form>
+
+          <div style={styles.linkContainer}>
+            <p style={styles.linkText}>
+              Pas encore de compte ? <Link to="/signup" style={styles.link}>S'inscrire</Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -346,33 +318,32 @@ const styles = {
     color: "#FCA5A5",
     fontSize: "13px",
   },
-  eyeButton: {
-  position: "absolute",
-  right: "12px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  background: "none",
-  border: "none",
-  cursor: "pointer",
-  color: "#9CA3AF",
-  padding: 0,
-},
-passwordWrapper: {
-  position: "relative",
-  width: "100%",
-},
-
-passwordInput: {
-  marginTop: "4px",
-  padding: "11px 40px 11px 12px", 
-  borderRadius: "10px",
-  border: "1px solid #1F2937",
-  background: "rgba(15,23,42,0.9)",
-  color: "#F9FAFB",
-  fontSize: "14px",
-  outline: "none",
-  width: "100%",
-},
+  linkContainer: {
+    marginTop: "22px",
+    textAlign: "center",
+  },
+  linkText: {
+    fontSize: "13px",
+    color: "#9CA3AF",
+  },
+  link: {
+    color: "#A3E635",
+    textDecoration: "none",
+    fontWeight: 600,
+  },
+  forgotPasswordLink: {
+    textAlign: "right",
+    marginTop: "8px",
+    marginBottom: "4px",
+  },
+  forgotLink: {
+    fontSize: "12px",
+    color: "#22D3EE",
+    textDecoration: "none",
+    fontWeight: 500,
+    cursor: "pointer",
+    display: "inline-block",
+  },
 };
 
 styles.button[":hover"] = {};

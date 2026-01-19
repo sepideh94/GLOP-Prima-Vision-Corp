@@ -12,7 +12,6 @@ const SignUpPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'SPECTATOR',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,7 +48,7 @@ const SignUpPage = () => {
         formData.lastName,
         formData.email,
         formData.password,
-        formData.role
+        'SPECTATOR' // Rôle fixé pour les Spectateurs
       );
 
       // Stocker dans AuthContext
@@ -57,22 +56,12 @@ const SignUpPage = () => {
         token: res.token,
         user: {
           email: formData.email,
-          role: formData.role,
+          role: 'SPECTATOR',
         },
       });
 
-      // Mapper le rôle vers la route correspondante
-      const roleRouteMap = {
-        'SPECTATOR': '/spectator',
-        'ATHLETE': '/athlete',
-        'VOLONTEER': '/volunteer',
-        'COMMISSIONNER': '/commissioner',
-        'ADMIN': '/admin'
-      };
-      
-      // Rediriger vers la page appropriée selon le rôle
-      const route = roleRouteMap[formData.role] || '/spectator';
-      navigate(route);
+      // Rediriger vers la page Spectateur
+      navigate('/spectator');
 
     } catch (err) {
       setError(err.response?.data?.message || 'Une erreur est survenue lors de l\'inscription.');
@@ -82,106 +71,106 @@ const SignUpPage = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Inscription</h2>
+    <div style={styles.page}>
+      <div style={styles.shell}>
+        <div style={styles.leftPanel}>
+          <div style={styles.leftAccentBar}></div>
 
-        {error && (
-          <div style={styles.error}>
-            {error}
+          <div>
+            <div style={styles.badge}>CiblOrgaSport</div>
+
+            <h1 style={styles.title}>
+              Rejoignez la communauté des {" "}
+              <span style={styles.titleHighlight}>spectateurs</span>
+            </h1>
+
+            <p style={styles.subtitle}>
+              Créez votre compte pour accéder à tous les événements sportifs, 
+              suivre vos compétitions favorites et recevoir les dernières actualités.
+              Votre aventure sportive commence ici.
+            </p>
+
+            <div style={styles.roles}>
+              <span style={styles.roleChip}>Événements</span>
+              <span style={styles.roleChip}>Résultats</span>
+              <span style={styles.roleChip}>Programmes</span>
+            </div>
           </div>
-        )}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <div style={styles.formGroup}>
+          <p style={styles.footerText}>
+            Inscription gratuite • Accès immédiat • Données sécurisées
+          </p>
+        </div>
+
+        <div style={styles.rightPanel}>
+          <h2 style={styles.rightTitle}>Inscription Spectateur</h2>
+          <p style={styles.rightDesc}>
+            Créez votre compte pour accéder à tous les événements.
+          </p>
+
+          {error && <div style={styles.error}>{error}</div>}
+
+          <form onSubmit={handleSubmit} style={styles.form}>
             <label style={styles.label}>Prénom</label>
             <input
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={handleChange}
-              required
               style={styles.input}
+              required
             />
-          </div>
 
-          <div style={styles.formGroup}>
             <label style={styles.label}>Nom</label>
             <input
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={handleChange}
-              required
               style={styles.input}
+              required
             />
-          </div>
 
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Email</label>
+            <label style={styles.label}>Adresse email</label>
             <input
               type="email"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              required
               style={styles.input}
+              required
             />
-          </div>
 
-          <div style={styles.formGroup}>
             <label style={styles.label}>Mot de passe</label>
             <input
               type="password"
               name="password"
               value={formData.password}
               onChange={handleChange}
-              required
               style={styles.input}
+              required
             />
-          </div>
 
-          <div style={styles.formGroup}>
             <label style={styles.label}>Confirmer le mot de passe</label>
             <input
               type="password"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              required
               style={styles.input}
+              required
             />
+
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? "Inscription..." : "S'inscrire"}
+            </button>
+          </form>
+
+          <div style={styles.linkContainer}>
+            <p style={styles.linkText}>
+              Déjà un compte ? <Link to="/login" style={styles.link}>Se connecter</Link>
+            </p>
           </div>
-
-          <div style={styles.formGroup}>
-            <label style={styles.label}>Rôle</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              style={styles.input}
-            >
-              <option value="SPECTATOR">Spectateur</option>
-              <option value="ATHLETE">Athlète</option>
-              <option value="VOLONTEER">Volontaire</option>
-              <option value="COMMISSIONNER">Commissaire</option>
-            </select>
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={styles.button}
-          >
-            {loading ? 'Inscription...' : 'S\'inscrire'}
-          </button>
-        </form>
-
-        <div style={styles.linkContainer}>
-          <p style={styles.linkText}>
-            Déjà un compte ? <Link to="/login" style={styles.link}>Se connecter</Link>
-          </p>
         </div>
       </div>
     </div>
@@ -189,28 +178,176 @@ const SignUpPage = () => {
 };
 
 const styles = {
-  container: { display: 'flex', justifyContent: 'center', paddingTop: '50px', paddingBottom: '50px' },
-  card: { background: 'white', padding: '40px', borderRadius: '8px', width: '400px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' },
-  title: { fontSize: '24px', textAlign: 'center', marginBottom: '20px' },
-  error: { background: '#fee', color: '#c33', padding: '10px', marginBottom: '20px', borderRadius: '5px' },
-  form: { display: 'flex', flexDirection: 'column', gap: '15px' },
-  formGroup: { display: 'flex', flexDirection: 'column' },
-  label: { fontWeight: '600', marginBottom: '5px' },
-  input: { padding: '12px', border: '1px solid #ccc', borderRadius: '5px', fontSize: '14px' },
-  button: { 
-    padding: '12px', 
-    background: '#007bff', 
-    color: 'white', 
-    border: 'none',
-    borderRadius: '5px', 
-    marginTop: '15px',
-    cursor: 'pointer',
-    fontSize: '16px',
-    fontWeight: '600'
+  page: {
+    minHeight: "100vh",
+    padding: "40px",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: `
+      radial-gradient(circle at 20% 30%, rgba(163, 230, 53, 0.25), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(34, 211, 238, 0.20), transparent 55%),
+      linear-gradient(135deg, #F1F5F9, #CBD5E1)
+    `,
+    color: "#E5E7EB",
+    fontFamily:
+      "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
-  linkContainer: { marginTop: '20px', textAlign: 'center' },
-  linkText: { fontSize: '14px', color: '#666' },
-  link: { color: '#007bff', textDecoration: 'none', fontWeight: '600' }
+  shell: {
+    display: "flex",
+    width: "100%",
+    maxWidth: "1100px",
+    borderRadius: "24px",
+    overflow: "hidden",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.7)",
+    background: "linear-gradient(135deg, #050816, #0B1220)",
+  },
+  leftPanel: {
+    flex: 1.1,
+    padding: "40px 50px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    position: "relative",
+    background:
+      "linear-gradient(145deg, #050816 0%, #0F172A 40%, #0B1220 100%)",
+  },
+  leftAccentBar: {
+    position: "absolute",
+    left: 0,
+    top: "15%",
+    bottom: "15%",
+    width: "6px",
+    background:
+      "linear-gradient(180deg, #22D3EE, #A3E635)",
+    borderRadius: "0 4px 4px 0",
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "6px 16px",
+    borderRadius: "999px",
+    background: "rgba(15,23,42,0.9)",
+    border: "1px solid rgba(148,163,184,0.5)",
+    fontSize: "13px",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    marginBottom: "28px",
+    color: "#E5E7EB",
+  },
+  title: {
+    fontSize: "30px",
+    lineHeight: 1.25,
+    fontWeight: 800,
+    margin: 0,
+  },
+  titleHighlight: {
+    color: "#A3E635",
+  },
+  subtitle: {
+    marginTop: "20px",
+    fontSize: "14px",
+    maxWidth: "440px",
+    color: "#CBD5F5",
+  },
+  roles: {
+    marginTop: "30px",
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "10px",
+  },
+  roleChip: {
+    padding: "8px 14px",
+    borderRadius: "999px",
+    fontSize: "12px",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+    background: "rgba(15,23,42,0.9)",
+    border: "1px solid rgba(148,163,184,0.5)",
+  },
+  footerText: {
+    marginTop: "30px",
+    fontSize: "12px",
+    color: "#9CA3AF",
+  },
+  rightPanel: {
+    flex: 1,
+    padding: "40px 45px",
+    background:
+      "radial-gradient(circle at top right, #A3E63520, #050816 60%)",
+    borderLeft: "1px solid rgba(15,23,42,0.8)",
+    display: "flex",
+    flexDirection: "column",
+  },
+  rightTitle: {
+    margin: 0,
+    fontSize: "26px",
+    fontWeight: 700,
+    color: "#F9FAFB",
+  },
+  rightDesc: {
+    marginTop: "10px",
+    marginBottom: "24px",
+    fontSize: "13px",
+    color: "#9CA3AF",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    marginTop: "5px",
+  },
+  label: {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#E5E7EB",
+  },
+  input: {
+    marginTop: "4px",
+    padding: "11px 12px",
+    borderRadius: "10px",
+    border: "1px solid #1F2937",
+    background: "rgba(15,23,42,0.9)",
+    color: "#F9FAFB",
+    fontSize: "14px",
+    outline: "none",
+  },
+  button: {
+    marginTop: "18px",
+    padding: "12px",
+    borderRadius: "999px",
+    border: "none",
+    fontWeight: 700,
+    fontSize: "15px",
+    cursor: "pointer",
+    color: "#020617",
+    background:
+      "linear-gradient(90deg, #22D3EE 0%, #A3E635 50%, #22D3EE 100%)",
+    boxShadow: "0 10px 30px rgba(34,211,238,0.35)",
+  },
+  error: {
+    marginBottom: "10px",
+    padding: "10px 12px",
+    borderRadius: "8px",
+    background: "rgba(220, 38, 38, 0.15)",
+    border: "1px solid rgba(248,113,113,0.6)",
+    color: "#FCA5A5",
+    fontSize: "13px",
+  },
+  linkContainer: {
+    marginTop: "22px",
+    textAlign: "center",
+  },
+  linkText: {
+    fontSize: "13px",
+    color: "#9CA3AF",
+  },
+  link: {
+    color: "#A3E635",
+    textDecoration: "none",
+    fontWeight: 600,
+  },
 };
 
 export default SignUpPage;
