@@ -53,9 +53,8 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .build();
 
-        user.setActive(false);
-
-        user = userService.save(user);
+        user.setActive(false); 
+        user = userService.save(user); 
 
         String token = UUID.randomUUID().toString();
 

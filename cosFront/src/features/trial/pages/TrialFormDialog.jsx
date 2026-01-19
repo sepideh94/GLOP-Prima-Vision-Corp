@@ -90,7 +90,7 @@ const emptyForm = {
 };
 
 
-export default function TrialFormDialog({ open, onClose, onSave, initialData, competition }) {
+export default function TrialFormDialog({ open, onClose, onSave, initialData, competition, existingTrials = [] }) {
  const isEdit = Boolean(initialData);
  const [form, setForm] = useState(emptyForm);
  const [error, setError] = useState("");
@@ -141,6 +141,24 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
      !form.roundId
    ) {
      setError("Merci de remplir tous les champs obligatoires (*)");
+     return;
+   }
+
+   // Check for duplicate: same date, same start hour, same site
+   const isDuplicate = existingTrials.some((trial) => {
+     // Skip the current trial if editing
+     if (initialData && trial.id === initialData.id) return false;
+
+     const trialStartHour = trial.startHour ? trial.startHour.substring(0, 5) : "";
+     return (
+       trial.startDate === form.startDate &&
+       trialStartHour === form.startHour &&
+       Number(trial.siteId) === Number(form.siteId)
+     );
+   });
+
+   if (isDuplicate) {
+     setError("Une épreuve existe déjà à cette date, heure et sur ce site.");
      return;
    }
 
@@ -305,7 +323,7 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
          <Grid item xs={12} sm={6} md={3}>
            <DatePickerForm
              fullWidth
-             label="Date de début *"
+             label="Date*"
              name="startDate"
              value={form.startDate}
              onChange={handleChange}
@@ -323,6 +341,9 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
              value={form.startHour}
              onChange={handleChange}
              InputLabelProps={{ shrink: true }}
+             inputProps={{
+               onKeyDown: (e) => e.preventDefault(),
+             }}
              sx={{
                "& .MuiInputLabel-root": {
                  whiteSpace: "nowrap",
@@ -341,6 +362,9 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
              value={form.endHour}
              onChange={handleChange}
              InputLabelProps={{ shrink: true }}
+             inputProps={{
+               onKeyDown: (e) => e.preventDefault(),
+             }}
              sx={{
                "& .MuiInputLabel-root": {
                  whiteSpace: "nowrap",
@@ -516,20 +540,39 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
 
 
      <DialogActions>
-       <Button onClick={onClose} variant="outlined">
-         Annuler
-       </Button>
+       <Button
+       onClick={onClose}
+       sx={{
+        mb: 2,
+        textTransform: "none",
+        fontWeight: 700,
+        px: 3,
+        py: 1.1,
+        minWidth: 130, 
+        borderRadius: appTheme.radius.pill,
+        background: "linear-gradient(135deg, #86efac, #4ade80)",
+        color: "#064e3b",
+        boxShadow: "0 6px 16px rgba(74,222,128,0.35)",
+        "&:hover": {
+        background: "linear-gradient(135deg, #4ade80, #22c55e)",
+       },
+      }}
+      >
+      Annuler
+      </Button>
+
        <Button onClick={handleSubmit}
        sx={{
-                 mb: 2,
-                 textTransform: "none",
-                 fontWeight: 700,
-                 px: 3,
-                 py: 1.1,
-                 borderRadius: appTheme.radius.pill,
-                 background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-                 color: appTheme.colors.dark,
-               }}>
+        mb: 2,
+        textTransform: "none",
+        fontWeight: 700,
+        minWidth: 130,
+        px: 3,
+        py: 1.1,
+        borderRadius: appTheme.radius.pill,
+        background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+        color: appTheme.colors.dark,
+        }}>
          Enregistrer
        </Button>
      </DialogActions>
