@@ -25,10 +25,10 @@ import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
-import com.ciblorgasport.volonteer.application.VolonteerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
+import com.ciblorgasport.volonteer.application.VolonteerCreationService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -91,6 +91,18 @@ public class CommissionnerController {
     public ResponseEntity<List<CompetitionResponse>> getCompetitionsByEvent(@PathVariable("eventId") Long eventId) {
         List<CompetitionResponse> competitions = competitionService.getCompetitionsByEventId(eventId);
         return ResponseEntity.ok(competitions);
+    }
+
+    // ==================== COMPETITION (SINGLE) ====================
+
+    @GetMapping("/competitions/{competitionId}")
+    public ResponseEntity<CompetitionResponse> getCompetition(
+        @PathVariable Long competitionId) {
+
+    CompetitionResponse competition =
+            competitionService.getCompetitionById(competitionId);
+
+    return ResponseEntity.ok(competition);
     }
 
     // ==================== ÉPREUVES (TRIALS) ====================
