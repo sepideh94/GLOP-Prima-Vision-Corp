@@ -1,11 +1,14 @@
 package com.ciblorgasport.email;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
+
 @Service
+@Profile("!test")
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
@@ -59,6 +62,27 @@ public class EmailServiceImpl implements EmailService {
             link + "\n\n" +
             "Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.\n\n" +
             "Ce lien expirera après 30 minutes.\n\n" +
+            "À bientôt,\n" +
+            "L’équipe CiblOrgaSport"
+        );
+        mailSender.send(msg);
+    }
+
+    @Override
+    public void sendCommissionnerInviteEmail(String to, String firstName, String token) {
+        String link = appBaseUrl + "/reset-password?token=" + token;
+
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("Invitation - Définissez votre mot de passe (CiblOrgaSport)");
+        msg.setText(
+            "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
+            "Un administrateur vous a créé un compte Commissaire sur CiblOrgaSport.\n\n" +
+            "Pour activer votre compte et définir votre mot de passe, cliquez sur ce lien :\n" +
+            link + "\n\n" +
+            "Ce lien expirera après 24 heures.\n\n" +
+            "Si vous n’êtes pas concerné, vous pouvez ignorer cet email.\n\n" +
             "À bientôt,\n" +
             "L’équipe CiblOrgaSport"
         );

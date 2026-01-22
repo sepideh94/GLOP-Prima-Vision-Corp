@@ -166,30 +166,40 @@ public class AuthenticationService {
 
     public void completeForgotPassword(String token, String newPassword, String confirmNewPassword) {
 
-        if (!Objects.equals(newPassword, confirmNewPassword)) {
-            throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
-        }
-
-        if (newPassword == null || newPassword.length() < 8) {
-            throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
-        }
-
-        ActivationToken at = activationTokenRepository.findByTokenAndType(token, TokenType.PASSWORD_RESET)
-                .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
-
-        if (at.isUsed()) {
-            throw new IllegalArgumentException("Token déjà utilisé.");
-        }
-
-        if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalArgumentException("Token expiré.");
-        }
-
-        UserAccount user = at.getUser();
-        user.setPassword(passwordEncoder.encode(newPassword));
-        userRepository.save(user);
-
-        at.setUsed(true);
-        activationTokenRepository.save(at);
+    if (!Objects.equals(newPassword, confirmNewPassword)) {
+        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
     }
+
+    if (newPassword == null || newPassword.length() < 8) {
+        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
+    }
+
+    ActivationToken at = activationTokenRepository.findByToken(token)
+            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+
+    if (at.isUsed()) {
+        throw new IllegalArgumentException("Token déjà utilisé.");
+    }
+
+    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
+        throw new IllegalArgumentException("Token expiré.");
+    }
+
+    if (at.getType() != TokenType.PASSWORD_RESET && at.getType() != TokenType.INVITE_COMMISSIONNER) {
+        throw new IllegalArgumentException("Token invalide.");
+    }
+
+    UserAccount user = at.getUser();
+    user.setPassword(passwordEncoder.encode(newPassword));
+
+    if (at.getType() == TokenType.INVITE_COMMISSIONNER) {
+        user.setActive(true);
+    }
+
+    userRepository.save(user);
+
+    at.setUsed(true);
+    activationTokenRepository.save(at);
+}
+
 }

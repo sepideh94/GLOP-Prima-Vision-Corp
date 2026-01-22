@@ -14,8 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ciblorgasport.commissionner.application.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
-import com.ciblorgasport.user.domain.UserAccount;
-import com.ciblorgasport.user.dto.CreateUserRequest;
+import com.ciblorgasport.user.dto.CreateCommissionnerRequest;
 import com.ciblorgasport.user.dto.UserResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -24,30 +23,28 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminController {
-	
-	@Autowired
-	private final CommissionnerCreationService commissionnerService;
-	
-	@Autowired
-	private final UserAccountService userAccountService;
-	
-	@PostMapping("/create-commissaire")
-	 public ResponseEntity<?> createCommissaire(@RequestBody CreateUserRequest request) {
-	        var created = commissionnerService.createUser(request);
-	        
-	        return ResponseEntity.status(HttpStatus.CREATED).body(
-		            Map.of(
-		              "id", created.getId(),
-		              "email", created.getEmail(),
-		              "role", created.getRoleName().replace("ROLE_", "") 
-		            )
-		        );
-	    }
-	
-	
-	@GetMapping("/users")
-	public ResponseEntity<List<UserResponse>> getAllUsers(){
-		return ResponseEntity.ok(userAccountService.getAllUsersForAdmin());
-	}
-	
+
+    @Autowired
+    private final CommissionnerCreationService commissionnerService;
+
+    @Autowired
+    private final UserAccountService userAccountService;
+
+    @PostMapping("/create-commissaire")
+    public ResponseEntity<?> createCommissaire(@RequestBody CreateCommissionnerRequest request) {
+        var created = commissionnerService.createUser(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                Map.of(
+                        "id", created.getId(),
+                        "email", created.getEmail(),
+                        "role", created.getRoleName().replace("ROLE_", "")
+                )
+        );
+    }
+
+    @GetMapping("/users")
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        return ResponseEntity.ok(userAccountService.getAllUsersForAdmin());
+    }
 }
