@@ -98,15 +98,4 @@ public class UserAccountService implements UserDetailsService {
 
 	}
 
-    public List<UserResponse> getAllUsersForAdmin() {
-        return userRepo.findAll().stream()
-                .map((UserAccount user) -> UserResponse.builder()
-                        .firstName(user.getFirstName())
-                        .lastName(user.getLastName())
-                        .email(user.getEmail())
-                        .role(user.getRoleName().replace("ROLE_", ""))
-                        .isAccountActive(user.isActive())
-                        .build())
-                .collect(Collectors.toList());
-    }
 }
