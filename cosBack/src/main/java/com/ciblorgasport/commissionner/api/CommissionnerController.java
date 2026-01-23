@@ -19,9 +19,14 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ciblorgasport.athlete.application.AthleteCreationService;
+import com.ciblorgasport.athlete.application.AthleteImportService;
+import com.ciblorgasport.athlete.application.AthleteService;
+import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.common.service.CsvImportService;
 import com.ciblorgasport.competition.application.CompetitionService;
+import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
+import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
@@ -38,16 +43,19 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CommissionnerController {
 
-	private final AthleteCreationService athleteService;
+	private final AthleteCreationService athleteCreationService;
+	private final AthleteImportService athleteImportService;
+	private final AthleteService athleteService;
 	private final VolonteerCreationService volontaireService;
 	private final UserAccountService userAccountService;
 	private final CsvImportService csvService;
 	private final CompetitionService competitionService;
+	private final ParticipationService participationService;
 	private final TrialService trialService;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
-        UserAccount created = athleteService.createUser(request);
+        UserAccount created = athleteCreationService.createUser(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
             Map.of(
@@ -71,10 +79,32 @@ public class CommissionnerController {
         );
     }
 
+    /**
+     * Import d'athlètes dans le contexte d'une compétition.
+     * Crée les athlètes s'ils n'existent pas et les invite automatiquement à la compétition.
+     */
+    @PostMapping("/competitions/{competitionId}/import-athletes")
+    public ResponseEntity<?> importAthletesForCompetition(
+            @PathVariable("competitionId") Long competitionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+
+        AthleteImportService.ImportResult result = athleteImportService.importAthletesForCompetition(file, competitionId);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Import athlètes terminé",
+                "processed", result.processed(),
+                "invited", result.invited(),
+                "skipped", result.skipped()
+        ));
+    }
+
+    /**
+     * @deprecated Utiliser /competitions/{competitionId}/import-athletes à la place
+     */
     @PostMapping("/import-athletes")
     public ResponseEntity<?> importAthletes(@RequestParam("file") MultipartFile file) throws Exception {
         List<CSVRecord> records = csvService.parseCsv(file);
-        records.forEach(r -> userAccountService.createAndInviteUser(r, athleteService));
+        records.forEach(r -> userAccountService.createAndInviteUser(r, athleteCreationService));
         return ResponseEntity.ok("Import athlètes terminé");
     }
 
@@ -128,5 +158,27 @@ public class CommissionnerController {
         String userEmail = authentication.getName();
         TrialResponse cancelledTrial = trialService.cancelTrial(id, userEmail);
         return ResponseEntity.ok(cancelledTrial);
+    }
+
+    // ==================== ATHLETES ====================
+
+    @GetMapping("/athletes")
+    public ResponseEntity<List<AthleteResponse>> getAllAthletes() {
+        List<AthleteResponse> athletes = athleteService.getAllAthletes();
+        return ResponseEntity.ok(athletes);
+    }
+
+    @GetMapping("/competitions/{competitionId}/athletes")
+    public ResponseEntity<List<AthleteResponse>> getAthletesByCompetition(
+            @PathVariable("competitionId") Long competitionId) {
+        List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+        return ResponseEntity.ok(athletes);
+    }
+
+    @GetMapping("/athletes/{athleteId}/participations")
+    public ResponseEntity<List<ParticipantResponse>> getParticipationsByAthlete(
+            @PathVariable("athleteId") Long athleteId) {
+        List<ParticipantResponse> participations = participationService.getParticipationsByAthlete(athleteId);
+        return ResponseEntity.ok(participations);
     }
 }

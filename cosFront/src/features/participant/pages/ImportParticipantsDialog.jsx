@@ -19,13 +19,22 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import commissionerImportService from "../services/commissionerImportService";
 import appTheme from "../../../common/theme/appTheme";
 
-export default function ImportParticipantsDialog({ open, onClose }) {
+/**
+ * Dialog pour importer des athlètes via CSV dans le contexte d'une compétition.
+ *
+ * @param {boolean} open - État d'ouverture du dialog
+ * @param {function} onClose - Callback de fermeture
+ * @param {number} competitionId - ID de la compétition (requis pour le nouvel import)
+ * @param {string} competitionName - Nom de la compétition (pour l'affichage)
+ */
+export default function ImportParticipantsDialog({ open, onClose, competitionId, competitionName }) {
 
   const [file, setFile] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState([]);
+  const [importResult, setImportResult] = useState(null);
 
  const parseCsv = (selectedFile) => {
   const reader = new FileReader();
@@ -82,6 +91,7 @@ export default function ImportParticipantsDialog({ open, onClose }) {
     const selectedFile = e.target.files[0];
     setError("");
     setSuccess("");
+    setImportResult(null);
 
     if (!selectedFile) {
       setError("Veuillez sélectionner un fichier CSV");
@@ -108,12 +118,20 @@ export default function ImportParticipantsDialog({ open, onClose }) {
       return;
     }
 
+    if (!competitionId) {
+      setError("Aucune compétition sélectionnée");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      await commissionerImportService.importAthletes(file);
+      const response = await commissionerImportService.importAthletesForCompetition(file, competitionId);
+      const result = response.data;
+
+      setImportResult(result);
 
       setPreview((prev) =>
         prev.map((p) => ({
@@ -122,8 +140,11 @@ export default function ImportParticipantsDialog({ open, onClose }) {
         }))
       );
 
-      setSuccess("Invitations envoyées avec succès");
-    } catch {
+      setSuccess(
+        `Import terminé : ${result.invited} athlète(s) invité(s), ${result.skipped} ignoré(s) (déjà invités)`
+      );
+    } catch (err) {
+      console.error("Erreur lors de l'import:", err);
       setError("Erreur lors de l'import des participants");
     } finally {
       setLoading(false);
@@ -135,6 +156,7 @@ export default function ImportParticipantsDialog({ open, onClose }) {
     setPreview([]);
     setError("");
     setSuccess("");
+    setImportResult(null);
     onClose();
   };
 
@@ -154,11 +176,17 @@ export default function ImportParticipantsDialog({ open, onClose }) {
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <GroupAddIcon sx={{ color: appTheme.colors.cyan }} />
         Importer des participants
+        {competitionName && (
+          <Typography component="span" sx={{ ml: 1, color: "text.secondary", fontWeight: 400 }}>
+            - {competitionName}
+          </Typography>
+        )}
       </DialogTitle>
 
       <DialogContent dividers>
         <Typography sx={{ mb: 2, color: "text.secondary" }}>
-          Importez un fichier CSV contenant les athlètes à inviter.
+          Importez un fichier CSV contenant les athlètes à inviter à cette compétition.
+          Les athlètes seront créés automatiquement s'ils n'existent pas encore.
         </Typography>
 
         <Box
@@ -260,12 +288,12 @@ export default function ImportParticipantsDialog({ open, onClose }) {
             boxShadow: "0 6px 16px rgba(74,222,128,0.35)",
           }}
         >
-          Annuler
+          Fermer
         </Button>
 
         <Button
           onClick={handleSendInvitations}
-          disabled={loading || preview.length === 0}
+          disabled={loading || preview.length === 0 || !competitionId}
           sx={{
             textTransform: "none",
             fontWeight: 700,

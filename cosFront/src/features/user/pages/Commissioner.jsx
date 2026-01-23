@@ -22,7 +22,7 @@ export default function Commissioner() {
     route: "/commissioner/competitions",
   },
   {
-    title: "Gestion des participants",
+    title: "Gestion des athlètes",
     subtitle: "Inscriptions et confirmations",
     icon: <People sx={{ fontSize: 42 }} />,
     color: appTheme.colors.cyan,

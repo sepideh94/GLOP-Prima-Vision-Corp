@@ -27,7 +27,7 @@ const sidebarConfig = {
       path: "/commissioner/competitions",
     },
     {
-      label: "Gestion des participants",
+      label: "Gestion des athlètes",
       icon: PeopleIcon,
       path: "/commissioner/participants",
     },
