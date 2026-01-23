@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link} from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 
@@ -12,6 +12,7 @@ const LoginPage = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -109,14 +110,50 @@ return (
             />
 
             <label style={styles.label}>Mot de passe</label>
-            <input
-              type="password"
-              name="password"
-              style={styles.input}
-              onChange={handleChange}
-              required
-            />
 
+          <div style={styles.passwordWrapper}>
+           <input
+             type={showPassword ? "text" : "password"}
+             name="password"
+             style={styles.passwordInput}
+             onChange={handleChange}
+             required
+          />
+
+          <button
+             type="button"
+             onClick={() => setShowPassword(!showPassword)}
+             style={styles.eyeButton}
+             aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          >
+          <svg
+             xmlns="http://www.w3.org/2000/svg"
+             width="20"
+             height="20"
+             viewBox="0 0 24 24"
+             fill="none"
+             stroke="currentColor"
+             strokeWidth="1.8"
+             strokeLinecap="round"
+             strokeLinejoin="round"
+          >
+          {showPassword ? (
+          <>
+          {/* eye-off */}
+          <path d="M17.94 17.94A10.94 10.94 0 0112 20C7 20 2.73 16.11 1 12c.74-1.73 1.83-3.29 3.19-4.6" />
+          <path d="M9.9 4.24A10.94 10.94 0 0112 4c5 0 9.27 3.89 11 8a11.05 11.05 0 01-2.16 3.19" />
+          <path d="M1 1l22 22" />
+          </>
+          ) : (
+          <>
+          {/* eye */}
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+          <circle cx="12" cy="12" r="3" />
+          </>
+          )}
+          </svg>
+          </button>
+          </div>
             <div style={styles.forgotPasswordContainer}>
               <Link to="/forgot-password" style={styles.forgotPasswordLink}>
                 Mot de passe oublié ?
@@ -320,6 +357,33 @@ const styles = {
     color: "#FCA5A5",
     fontSize: "13px",
   },
+  eyeButton: {
+  position: "absolute",
+  right: "12px",
+  top: "50%",
+  transform: "translateY(-50%)",
+  background: "none",
+  border: "none",
+  cursor: "pointer",
+  color: "#9CA3AF",
+  padding: 0,
+},
+passwordWrapper: {
+  position: "relative",
+  width: "100%",
+},
+
+passwordInput: {
+  marginTop: "4px",
+  padding: "11px 40px 11px 12px", 
+  borderRadius: "10px",
+  border: "1px solid #1F2937",
+  background: "rgba(15,23,42,0.9)",
+  color: "#F9FAFB",
+  fontSize: "14px",
+  outline: "none",
+  width: "100%",
+},
 
   forgotPasswordContainer: {
     display: "flex",

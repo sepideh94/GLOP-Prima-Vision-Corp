@@ -20,32 +20,71 @@ import CompetitionListPage from "../features/competition/pages/CompetitionListPa
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
 
+import CommissionerCompetitionListPage from
+  "../features/competition/pages/CommissionerCompetitionListPage.jsx";
+
+import CommissionerTrialListPage from
+  "../features/trial/pages/CommissionerTrialListPage.jsx";
+
+import CommissionerParticipantsPage from
+  "../features/participant/pages/CommissionerParticipantsPage.jsx";
+
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* PUBLIC */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
+          {/* PROTECTED */}
           <Route element={<PrivateRoute />}>
-           <Route element={<Layout />}>
-             <Route path="/admin" element={<Admin />} />
-             <Route path="/athlete" element={<Athlete />} />   
-             <Route path="/commissioner" element={<Commissioner />} />
-             <Route path="/spectator" element={<Spectator />} />
-             <Route path="/volunteer" element={<Volunteer />} />
+            <Route element={<Layout />}>
 
-             <Route path="/events" element={<EventsList />} />
-             <Route path="/admin/competitions" element={<CompetitionListPage />} />
-             <Route path="/admin/competitions/:competitionId/trials" element={<TrialListPage />}/>
-             <Route path="/admin/users" element={<UsersManagementPage />} />
+              {/* DASHBOARDS */}
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/athlete" element={<Athlete />} />
+              <Route path="/commissioner" element={<Commissioner />} />
+              <Route path="/spectator" element={<Spectator />} />
+              <Route path="/volunteer" element={<Volunteer />} />
+
+              {/* ADMIN */}
+              <Route path="/events" element={<EventsList />} />
+              <Route
+                path="/admin/competitions"
+                element={<CompetitionListPage />}
+              />
+              <Route
+                path="/admin/competitions/:competitionId/trials"
+                element={<TrialListPage />}
+              />
+              <Route
+                path="/admin/users"
+                element={<UsersManagementPage />}
+              />
+
+              {/* COMMISSIONER */}
+              <Route
+                path="/commissioner/competitions"
+                element={<CommissionerCompetitionListPage />}
+              />
+              <Route
+                path="/commissioner/competitions/:competitionId/trials"
+                element={<CommissionerTrialListPage />}
+              />
+              <Route
+                path="/commissioner/participants"
+                element={<CommissionerParticipantsPage />}
+              />
+
             </Route>
           </Route>
-          
+
+          {/* FALLBACK */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
