@@ -446,6 +446,8 @@ export default function CommissionerTrialListPage() {
       <ImportParticipantsDialog
         open={openImport}
         onClose={() => setOpenImport(false)}
+        competitionId={competitionId}
+        competitionName={competition?.name}
       />
     </Box>
   );
