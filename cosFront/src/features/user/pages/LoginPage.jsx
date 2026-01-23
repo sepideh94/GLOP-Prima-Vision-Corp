@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate} from 'react-router-dom';
+import { useNavigate, Link} from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 
@@ -154,11 +154,22 @@ return (
           </svg>
           </button>
           </div>
+            <div style={styles.forgotPasswordContainer}>
+              <Link to="/forgot-password" style={styles.forgotPasswordLink}>
+                Mot de passe oublié ?
+              </Link>
+            </div>
 
-          <button type="submit" disabled={loading} style={styles.button}>
-           {loading ? "Connexion..." : "Se connecter"}
-          </button>
+            <button type="submit" disabled={loading} style={styles.button}>
+              {loading ? "Connexion..." : "Se connecter"}
+            </button>
           </form>
+
+          <div style={styles.signupContainer}>
+            <Link to="/signup" style={styles.signupButton}>
+              Inscription
+            </Link>
+          </div>
         </div>
       </div>
     </div>
@@ -373,6 +384,40 @@ passwordInput: {
   outline: "none",
   width: "100%",
 },
+
+  forgotPasswordContainer: {
+    display: "flex",
+    justifyContent: "flex-end",
+    marginTop: "4px",
+    marginBottom: "4px",
+  },
+
+  forgotPasswordLink: {
+    fontSize: "12px",
+    color: "#A3E635",
+    textDecoration: "none",
+    fontWeight: 500,
+    transition: "color 0.2s ease",
+  },
+
+  signupContainer: {
+    marginTop: "24px",
+    textAlign: "center",
+  },
+
+  signupButton: {
+    display: "inline-block",
+    padding: "12px 24px",
+    borderRadius: "999px",
+    border: "2px solid #A3E635",
+    fontWeight: 700,
+    fontSize: "15px",
+    cursor: "pointer",
+    color: "#A3E635",
+    background: "transparent",
+    textDecoration: "none",
+    transition: "all 0.2s ease",
+  },
 };
 
 styles.button[":hover"] = {};

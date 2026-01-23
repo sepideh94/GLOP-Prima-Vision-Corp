@@ -6,6 +6,8 @@ import Layout from "../common/components/Layout";
 
 import LoginPage from "../features/user/pages/LoginPage.jsx";
 import SignUpPage from "../features/user/pages/SignUpPage.jsx";
+import ForgotPasswordPage from "../features/user/pages/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "../features/user/pages/ResetPasswordPage.jsx";
 
 import Admin from "../features/user/pages/Admin.jsx";
 import Athlete from "../features/user/pages/Athlete.jsx";
@@ -36,6 +38,8 @@ export default function App() {
           {/* PUBLIC */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* PROTECTED */}
           <Route element={<PrivateRoute />}>

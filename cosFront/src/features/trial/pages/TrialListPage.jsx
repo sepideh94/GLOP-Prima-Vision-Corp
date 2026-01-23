@@ -218,6 +218,8 @@ export default function TrialListPage() {
       aValue = a.statusLabel || "";
       bValue = b.statusLabel || "";
     }
+
+    // Convert to string for comparison if not already a number
     if (typeof aValue === "string") aValue = aValue.toLowerCase();
     if (typeof bValue === "string") bValue = bValue.toLowerCase();
 

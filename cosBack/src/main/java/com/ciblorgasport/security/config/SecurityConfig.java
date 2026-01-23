@@ -82,6 +82,13 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/auth/signin").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/signup").permitAll()
 
+                //  Activation link from email (public)
+                 .requestMatchers(HttpMethod.GET, "/api/auth/activate").permitAll()
+
+                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                 .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password/complete").permitAll()
+
+
                 // Events
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")

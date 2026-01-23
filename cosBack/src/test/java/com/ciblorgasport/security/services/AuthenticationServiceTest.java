@@ -1,11 +1,15 @@
 package com.ciblorgasport.security.services;
 
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.security.ActivationToken;
+import com.ciblorgasport.security.ActivationTokenRepository;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
 import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,11 +19,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
-
-import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -35,12 +39,17 @@ class AuthenticationServiceTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
+    @Mock
+    private EmailService emailService;
+    @Mock
+    private ActivationTokenRepository activationTokenRepository;
+
     @InjectMocks
     private AuthenticationService authenticationService;
 
     @Test
     void signup_ShouldHashPasswordAndSaveUser() {
-       
+
         SignUpRequest request = new SignUpRequest("Jean", "Dupont", "jean@test.com", "plainPassword");
         Spectator savedUser = Spectator.builder()
                 .email("jean@test.com")
@@ -51,20 +60,26 @@ class AuthenticationServiceTest {
         when(userService.save(any())).thenReturn(savedUser);
         when(jwtService.generateToken(any())).thenReturn("fake-jwt-token");
 
-       
+        when(activationTokenRepository.save(any(ActivationToken.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
+        doNothing().when(emailService).sendActivationEmail(any(), any(), any());
+
         JwtAuthenticationResponse response = authenticationService.signup(request);
 
         assertThat(response.getToken()).isEqualTo("fake-jwt-token");
         verify(passwordEncoder).encode("plainPassword");
-        verify(userService).save(argThat(user -> 
-            user.getPassword().equals("hashedPassword") && user.getEmail().equals("jean@test.com")
+        verify(userService).save(argThat(user ->
+                user.getPassword().equals("hashedPassword") && user.getEmail().equals("jean@test.com")
         ));
+
+        verify(activationTokenRepository).save(any(ActivationToken.class));
+        verify(emailService).sendActivationEmail(eq("jean@test.com"), any(), any());
     }
-    
+
     @Test
     void signin_ShouldReturnToken_WhenCredentialsAreValid() {
-        
-    	
+
         SignInRequest request = new SignInRequest("jean@test.com", "password123");
         Spectator user = Spectator.builder()
                 .email("jean@test.com")
@@ -76,7 +91,6 @@ class AuthenticationServiceTest {
 
         JwtAuthenticationResponse response = authenticationService.signin(request);
 
-        
         assertThat(response.getToken()).isEqualTo("fake-jwt-token");
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
     }
