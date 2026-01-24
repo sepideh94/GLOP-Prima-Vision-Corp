@@ -52,9 +52,6 @@ export default function UsersManagementPage() {
   const [openForm, setOpenForm] = useState(false);
   const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
-  const [openPasswordDialog, setOpenPasswordDialog] = useState(false);
-  const [tempPassword, setTempPassword] = useState(null);
-  const [createdUser, setCreatedUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmActionType, setConfirmActionType] = useState(null);
@@ -116,37 +113,32 @@ export default function UsersManagementPage() {
         throw new Error("Tous les champs sont obligatoires");
       }
 
-      // Générer un mot de passe temporaire aléatoire
-      const tempPassword = generateTempPassword();
-      
+      // Créer le payload sans mot de passe
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
-        password: tempPassword,
       };
 
       // Vérifier que les champs ne sont pas vides après trim
-      if (!payload.firstName || !payload.lastName || !payload.email || !payload.password) {
+      if (!payload.firstName || !payload.lastName || !payload.email) {
         throw new Error("Les champs ne peuvent pas être vides");
       }
 
-      console.log("Payload envoyé:", { ...payload, password: "***" }); // Log sans afficher le mot de passe
+      console.log("Payload envoyé:", payload);
       
       const result = await userService.createCommissioner(payload);
       console.log("Commissaire créé avec succès:", result);
       
-      // Stocker le mot de passe temporaire et les infos utilisateur pour les afficher dans un dialog
-      setTempPassword(tempPassword);
-      setCreatedUser({
-        email: result.email || payload.email,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-      });
+      // Afficher un message de succès indiquant qu'un email a été envoyé
+      setSuccessMessage(
+        `Commissaire créé avec succès. Un email d'invitation a été envoyé à ${result.email || payload.email}.`
+      );
+      setOpenSnackbar(true);
       setOpenForm(false);
-      setOpenPasswordDialog(true);
-      // Ne pas recharger les users car l'endpoint GET /api/admin/users n'existe pas encore
-      // loadUsers();
+      
+      // Recharger la liste des utilisateurs
+      loadUsers();
     } catch (err) {
       console.error("Erreur complète:", err);
       console.error("Response status:", err.response?.status);
@@ -186,24 +178,6 @@ export default function UsersManagementPage() {
       
       throw new Error(errorMsg);
     }
-  };
-
-  // Générer un mot de passe temporaire sécurisé
-  const generateTempPassword = () => {
-    const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    // S'assurer qu'il y a au moins une majuscule, une minuscule, un chiffre et un caractère spécial
-    password += "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[Math.floor(Math.random() * 26)];
-    password += "abcdefghijklmnopqrstuvwxyz"[Math.floor(Math.random() * 26)];
-    password += "0123456789"[Math.floor(Math.random() * 10)];
-    password += "!@#$%^&*"[Math.floor(Math.random() * 8)];
-    // Remplir le reste
-    for (let i = password.length; i < length; i++) {
-      password += charset[Math.floor(Math.random() * charset.length)];
-    }
-    // Mélanger les caractères
-    return password.split("").sort(() => Math.random() - 0.5).join("");
   };
 
   const handleViewDetails = async (user) => {
@@ -701,84 +675,6 @@ export default function UsersManagementPage() {
         </DialogActions>
       </Dialog>
 
-      {/* DIALOG MOT DE PASSE TEMPORAIRE */}
-      <Dialog
-        open={openPasswordDialog}
-        onClose={() => {
-          setOpenPasswordDialog(false);
-          setTempPassword(null);
-          setCreatedUser(null);
-        }}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Commissaire créé avec succès</DialogTitle>
-        <DialogContent>
-          {createdUser && tempPassword && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-              <Alert severity="success" sx={{ borderRadius: 2 }}>
-                Le compte commissaire a été créé avec succès !
-              </Alert>
-              <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
-                  Informations de connexion :
-                </Typography>
-                <Typography>
-                  <strong>Email :</strong> {createdUser.email}
-                </Typography>
-                <Typography sx={{ mt: 1 }}>
-                  <strong>Mot de passe temporaire :</strong>
-                </Typography>
-                <Box
-                  sx={{
-                    mt: 1,
-                    p: 2,
-                    background: appTheme.colors.darkSoft,
-                    borderRadius: 2,
-                    border: `2px solid ${appTheme.colors.cyan}`,
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: "monospace",
-                      fontSize: "18px",
-                      fontWeight: 700,
-                      color: appTheme.colors.cyan,
-                      textAlign: "center",
-                      letterSpacing: "2px",
-                    }}
-                  >
-                    {tempPassword}
-                  </Typography>
-                </Box>
-                <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
-                  ⚠️ Notez ce mot de passe, il ne sera plus affiché après la fermeture de cette fenêtre.
-                </Alert>
-              </Box>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenPasswordDialog(false);
-              setTempPassword(null);
-              setCreatedUser(null);
-            }}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              px: 3,
-              py: 1.1,
-              borderRadius: appTheme.radius.pill,
-              background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-              color: appTheme.colors.dark,
-            }}
-          >
-            J'ai noté le mot de passe
-          </Button>
-        </DialogActions>
-      </Dialog>
 
       {/* FORMULAIRE CRÉATION COMMISSAIRE */}
       <CommissionerFormDialog
