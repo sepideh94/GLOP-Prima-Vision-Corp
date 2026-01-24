@@ -17,7 +17,7 @@ const ResetPasswordPage = () => {
 
   useEffect(() => {
     if (!token) {
-      setError('Token de réinitialisation manquant.');
+      setError('Token manquant.');
     }
   }, [token]);
 
@@ -36,7 +36,7 @@ const ResetPasswordPage = () => {
     setMessage('');
 
     if (!token) {
-      setError('Token de réinitialisation manquant.');
+      setError('Token manquant.');
       setLoading(false);
       return;
     }
@@ -61,11 +61,11 @@ const ResetPasswordPage = () => {
         formData.confirmPassword
       );
       
-      setMessage('Votre mot de passe a été réinitialisé avec succès.');
+      setMessage('Votre mot de passe a été défini avec succès.');
       
       // Rediriger vers la page de login après 2 secondes
       setTimeout(() => {
-        navigate('/login?passwordReset=true');
+        navigate('/login?passwordSet=true');
       }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || 'Une erreur est survenue lors de la réinitialisation.');
@@ -84,12 +84,12 @@ const ResetPasswordPage = () => {
             <div style={styles.badge}>CiblOrgaSport</div>
 
             <h1 style={styles.title}>
-              Réinitialisation du {" "}
+              Définir votre {" "}
               <span style={styles.titleHighlight}>mot de passe</span>
             </h1>
 
             <p style={styles.subtitle}>
-              Créez un nouveau mot de passe sécurisé pour accéder à votre compte. 
+              Créez un mot de passe sécurisé pour accéder à votre compte. 
               Assurez-vous qu'il contient au moins 6 caractères.
             </p>
 
@@ -105,9 +105,9 @@ const ResetPasswordPage = () => {
         </div>
 
         <div style={styles.rightPanel}>
-          <h2 style={styles.rightTitle}>Réinitialisation du mot de passe</h2>
+          <h2 style={styles.rightTitle}>Définir votre mot de passe</h2>
           <p style={styles.rightDesc}>
-            Entrez votre nouveau mot de passe ci-dessous.
+            Entrez votre mot de passe ci-dessous.
           </p>
 
           {error && <div style={styles.error}>{error}</div>}
@@ -115,7 +115,7 @@ const ResetPasswordPage = () => {
 
           {!token && (
             <div style={styles.error}>
-              Token de réinitialisation manquant. Veuillez utiliser le lien reçu par email.
+              Token manquant. Veuillez utiliser le lien reçu par email.
             </div>
           )}
 
@@ -144,7 +144,7 @@ const ResetPasswordPage = () => {
               />
 
               <button type="submit" disabled={loading} style={styles.button}>
-                {loading ? "Réinitialisation..." : "Valider"}
+                {loading ? "Enregistrement..." : "Valider"}
               </button>
             </form>
           )}
