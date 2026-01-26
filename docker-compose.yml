@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "${DB_PORT_PUBLISHED:-5433}:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -28,7 +28,7 @@ services:
     container_name: ciblorgasport-backend
     environment:
       DB_HOST: postgres
-      DB_PORT: ${DB_PORT:-5433}
+      DB_PORT: ${DB_PORT:-5432}
       DB_NAME: ${DB_NAME:-ciblorgasport}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-postgres123}
@@ -50,7 +50,7 @@ services:
       APP_BASE_URL: ${APP_BASE_URL}
 
     ports:
-      - "${BACKEND_PORT_PUBLISHED:-8083}:8083"
+      - "8083:8083"
     depends_on:
       postgres:
         condition: service_healthy
@@ -66,7 +66,7 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8083}
     container_name: ciblorgasport-frontend
     ports:
-      - "${FRONTEND_PORT_PUBLISHED:-3000}:80"
+      - "3000:80"
     depends_on:
       - backend
     networks:
@@ -81,7 +81,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
       PGADMIN_CONFIG_SERVER_MODE: "False"
     ports:
-      - "${PGADMIN_PORT_PUBLISHED:-5050}:80"
+      - "5050:80"
     networks:
       - ciblorgasport-network
     restart: unless-stopped
