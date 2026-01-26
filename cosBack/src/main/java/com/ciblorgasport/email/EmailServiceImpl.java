@@ -16,7 +16,7 @@ public class EmailServiceImpl implements EmailService {
     @Value("${mail.from}")
     private String from;
 
-    @Value("${api.base-url:http://localhost:8080}")
+    @Value("${api.base-url:http://localhost:8083}")
     private String apiBaseUrl;
 
     @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")

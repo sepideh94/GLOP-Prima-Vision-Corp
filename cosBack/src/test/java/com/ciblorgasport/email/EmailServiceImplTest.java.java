@@ -18,7 +18,7 @@ class EmailServiceImplTest {
         EmailServiceImpl service = new EmailServiceImpl(mailSender);
 
         ReflectionTestUtils.setField(service, "from", "noreply@cos.com");
-        ReflectionTestUtils.setField(service, "apiBaseUrl", "http://localhost:8080");
+        ReflectionTestUtils.setField(service, "apiBaseUrl", "http://localhost:8083");
 
         service.sendActivationEmail("test@gmail.com", "Jean", "token-123");
 
@@ -30,6 +30,6 @@ class EmailServiceImplTest {
         assertThat(msg.getTo()).containsExactly("test@gmail.com");
         assertThat(msg.getSubject()).contains("Validez votre inscription");
         assertThat(msg.getText()).contains("token-123");
-        assertThat(msg.getText()).contains("http://localhost:8080/api/auth/activate?token=token-123");
+        assertThat(msg.getText()).contains("http://localhost:8083/api/auth/activate?token=token-123");
     }
 }

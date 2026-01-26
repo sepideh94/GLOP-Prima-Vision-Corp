@@ -20,11 +20,11 @@ WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 
 # Exposer le port
-EXPOSE 8080
+EXPOSE 8083
 
 # Variables d'environnement par défaut
 ENV DB_HOST=postgres
-ENV DB_PORT=5432
+ENV DB_PORT=5433
 ENV DB_NAME=ciblorgasport
 ENV DB_USER=postgres
 ENV DB_PASSWORD=postgres123

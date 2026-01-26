@@ -7,7 +7,7 @@ npm run dev
 ## Configuration (.env)
 Créer un fichier .env à la racine du projet et y ajouter l'URL de l'API du backend modifiable par la suite : 
 
-VITE_API_URL=http://localhost:8080/api
+VITE_API_URL=http://localhost:8083/api
 
 ## Dépendances installées
 npm i bootstrap → design de base
