@@ -14,7 +14,7 @@ COPY . .
 
 # Build de l'application (Vite)
 # IMPORTANT: pas d'IP hardcodée ici
-ARG VITE_API_BASE_URL=http://localhost:8080
+ARG VITE_API_BASE_URL=http://localhost:8083
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 RUN npm run build
 
