@@ -29,8 +29,6 @@ public abstract class UserAccount implements UserDetails {
 	private LocalDateTime createdAt;
 	
     private LocalDateTime updatedAt;
-    
-    public abstract String getRoleName();
 	
 	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,6 +43,11 @@ public abstract class UserAccount implements UserDetails {
 	
 	@Column(nullable = false)
 	private String password;
+
+	@Column(nullable = false)
+    private boolean isActive = false;
+
+    public abstract String getRoleName();
 
 	@Override
 	public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -81,8 +84,9 @@ public abstract class UserAccount implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return true;
-    }
+    return true; 
+     }
+
 
     @PrePersist
     protected void onCreate() {

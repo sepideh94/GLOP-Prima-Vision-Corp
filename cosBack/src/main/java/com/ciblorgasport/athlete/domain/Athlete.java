@@ -1,5 +1,6 @@
 package com.ciblorgasport.athlete.domain;
 
+import com.ciblorgasport.common.domain.Competitor;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.persistence.DiscriminatorValue;
@@ -17,11 +18,16 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 @DiscriminatorValue("ATHLETE")
-public class Athlete extends UserAccount{
-	
+public class Athlete extends UserAccount implements Competitor {
+
 	@Override
 	public String getRoleName() {
 		return "ROLE_ATHLETE";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return getFirstName() + " " + getLastName();
 	}
 
 	public boolean isAdmin(){return false;}

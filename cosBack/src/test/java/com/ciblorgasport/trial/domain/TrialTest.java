@@ -11,7 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.ciblorgasport.admin.domain.Admin;
-import com.ciblorgasport.core.Status;
+import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.site.domain.Site;
 
 @DisplayName("Trial Entity Unit Tests")

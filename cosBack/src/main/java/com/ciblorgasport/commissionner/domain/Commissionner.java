@@ -25,6 +25,11 @@ public class Commissionner extends UserAccount {
 		return "ROLE_COMMISSIONNER";
 	}
 
+	@Override
+public boolean isEnabled() {
+    return isActive();
+}
+
 	public boolean isAdmin(){return false;}
 	public boolean isCommissionner(){return true;}
 	public boolean isAthlete(){return false;}

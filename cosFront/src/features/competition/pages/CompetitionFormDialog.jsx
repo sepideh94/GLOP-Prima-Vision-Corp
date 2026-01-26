@@ -194,12 +194,34 @@ export default function CompetitionFormDialog({
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Annuler</Button>
+
+       <Button
+        onClick={onClose}
+        sx={{
+          mb: 2,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          minWidth: 130, 
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #86efac, #4ade80)",
+          color: "#064e3b",
+          boxShadow: "0 6px 16px rgba(74,222,128,0.35)",
+          "&:hover": {
+          background: "linear-gradient(135deg, #4ade80, #22c55e)",
+        },
+        }}
+        >
+        Annuler
+        </Button>
+
         <Button 
         sx={{
           mb: 2,
           textTransform: "none",
           fontWeight: 700,
+          minWidth: 130,
           px: 3,
           py: 1.1,
           borderRadius: appTheme.radius.pill,

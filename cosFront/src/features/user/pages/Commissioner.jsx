@@ -5,54 +5,135 @@ import {
   Card,
   CardContent,
   CardActionArea,
-  Button,
 } from "@mui/material";
-
-import {
-  EditCalendar
-} from "@mui/icons-material";
-
-import { useState } from "react";
+import { EmojiEvents, People } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
+import appTheme from "../../../common/theme/appTheme";
 
 export default function Commissioner() {
-  const [showAuth, setShowAuth] = useState(false);
+  const navigate = useNavigate();
 
-  const features = [
-    { title: "Gérer les épreuves", icon: <EditCalendar />, color: "#1976d2" },
-  ];
+  const sections = [
+  {
+    title: "Gestion des compétitions et épreuves",
+    subtitle: "Organisation et suivi",
+    icon: <EmojiEvents sx={{ fontSize: 42 }} />,
+    color: appTheme.colors.green,
+    route: "/commissioner/competitions",
+  },
+  {
+    title: "Gestion des athlètes",
+    subtitle: "Inscriptions et confirmations",
+    icon: <People sx={{ fontSize: 42 }} />,
+    color: appTheme.colors.cyan,
+    route: "/commissioner/participants",
+  },
+];
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Typography variant="h5" fontWeight="bold" mb={3}>
+    <Box>
+      <Typography
+        sx={{
+          fontSize: 32,
+          fontWeight: 900,
+          mb: 7,
+        }}
+      >
         Tableau de bord du Commissaire
       </Typography>
 
-      <Grid container spacing={3}>
-        {features.map((feature, index) => (
-          <Grid item xs={12} sm={6} md={4} key={index}>
+      <Grid container spacing={4}>
+        {sections.map((s) => (
+          <Grid
+            item
+            xs={12}
+            md={6}
+            key={s.title}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
             <Card
               sx={{
-                borderRadius: 3,
-                boxShadow: 3,
-                transition: "0.3s",
-                "&:hover": { transform: "scale(1.03)" },
+                width: 260,
+                height: 170,
+                borderRadius: 4,
+                background: appTheme.gradients.card,
+                boxShadow: appTheme.shadows.card,
+                position: "relative",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
               }}
             >
-              <CardActionArea>
-                <CardContent sx={{ textAlign: "center", py: 4 }}>
+              {/* Barre colorée */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  top: 24,
+                  bottom: 24,
+                  width: 4,
+                  borderRadius: 6,
+                  background: s.color,
+                }}
+              />
+
+              <CardActionArea
+                onClick={() => navigate(s.route)}
+                sx={{ height: "100%" }}
+              >
+                <CardContent
+                  sx={{
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "flex-start",
+                    pt: 3,
+                    pl: 3,
+                    pr: 3,
+                    color: appTheme.colors.textPrimary,
+                  }}
+                >
+                  {/* Icône */}
                   <Box
                     sx={{
-                      mb: 2,
-                      fontSize: 50,
-                      color: feature.color,
+                      width: 44,
+                      height: 44,
+                      borderRadius: "50%",
+                      background: s.color,
                       display: "flex",
+                      alignItems: "center",
                       justifyContent: "center",
+                      mb: 1.5,
+                      color: "#020617",
                     }}
                   >
-                    {feature.icon}
+                    {s.icon}
                   </Box>
-                  <Typography variant="h6" fontWeight="bold">
-                    {feature.title}
+
+                  {/* Titre */}
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      lineHeight: 1.3,
+                      mb: 0.5,
+                    }}
+                  >
+                    {s.title}
+                  </Typography>
+
+                  {/* Sous-titre */}
+                  <Typography
+                    sx={{
+                      fontSize: 12.5,
+                      color: appTheme.colors.textMuted,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {s.subtitle}
                   </Typography>
                 </CardContent>
               </CardActionArea>
@@ -60,33 +141,6 @@ export default function Commissioner() {
           </Grid>
         ))}
       </Grid>
-
-      {showAuth && (
-        <Box
-          sx={{
-            mt: 5,
-            p: 3,
-            borderRadius: 2,
-            bgcolor: "#e3f2fd",
-            boxShadow: 2,
-            textAlign: "center",
-          }}
-        >
-          <Typography variant="h6" mb={2}>
-            S’authentifier
-          </Typography>
-          <Typography variant="body1" mb={2}>
-            Cette action est requise avant d’accéder aux fonctionnalités.
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => setShowAuth(false)}
-          >
-            Se connecter
-          </Button>
-        </Box>
-      )}
     </Box>
   );
 }

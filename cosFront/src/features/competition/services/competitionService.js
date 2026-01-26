@@ -31,6 +31,17 @@ const competitionService = {
     const res = await api.get(`/api/events/${id}`);
     return res.data;
   },
+
+  async getCompetitionsByEventForCommissioner(eventId) {
+    const res = await api.get(`/api/commissioner/events/${eventId}/competitions`);
+    return res.data;
+  },
+
+  async getCompetitionCommissioner (id){
+  const res = await api.get(`/api/commissioner/competitions/${id}`);
+  return res.data;
+},
+
 };
 
 export default competitionService;

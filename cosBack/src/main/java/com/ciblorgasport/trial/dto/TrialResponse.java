@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import com.ciblorgasport.core.Status;
+import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialMode;
