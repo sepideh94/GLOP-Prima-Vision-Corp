@@ -1,10 +1,13 @@
 package com.ciblorgasport.athlete.application;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ciblorgasport.athlete.domain.Athlete;
@@ -38,6 +41,9 @@ public class AthleteImportService {
     private final CompetitionRepository competitionRepository;
     private final ParticipationRepository participationRepository;
 
+    private final AthleteInviteTokenService athleteInviteTokenService;
+    private final AthleteInviteBatchService athleteInviteBatchService;
+
     /**
      * Importe des athlètes depuis un fichier CSV et les invite à une compétition.
      *
@@ -57,6 +63,8 @@ public class AthleteImportService {
         int invited = 0;
         int skipped = 0;
 
+        List<AthleteInviteEmail> invitesToSend = new ArrayList<>();
+
         for (CSVRecord record : records) {
             try {
                 Athlete athlete = getOrCreateAthlete(record);
@@ -64,6 +72,11 @@ public class AthleteImportService {
 
                 if (wasInvited) {
                     invited++;
+
+                    if (!athlete.isActive()) {
+                        String token = athleteInviteTokenService.createInviteToken(athlete);
+                        invitesToSend.add(new AthleteInviteEmail(athlete.getEmail(), athlete.getFirstName(), token));
+                    }
                 } else {
                     skipped++; // Déjà invité
                 }
@@ -74,6 +87,15 @@ public class AthleteImportService {
             }
         }
 
+        if (!invitesToSend.isEmpty()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    athleteInviteBatchService.sendInvites(invitesToSend);
+                }
+            });
+        }
+
         return new ImportResult(created, invited, skipped);
     }
 
@@ -81,7 +103,7 @@ public class AthleteImportService {
      * Récupère un athlète existant ou en crée un nouveau.
      */
     private Athlete getOrCreateAthlete(CSVRecord record) {
-        String email = record.get("email");
+        String email = normalizeEmail(record.get("email"));
 
         // Vérifier si l'athlète existe déjà
         return athleteRepository.findByEmail(email)
@@ -98,6 +120,10 @@ public class AthleteImportService {
 
                     return (Athlete) athleteCreationService.createUser(request);
                 });
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 
     /**
