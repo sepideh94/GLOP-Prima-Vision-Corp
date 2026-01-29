@@ -7,4 +7,7 @@ public interface EmailService {
 
     void sendCommissionnerInviteEmail(String to, String firstName, String token);
 
+    void sendAthleteInviteEmail(String to, String firstName, String token);
+
+
 }
