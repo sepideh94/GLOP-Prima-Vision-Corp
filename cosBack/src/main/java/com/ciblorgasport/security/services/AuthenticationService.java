@@ -185,14 +185,16 @@ public class AuthenticationService {
         throw new IllegalArgumentException("Token expiré.");
     }
 
-    if (at.getType() != TokenType.PASSWORD_RESET && at.getType() != TokenType.INVITE_COMMISSIONNER) {
+    if (at.getType() != TokenType.PASSWORD_RESET
+            && at.getType() != TokenType.INVITE_COMMISSIONNER
+            && at.getType() != TokenType.INVITE_ATHLETE) {
         throw new IllegalArgumentException("Token invalide.");
     }
 
     UserAccount user = at.getUser();
     user.setPassword(passwordEncoder.encode(newPassword));
 
-    if (at.getType() == TokenType.INVITE_COMMISSIONNER) {
+    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE) {
         user.setActive(true);
     }
 
@@ -201,5 +203,6 @@ public class AuthenticationService {
     at.setUsed(true);
     activationTokenRepository.save(at);
 }
+
 
 }

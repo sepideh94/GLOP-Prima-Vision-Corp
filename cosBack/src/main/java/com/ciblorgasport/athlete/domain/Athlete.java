@@ -29,6 +29,12 @@ public class Athlete extends UserAccount implements Competitor {
 	public String getDisplayName() {
 		return getFirstName() + " " + getLastName();
 	}
+	
+	@Override
+public boolean isEnabled() {
+    return isActive();
+}
+
 
 	public boolean isAdmin(){return false;}
 	public boolean isCommissionner(){return false;}

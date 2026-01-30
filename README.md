@@ -126,14 +126,14 @@ docker compose up
 ```
 
 Cette commande va :
-- Démarrer PostgreSQL sur le port 5432
-- Démarrer le backend Spring Boot sur le port 8080
+- Démarrer PostgreSQL sur le port 5433
+- Démarrer le backend Spring Boot sur le port 8083
 - Démarrer le frontend React sur le port 3000
 - Démarrer PgAdmin sur le port 5050
 
 3. **Accéder à l'application**
 - **Frontend** : http://localhost:3000
-- **Backend API** : http://localhost:8080
+- **Backend API** : http://localhost:8083
 - **PgAdmin** : http://localhost:5050
 
 ### Lancement en développement local
@@ -152,7 +152,7 @@ cd cosBack
 mvn spring-boot:run
 ```
 
-Le backend sera accessible sur http://localhost:8080
+Le backend sera accessible sur http://localhost:8083
 
 #### Frontend
 
@@ -207,7 +207,7 @@ Un compte administrateur est automatiquement créé lors du premier lancement de
 ### Connexion à PostgreSQL
 
 - **Host** : `localhost` (ou `postgres` dans Docker)
-- **Port** : `5432`
+- **Port** : `5433`
 - **Database** : `ciblorgasport`
 - **Username** : `postgres`
 - **Password** : `postgres123`
@@ -310,8 +310,8 @@ Vous pouvez personnaliser l'application via des variables d'environnement dans `
 ### Ports par défaut
 
 - **Frontend** : 3000
-- **Backend** : 8080
-- **PostgreSQL** : 5432
+- **Backend** : 8083
+- **PostgreSQL** : 5433
 - **PgAdmin** : 5050
 
 ## Déploiement
