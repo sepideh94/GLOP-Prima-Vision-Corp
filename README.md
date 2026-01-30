@@ -119,11 +119,18 @@ L'application suit une architecture en couches :
 git clone git@github.com:sepideh94/GLOP-Prima-Vision-Corp.git
 cd GLOP-Prima-Vision-Corp
 ```
-
-2. **Lancer l'application**
-```bash
-docker compose up
+2. **Nettoyer les anciennes instances**
 ```
+docker-compose down -v
+```
+3. **Lancer l'application**
+```bash
+docker compose up --build
+```
+
+* **Savoir quand l'appli est prête** : 
+Attendez de voir le message encadré ` APPLICATION CIBLORGASPORT PRÊTE !` dans la console.
+
 
 Cette commande va :
 - Démarrer PostgreSQL sur le port 5433
@@ -131,7 +138,7 @@ Cette commande va :
 - Démarrer le frontend React sur le port 3000
 - Démarrer PgAdmin sur le port 5050
 
-3. **Accéder à l'application**
+4. **Accéder à l'application**
 - **Frontend** : http://localhost:3000
 - **Backend API** : http://localhost:8083
 - **PgAdmin** : http://localhost:5050
