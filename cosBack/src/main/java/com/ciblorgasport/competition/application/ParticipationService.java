@@ -12,6 +12,7 @@ import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.dto.InvitationDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -92,5 +93,18 @@ public class ParticipationService {
 
         participationRepository.save(participation);
         userAccountRepository.save(athlete);
+    }
+    
+    public InvitationDetailsResponse getInvitationDetails(String token) {
+        Participation participation = participationRepository.findByInvitationToken(token)
+                .orElseThrow(() -> new EntityNotFoundException("Invitation invalide."));
+
+        UserAccount account = userAccountRepository.findById(participation.getCompetitorId())
+                .orElse(null);
+
+        String firstName = (account != null) ? account.getFirstName() : "";
+        String lastName = (account != null) ? account.getLastName() : "";
+
+        return InvitationDetailsResponse.fromEntity(participation, firstName, lastName);
     }
 }
