@@ -145,7 +145,7 @@ export default function ImportParticipantsDialog({ open, onClose, competitionId,
       );
     } catch (err) {
       console.error("Erreur lors de l'import:", err);
-      setError("Erreur lors de l'import des participants");
+      setError(err.response?.data?.message || "Erreur lors de l'import des participants");
     } finally {
       setLoading(false);
     }
