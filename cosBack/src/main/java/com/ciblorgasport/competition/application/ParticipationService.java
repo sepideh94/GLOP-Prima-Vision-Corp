@@ -28,7 +28,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ParticipationService {
 
-	
     private final ParticipationRepository participationRepository;
     private final AthleteRepository athleteRepository;
 	private final UserAccountRepository userAccountRepository;
