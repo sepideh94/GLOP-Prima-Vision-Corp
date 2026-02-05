@@ -33,6 +33,15 @@ const sidebarConfig = {
     },
   ],
 
+  ATHLETE: [
+    { label: "Tableau de bord", icon: HomeIcon, path: "/athlete" },
+    {
+      label: "Compétitions",
+      icon: EmojiEventsIcon,
+      path: "/athlete/competitions",
+    },
+  ],
+
   GUEST: [],
 };
 
