@@ -2,8 +2,10 @@ package com.ciblorgasport.competition.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,6 +14,7 @@ import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.InvitationDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
@@ -76,35 +79,25 @@ public class ParticipationService {
         return responses;
     }
     
-
-    @Transactional
-    public void validateOnboarding(String token, String newPassword, boolean charterAccepted) {
-
-    	Participation participation = participationRepository.findByInvitationToken(token)
-                .orElseThrow(() -> new EntityNotFoundException("Invitation introuvable"));
-        participation.confirm(token, charterAccepted);
-
-       
-        Athlete athlete = (Athlete) userAccountRepository.findById(participation.getCompetitorId())
-                .orElseThrow(() -> new EntityNotFoundException("Utilisateur non trouvé"));
-
-        athlete.setPassword(passwordEncoder.encode(newPassword));
-        athlete.setActive(true); 
-
-        participationRepository.save(participation);
-        userAccountRepository.save(athlete);
+    public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
+        return participationRepository
+                .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)
+                .stream()
+                .map(AthleteCompetitionDetailsResponse::fromEntity)
+                .collect(Collectors.toList());
     }
     
-    public InvitationDetailsResponse getInvitationDetails(String token) {
-        Participation participation = participationRepository.findByInvitationToken(token)
-                .orElseThrow(() -> new EntityNotFoundException("Invitation invalide."));
+    @Transactional
+    public void confirmParticipation(Long participationId, Long athleteId) {
+        Participation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
 
-        UserAccount account = userAccountRepository.findById(participation.getCompetitorId())
-                .orElse(null);
+        if (!participation.getCompetitorId().equals(athleteId)) {
+            throw new AccessDeniedException("Accès non autorisé");
+        }
 
-        String firstName = (account != null) ? account.getFirstName() : "";
-        String lastName = (account != null) ? account.getLastName() : "";
-
-        return InvitationDetailsResponse.fromEntity(participation, firstName, lastName);
+        participation.confirmCharter();
+        participationRepository.save(participation);
     }
+
 }

@@ -16,7 +16,6 @@ public class AthleteCompetitionDetailsResponse {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private ParticipationStatus status; 
-    private String location;
 
     public static AthleteCompetitionDetailsResponse fromEntity(Participation p) {
         return AthleteCompetitionDetailsResponse.builder()
