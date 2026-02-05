@@ -17,5 +17,4 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     boolean existsByCompetitionIdAndCompetitorIdAndCompetitorType(
             Long competitionId, Long competitorId, CompetitorType competitorType);
     
-    Optional<Participation> findByInvitationToken(String invitationToken);
 }

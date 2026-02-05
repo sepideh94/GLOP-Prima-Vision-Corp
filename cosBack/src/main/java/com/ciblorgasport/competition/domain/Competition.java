@@ -22,8 +22,6 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"parentEvent", "trials"}) 
-@ToString(exclude = {"parentEvent", "trials"})
 public class Competition implements StatusChecker {
  
  @Id
