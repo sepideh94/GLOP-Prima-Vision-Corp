@@ -4,21 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
-import com.ciblorgasport.competition.dto.InvitationDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
-import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 import jakarta.persistence.EntityNotFoundException;
