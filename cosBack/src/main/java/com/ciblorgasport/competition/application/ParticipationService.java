@@ -28,16 +28,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ParticipationService {
 
-	@Autowired
+	
     private final ParticipationRepository participationRepository;
-	
-	@Autowired
     private final AthleteRepository athleteRepository;
-
-	@Autowired
 	private final UserAccountRepository userAccountRepository;
-	
-	@Autowired
 	private final PasswordEncoder passwordEncoder;
 	
 	
