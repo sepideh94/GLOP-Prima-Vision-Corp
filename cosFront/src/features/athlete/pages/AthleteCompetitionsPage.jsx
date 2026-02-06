@@ -1,38 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Grid, Typography, Box } from "@mui/material";
 import CompetitionCard from "../components/CompetitionCard";
 import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
-
-const initialCompetitions = [
-  {
-    id: 1,
-    eventName: "NOM EVENT 1",
-    competitionName: "Nom de la compétition 1",
-    date: "15-16 JUIN 2024",
-    location: "Stade Charléty, Paris",
-    status: "INVITED",
-  },
-  {
-    id: 2,
-    eventName: "NOM EVENT 1",
-    competitionName: "Nom de la compétition 2",
-    date: "22 SEPT 2024",
-    location: "Clermont-Ferrand",
-    status: "CONFIRMED",
-  },
-  {
-    id: 3,
-    eventName: "NOM EVENT 3",
-    competitionName: "Nom de la compétition 3",
-    date: "05 OCT 2024",
-    location: "Lille",
-    status: "FINISHED",
-  },
-];
+import athleteCompetitionService from "../services/athleteCompetitionService";
 
 export default function AthleteCompetitionsPage() {
-  const [competitions, setCompetitions] = useState(initialCompetitions);
+  const [competitions, setCompetitions] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    athleteCompetitionService.getMyCompetitions().then((data) => {
+      setCompetitions(data);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return <Typography>Chargement…</Typography>;
+  }
 
   return (
     <Box sx={{ width: "100%" }}>
@@ -40,23 +26,13 @@ export default function AthleteCompetitionsPage() {
         Participation
       </Typography>
 
-      <Typography sx={{ fontSize: 15, color: "#374151", mb: 6, maxWidth: 900 }}>
-        Retrouvez ici les compétitions auxquelles vous êtes invité(e) et confirmez
-        votre participation si nécessaire.
+      <Typography sx={{ fontSize: 15, color: "#374151", mb: 6 }}>
+        Retrouvez ici les compétitions auxquelles vous êtes invité(e) et confirmez votre participation si nécessaire.
       </Typography>
 
-      <Grid container spacing={4} alignItems="stretch">
+      <Grid container spacing={4}>
         {competitions.map((competition) => (
-          <Grid
-            key={competition.id}
-            item
-            xs={12}
-            md={4}
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-            }}
-          >
+          <Grid key={competition.participationId} item xs={12} md={4}>
             <CompetitionCard
               competition={competition}
               onConfirm={setSelectedCompetition}
@@ -71,14 +47,18 @@ export default function AthleteCompetitionsPage() {
           competition={selectedCompetition}
           onClose={() => setSelectedCompetition(null)}
           onConfirm={() => {
-            setCompetitions((prev) =>
-              prev.map((c) =>
-                c.id === selectedCompetition.id
-                  ? { ...c, status: "CONFIRMED" }
-                  : c
-              )
-            );
-            setSelectedCompetition(null);
+            athleteCompetitionService
+              .confirmParticipation(selectedCompetition.participationId) 
+              .then(() => {
+                setCompetitions((prev) =>
+                  prev.map((c) =>
+                    c.participationId === selectedCompetition.participationId
+                      ? { ...c, status: "CONFIRMED" }
+                      : c
+                  )
+                );
+                setSelectedCompetition(null);
+              });
           }}
         />
       )}

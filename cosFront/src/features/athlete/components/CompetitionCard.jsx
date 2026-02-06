@@ -1,41 +1,41 @@
-import {
-  Card,
-  Box,
-  Typography,
-  Button,
-  Chip,
-} from "@mui/material";
-import PlaceIcon from "@mui/icons-material/Place";
+import { Card, Box, Typography, Button, Chip } from "@mui/material";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 
 const HEADER_COLORS = {
-  INVITED: "#2563eb",
-  CONFIRMED: "#15803d",
-  FINISHED: "#d97706", 
+  INVITED: "linear-gradient(90deg, #2563eb, #1d4ed8)",   
+  CONFIRMED: "linear-gradient(90deg, #16a34a, #15803d)", 
+};
+
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  return new Date(dateString).toLocaleDateString("fr-FR");
 };
 
 export default function CompetitionCard({ competition, onConfirm }) {
-  if (!competition) return null;
+  const isConfirmed = competition.status === "CONFIRMED";
 
   return (
     <Card
       elevation={6}
       sx={{
-        width: 320,
-        height: 420,
+        width: 380,
+        height: 300,
         borderRadius: 3,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
       }}
     >
-      {/* HEADER */}
+      {/* ===== HEADER ===== */}
       <Box
         sx={{
-          height: 90,
-          backgroundColor: HEADER_COLORS[competition.status],
+          height: 80,
+          background:
+            HEADER_COLORS[competition.status] || HEADER_COLORS.INVITED,
           px: 2.5,
           py: 2,
+          display: "flex",
+          alignItems: "flex-start",
         }}
       >
         <Chip
@@ -45,36 +45,28 @@ export default function CompetitionCard({ competition, onConfirm }) {
             backgroundColor: "rgba(0,0,0,0.35)",
             color: "#fff",
             fontWeight: 700,
-            fontSize: 12,
           }}
         />
       </Box>
 
-      {/* CONTENT */}
+      {/* ===== CONTENT ===== */}
       <Box sx={{ flex: 1, px: 3, py: 2 }}>
-        <Typography sx={{ fontSize: 13, color: "#2563eb", mb: 0.5 }}>
-          {competition.date}
+        <Typography sx={{ fontSize: 13, color: "#2563eb" }}>
+          Début : {formatDate(competition.startDate)} &nbsp;|&nbsp; Fin :{" "}
+          {formatDate(competition.endDate)}
         </Typography>
-
         <Typography
           sx={{
             fontSize: 18,
             fontWeight: 900,
-            mb: 1,
+            mt: 2.2, 
           }}
         >
           {competition.competitionName}
         </Typography>
-
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <PlaceIcon sx={{ fontSize: 18, color: "#e11d48", mr: 1 }} />
-          <Typography sx={{ fontSize: 14 }}>
-            {competition.location}
-          </Typography>
-        </Box>
       </Box>
 
-      {/* FOOTER */}
+      {/* ===== FOOTER ===== */}
       <Box
         sx={{
           height: 64,
@@ -86,31 +78,43 @@ export default function CompetitionCard({ competition, onConfirm }) {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <HourglassBottomIcon sx={{ fontSize: 18, color: "#f59e0b" }} />
-          <Typography sx={{ fontSize: 13, color: "#f59e0b" }}>
-            fin : j-15
+          <HourglassBottomIcon
+            sx={{
+              fontSize: 18,
+              color: isConfirmed ? "#16a34a" : "#f59e0b",
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: 13,
+              color: isConfirmed ? "#16a34a" : "#f59e0b",
+              fontWeight: 600,
+            }}
+          >
+            {isConfirmed ? "Participation confirmée" : "En attente"}
           </Typography>
         </Box>
 
-        {competition.status === "INVITED" && (
+        {!isConfirmed && (
           <Button
-            size="small"
             onClick={() => onConfirm(competition)}
             sx={{
               textTransform: "none",
               fontWeight: 700,
+              backgroundColor: "#2563eb",
+              color: "#fff",
+              px: 2,
+              "&:hover": {
+                backgroundColor: "#1d4ed8",
+              },
             }}
           >
-            Confirmer la participation
+            Confirmer ma participation
           </Button>
         )}
 
-        {competition.status === "CONFIRMED" && (
-          <Chip label="Confirmée" size="small" color="success" />
-        )}
-
-        {competition.status === "FINISHED" && (
-          <Chip label="Terminée" size="small" />
+        {isConfirmed && (
+          <Chip label="Confirmée" color="success" size="small" />
         )}
       </Box>
     </Card>
