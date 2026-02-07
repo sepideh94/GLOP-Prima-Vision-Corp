@@ -2,19 +2,70 @@ import { useEffect, useState } from "react";
 import { Grid, Typography, Box } from "@mui/material";
 import CompetitionCard from "../components/CompetitionCard";
 import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
+import IncompleteProfileModal from "../components/IncompleteProfileModal";
 import athleteCompetitionService from "../services/athleteCompetitionService";
+import athleteProfileService from "../services/athleteProfileService";
+import { useAuth } from "../../../common/contexts/AuthContext";
 
 export default function AthleteCompetitionsPage() {
   const [competitions, setCompetitions] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     athleteCompetitionService.getMyCompetitions().then((data) => {
       setCompetitions(data);
       setLoading(false);
     });
+    loadProfile();
   }, []);
+
+  const loadProfile = async () => {
+    try {
+      const profile = await athleteProfileService.getMyProfile();
+      setUserProfile(profile);
+    } catch (err) {
+      // Profil non trouvé
+      setUserProfile(null);
+    }
+  };
+
+  const isProfileComplete = () => {
+    // Vérifier d'abord dans userProfile (depuis l'API)
+    if (userProfile) {
+      return (
+        userProfile.nationality &&
+        userProfile.dateOfBirth &&
+        userProfile.gender &&
+        userProfile.passportNumber &&
+        userProfile.passportFile &&
+        userProfile.medicalCertificateFile
+      );
+    }
+    // Sinon vérifier dans l'objet user depuis AuthContext
+    if (user) {
+      return (
+        user.nationality &&
+        user.dateOfBirth &&
+        user.gender &&
+        user.passportNumber &&
+        user.passportFile &&
+        user.medicalCertificateFile
+      );
+    }
+    return false;
+  };
+
+  const handleConfirmClick = (competition) => {
+    if (!isProfileComplete()) {
+      setShowIncompleteProfileModal(true);
+      return;
+    }
+    setSelectedCompetition(competition);
+  };
 
   if (loading) {
     return <Typography>Chargement…</Typography>;
@@ -35,7 +86,7 @@ export default function AthleteCompetitionsPage() {
           <Grid key={competition.participationId} item xs={12} md={4}>
             <CompetitionCard
               competition={competition}
-              onConfirm={setSelectedCompetition}
+              onConfirm={handleConfirmClick}
             />
           </Grid>
         ))}
@@ -62,6 +113,14 @@ export default function AthleteCompetitionsPage() {
           }}
         />
       )}
+
+      <IncompleteProfileModal
+        open={showIncompleteProfileModal}
+        onClose={() => {
+          setShowIncompleteProfileModal(false);
+          loadProfile(); // Recharger le profil après fermeture de la modale
+        }}
+      />
     </Box>
   );
 }
