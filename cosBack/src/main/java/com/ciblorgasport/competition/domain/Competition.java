@@ -3,7 +3,9 @@ package com.ciblorgasport.competition.domain;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;

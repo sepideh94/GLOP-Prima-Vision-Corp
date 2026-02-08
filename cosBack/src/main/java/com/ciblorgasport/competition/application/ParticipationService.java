@@ -2,16 +2,22 @@ package com.ciblorgasport.competition.application;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -20,7 +26,10 @@ public class ParticipationService {
 
     private final ParticipationRepository participationRepository;
     private final AthleteRepository athleteRepository;
-
+	private final UserAccountRepository userAccountRepository;
+	private final PasswordEncoder passwordEncoder;
+	
+	
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
         List<Participation> participations = participationRepository.findByCompetitionId(competitionId);
         return buildParticipantResponses(participations);
@@ -58,4 +67,26 @@ public class ParticipationService {
 
         return responses;
     }
+    
+    public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
+        return participationRepository
+                .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)
+                .stream()
+                .map(AthleteCompetitionDetailsResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+    
+    @Transactional
+    public void confirmParticipation(Long participationId, Long athleteId) {
+        Participation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
+
+        if (!participation.getCompetitorId().equals(athleteId)) {
+            throw new AccessDeniedException("Accès non autorisé");
+        }
+
+        participation.confirmCharter();
+        participationRepository.save(participation);
+    }
+
 }
