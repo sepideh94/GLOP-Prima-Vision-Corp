@@ -9,6 +9,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -218,21 +219,33 @@ export default function CommissionerTrialListPage() {
           Gestion des épreuves
         </Typography>
 
-        <Button
-          startIcon={<UploadFileIcon />}
-          onClick={() => setOpenImport(true)}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            px: 3,
-            py: 1.1,
-            borderRadius: appTheme.radius.pill,
-            background: appTheme.gradients.navbar,
-            color: appTheme.colors.dark,
-          }}
+        <Tooltip
+          title={competition?.statusLabel === "Terminée" ? "Import impossible pour une compétition terminée" : ""}
+          arrow
         >
-          Importer les participants
-        </Button>
+          <span>
+            <Button
+              startIcon={<UploadFileIcon />}
+              onClick={() => setOpenImport(true)}
+              disabled={competition?.statusLabel === "Terminée"}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                px: 3,
+                py: 1.1,
+                borderRadius: appTheme.radius.pill,
+                background: competition?.statusLabel === "Terminée"
+                  ? "rgba(128, 128, 128, 0.3)"
+                  : appTheme.gradients.navbar,
+                color: competition?.statusLabel === "Terminée"
+                  ? "rgba(0, 0, 0, 0.4)"
+                  : appTheme.colors.dark,
+              }}
+            >
+              Importer les participants
+            </Button>
+          </span>
+        </Tooltip>
       </Box>
 
       <Box

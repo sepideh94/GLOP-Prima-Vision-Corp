@@ -174,6 +174,19 @@ export default function ProfilePage() {
     setError("");
   };
 
+  const handleCharterToggle = (event) => {
+    const checked = event.target.checked;
+    setCharterAccepted(checked);
+    localStorage.setItem("athlete_eu_charter_accepted", checked ? "true" : "false");
+
+    if (checked && errors.charterAccepted) {
+      setErrors((prev) => ({
+        ...prev,
+        charterAccepted: undefined,
+      }));
+    }
+  };
+
   const handleFileChange = (field, file) => {
     if (file) {
       handleChange(field, file);

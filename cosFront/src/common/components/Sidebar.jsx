@@ -96,7 +96,7 @@ export default function Sidebar() {
             }}
           >
             <Box
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/athlete/profile")}
               sx={{
                 borderRadius: 2,
                 width: "calc(100% - 16px)",

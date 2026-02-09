@@ -172,7 +172,7 @@ export default function TrialFormDialog({ open, onClose, onSave, initialData, co
    try {
      await onSave(payload);
    } catch (err) {
-     setError(err.message || "Une erreur s'est produite");
+     setError(err.response?.data?.message || "Une erreur s'est produite");
    }
  };
 

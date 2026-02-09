@@ -92,7 +92,7 @@ export default function App() {
                 element={<AthleteCompetitionsPage />}
               />
               <Route
-                path="/profile"
+                path="/athlete/profile"
                 element={<ProfilePage />}
               />
 
