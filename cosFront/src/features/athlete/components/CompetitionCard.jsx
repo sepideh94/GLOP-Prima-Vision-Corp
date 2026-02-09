@@ -11,8 +11,10 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("fr-FR");
 };
 
-export default function CompetitionCard({ competition, onConfirm }) {
+export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
   const isConfirmed = competition.status === "CONFIRMED";
+  // Si le profil est complet, considérer comme confirmé visuellement
+  const showAsConfirmed = isConfirmed || isProfileComplete;
 
   return (
     <Card
@@ -31,7 +33,7 @@ export default function CompetitionCard({ competition, onConfirm }) {
         sx={{
           height: 80,
           background:
-            HEADER_COLORS[competition.status] || HEADER_COLORS.INVITED,
+            showAsConfirmed ? HEADER_COLORS.CONFIRMED : HEADER_COLORS.INVITED,
           px: 2.5,
           py: 2,
           display: "flex",
@@ -81,21 +83,21 @@ export default function CompetitionCard({ competition, onConfirm }) {
           <HourglassBottomIcon
             sx={{
               fontSize: 18,
-              color: isConfirmed ? "#16a34a" : "#f59e0b",
+              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
             }}
           />
           <Typography
             sx={{
               fontSize: 13,
-              color: isConfirmed ? "#16a34a" : "#f59e0b",
+              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
               fontWeight: 600,
             }}
           >
-            {isConfirmed ? "Participation confirmée" : "En attente"}
+            {showAsConfirmed ? "Participation confirmée" : "En attente"}
           </Typography>
         </Box>
 
-        {!isConfirmed && (
+        {!isConfirmed && !isProfileComplete && (
           <Button
             onClick={() => onConfirm(competition)}
             sx={{
@@ -113,7 +115,7 @@ export default function CompetitionCard({ competition, onConfirm }) {
           </Button>
         )}
 
-        {isConfirmed && (
+        {showAsConfirmed && (
           <Chip label="Confirmée" color="success" size="small" />
         )}
       </Box>

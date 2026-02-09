@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -13,12 +14,12 @@ import {
   CircularProgress,
   Paper,
   Checkbox,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
+  Divider,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArticleIcon from "@mui/icons-material/Article";
@@ -29,20 +30,7 @@ import { fr } from "date-fns/locale";
 import * as yup from "yup";
 import athleteProfileService from "../services/athleteProfileService";
 import appTheme from "../../../common/theme/appTheme";
-
-// Liste des pays (version simplifiée - vous pouvez utiliser une librairie complète)
-const COUNTRIES = [
-  "France",
-  "Belgique",
-  "Suisse",
-  "Canada",
-  "Allemagne",
-  "Espagne",
-  "Italie",
-  "Royaume-Uni",
-  "États-Unis",
-  "Autre",
-];
+import { useAuth } from "../../../common/contexts/AuthContext";
 
 // Schéma de validation yup
 const profileSchema = yup.object().shape({
@@ -51,15 +39,15 @@ const profileSchema = yup.object().shape({
     .date()
     .required("La date de naissance est obligatoire")
     .max(new Date(), "La date de naissance ne peut pas être dans le futur"),
-  gender: yup.string().required("Le sexe est obligatoire"),
+  gender: yup.string().oneOf(["M", "F"], "Le sexe doit être M ou F").required("Le sexe est obligatoire"),
   passportNumber: yup.string().required("Le numéro de passeport est obligatoire"),
   passportFile: yup
     .mixed()
     .test("fileRequired", "Le passeport est obligatoire", (value) => {
-      return value instanceof File || value === null;
+      return value instanceof File || value === "existing" || value === null;
     })
     .test("fileType", "Le fichier doit être une image ou un PDF", (value) => {
-      if (!value) return true;
+      if (!value || value === "existing") return true;
       if (value instanceof File) {
         const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
         return validTypes.includes(value.type);
@@ -69,10 +57,10 @@ const profileSchema = yup.object().shape({
   medicalCertificateFile: yup
     .mixed()
     .test("fileRequired", "Le certificat médical est obligatoire", (value) => {
-      return value instanceof File || value === null;
+      return value instanceof File || value === "existing" || value === null;
     })
     .test("fileType", "Le fichier doit être une image ou un PDF", (value) => {
-      if (!value) return true;
+      if (!value || value === "existing") return true;
       if (value instanceof File) {
         const validTypes = ["image/jpeg", "image/png", "image/jpg", "application/pdf"];
         return validTypes.includes(value.type);
@@ -82,6 +70,9 @@ const profileSchema = yup.object().shape({
 });
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     nationality: "",
     dateOfBirth: null,
@@ -96,15 +87,55 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
-  const [charterAccepted, setCharterAccepted] = useState(() => {
-    const stored = localStorage.getItem("athlete_eu_charter_accepted");
-    return stored === "true";
-  });
+  const [charterAccepted, setCharterAccepted] = useState(false);
   const [charterModalOpen, setCharterModalOpen] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
 
+  // Vérifier que l'utilisateur est un athlète
   useEffect(() => {
-    loadProfile();
-  }, []);
+    if (user && user.role && user.role.toUpperCase() !== "ATHLETE") {
+      // Rediriger vers le dashboard approprié selon le rôle
+      const roleRoutes = {
+        ADMIN: "/admin",
+        COMMISSIONNER: "/commissioner",
+        VOLONTEER: "/volunteer",
+        SPECTATOR: "/spectator",
+      };
+      const redirectPath = roleRoutes[user.role.toUpperCase()] || "/athlete";
+      navigate(redirectPath, { replace: true });
+      return;
+    }
+    
+    if (user && user.role && user.role.toUpperCase() === "ATHLETE") {
+      loadProfile();
+      loadCountries();
+    }
+  }, [user, navigate]);
+
+  const loadCountries = async () => {
+    setLoadingCountries(true);
+    try {
+      const countriesList = await athleteProfileService.getCountries();
+      setCountries(countriesList);
+    } catch (err) {
+      console.error("Erreur lors du chargement des pays:", err);
+      // En cas d'erreur, on peut utiliser une liste de secours
+      setCountries([
+        { code: "FR", name: "France" },
+        { code: "BE", name: "Belgique" },
+        { code: "CH", name: "Suisse" },
+        { code: "CA", name: "Canada" },
+        { code: "DE", name: "Allemagne" },
+        { code: "ES", name: "Espagne" },
+        { code: "IT", name: "Italie" },
+        { code: "GB", name: "Royaume-Uni" },
+        { code: "US", name: "États-Unis" },
+      ]);
+    } finally {
+      setLoadingCountries(false);
+    }
+  };
 
   const loadProfile = async () => {
     setLoading(true);
@@ -112,12 +143,13 @@ export default function ProfilePage() {
       const profile = await athleteProfileService.getMyProfile();
       setFormData({
         nationality: profile.nationality || "",
-        dateOfBirth: profile.dateOfBirth ? new Date(profile.dateOfBirth) : null,
-        gender: profile.gender || "",
+        dateOfBirth: profile.birthDate ? new Date(profile.birthDate) : null,
+        gender: profile.sexe || "",
         passportNumber: profile.passportNumber || "",
-        passportFile: profile.passportFile ? "existing" : null,
-        medicalCertificateFile: profile.medicalCertificateFile ? "existing" : null,
+        passportFile: profile.hasPassport ? "existing" : null,
+        medicalCertificateFile: profile.hasMedicalCertificate ? "existing" : null,
       });
+      setCharterAccepted(profile.hasAcceptedCharte || false);
     } catch (err) {
       // Si le profil n'existe pas encore, on continue avec un formulaire vide
       console.log("Profil non trouvé, création d'un nouveau profil");
@@ -161,6 +193,18 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCharterToggle = (event) => {
+    const checked = event.target.checked;
+    setCharterAccepted(checked);
+
+    if (checked && errors.charterAccepted) {
+      setErrors((prev) => ({
+        ...prev,
+        charterAccepted: undefined,
+      }));
+    }
+  };
+
   const validate = async () => {
     try {
       await profileSchema.validate(formData, { abortEarly: false });
@@ -196,7 +240,27 @@ export default function ProfilePage() {
 
     setSaving(true);
     try {
-      await athleteProfileService.updateProfile(formData);
+      // Préparer les données pour le backend (convertir les noms de champs)
+      const profileData = {
+        nationality: formData.nationality,
+        birthDate: formData.dateOfBirth,
+        sexe: formData.gender,
+        passportNumber: formData.passportNumber,
+        hasAcceptedCharte: charterAccepted,
+      };
+
+      // Mettre à jour le profil (données texte)
+      await athleteProfileService.updateProfile(profileData);
+
+      // Uploader les fichiers séparément si nécessaire
+      if (formData.passportFile && formData.passportFile !== "existing" && formData.passportFile instanceof File) {
+        await athleteProfileService.uploadPassport(formData.passportFile);
+      }
+
+      if (formData.medicalCertificateFile && formData.medicalCertificateFile !== "existing" && formData.medicalCertificateFile instanceof File) {
+        await athleteProfileService.uploadMedicalCertificate(formData.medicalCertificateFile);
+      }
+
       setSuccess(true);
       // Recharger le profil pour afficher les fichiers uploadés
       await loadProfile();
@@ -268,9 +332,9 @@ export default function ProfilePage() {
               }}
             >
               <option value="">Sélectionnez un pays</option>
-              {COUNTRIES.map((country) => (
-                <option key={country} value={country}>
-                  {country}
+              {countries.map((country) => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
                 </option>
               ))}
             </TextField>
@@ -311,8 +375,8 @@ export default function ProfilePage() {
               value={formData.gender}
               onChange={(e) => handleChange("gender", e.target.value)}
             >
-              <FormControlLabel value="MALE" control={<Radio />} label="Homme" />
-              <FormControlLabel value="FEMALE" control={<Radio />} label="Femme" />
+              <FormControlLabel value="M" control={<Radio />} label="Homme" />
+              <FormControlLabel value="F" control={<Radio />} label="Femme" />
             </RadioGroup>
             {errors.gender && (
               <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
@@ -417,7 +481,7 @@ export default function ProfilePage() {
             )}
           </FormControl>
 
-          {/* Charte européenne du sport (aperçu + case à cocher) */}
+          {/* Charte européenne du sport */}
           <Box
             sx={{
               mb: 4,
