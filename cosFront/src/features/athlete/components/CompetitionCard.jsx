@@ -11,7 +11,7 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString("fr-FR");
 };
 
-export default function CompetitionCard({ competition, onConfirm }) {
+export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
   const isConfirmed = competition.status === "CONFIRMED";
 
   return (
@@ -101,15 +101,15 @@ export default function CompetitionCard({ competition, onConfirm }) {
             sx={{
               textTransform: "none",
               fontWeight: 700,
-              backgroundColor: "#2563eb",
+              backgroundColor: isProfileComplete ? "#16a34a" : "#2563eb",
               color: "#fff",
               px: 2,
               "&:hover": {
-                backgroundColor: "#1d4ed8",
+                backgroundColor: isProfileComplete ? "#15803d" : "#1d4ed8",
               },
             }}
           >
-            Confirmer ma participation
+            {isProfileComplete ? "Confirmée" : "Confirmer ma participation"}
           </Button>
         )}
 

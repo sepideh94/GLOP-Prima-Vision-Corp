@@ -23,6 +23,23 @@ export default function AthleteCompetitionsPage() {
     loadProfile();
   }, []);
 
+  // Recharger le profil quand la page redevient visible (après retour du profil)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        loadProfile();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", loadProfile);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", loadProfile);
+    };
+  }, []);
+
   const loadProfile = async () => {
     try {
       const profile = await athleteProfileService.getMyProfile();
@@ -38,11 +55,11 @@ export default function AthleteCompetitionsPage() {
     if (userProfile) {
       return (
         userProfile.nationality &&
-        userProfile.dateOfBirth &&
-        userProfile.gender &&
+        userProfile.birthDate &&
+        userProfile.sexe &&
         userProfile.passportNumber &&
-        userProfile.passportFile &&
-        userProfile.medicalCertificateFile
+        userProfile.hasPassport &&
+        userProfile.hasMedicalCertificate
       );
     }
     // Sinon vérifier dans l'objet user depuis AuthContext
@@ -87,6 +104,7 @@ export default function AthleteCompetitionsPage() {
             <CompetitionCard
               competition={competition}
               onConfirm={handleConfirmClick}
+              isProfileComplete={isProfileComplete()}
             />
           </Grid>
         ))}
