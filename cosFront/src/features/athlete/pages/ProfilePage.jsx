@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -29,6 +30,7 @@ import { fr } from "date-fns/locale";
 import * as yup from "yup";
 import athleteProfileService from "../services/athleteProfileService";
 import appTheme from "../../../common/theme/appTheme";
+import { useAuth } from "../../../common/contexts/AuthContext";
 
 // Schéma de validation yup
 const profileSchema = yup.object().shape({
@@ -68,6 +70,9 @@ const profileSchema = yup.object().shape({
 });
 
 export default function ProfilePage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  
   const [formData, setFormData] = useState({
     nationality: "",
     dateOfBirth: null,
@@ -87,10 +92,26 @@ export default function ProfilePage() {
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
 
+  // Vérifier que l'utilisateur est un athlète
   useEffect(() => {
-    loadProfile();
-    loadCountries();
-  }, []);
+    if (user && user.role && user.role.toUpperCase() !== "ATHLETE") {
+      // Rediriger vers le dashboard approprié selon le rôle
+      const roleRoutes = {
+        ADMIN: "/admin",
+        COMMISSIONNER: "/commissioner",
+        VOLONTEER: "/volunteer",
+        SPECTATOR: "/spectator",
+      };
+      const redirectPath = roleRoutes[user.role.toUpperCase()] || "/athlete";
+      navigate(redirectPath, { replace: true });
+      return;
+    }
+    
+    if (user && user.role && user.role.toUpperCase() === "ATHLETE") {
+      loadProfile();
+      loadCountries();
+    }
+  }, [user, navigate]);
 
   const loadCountries = async () => {
     setLoadingCountries(true);

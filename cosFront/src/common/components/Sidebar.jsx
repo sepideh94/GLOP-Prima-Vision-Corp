@@ -82,8 +82,8 @@ export default function Sidebar() {
         ))}
       </List>
 
-      {/* Menu Profile avec Avatar + Nom en bas */}
-      {user && (
+      {/* Menu Profile avec Avatar + Nom en bas - Uniquement pour les athlètes */}
+      {user && user.role && user.role.toUpperCase() === "ATHLETE" && (
         <>
           <Divider sx={{ borderColor: "rgba(148,163,184,0.2)", mx: 2 }} />
           <Box

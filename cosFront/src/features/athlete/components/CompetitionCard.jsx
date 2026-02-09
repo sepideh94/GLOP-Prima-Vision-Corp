@@ -13,6 +13,8 @@ const formatDate = (dateString) => {
 
 export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
   const isConfirmed = competition.status === "CONFIRMED";
+  // Si le profil est complet, considérer comme confirmé visuellement
+  const showAsConfirmed = isConfirmed || isProfileComplete;
 
   return (
     <Card
@@ -31,7 +33,7 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
         sx={{
           height: 80,
           background:
-            HEADER_COLORS[competition.status] || HEADER_COLORS.INVITED,
+            showAsConfirmed ? HEADER_COLORS.CONFIRMED : HEADER_COLORS.INVITED,
           px: 2.5,
           py: 2,
           display: "flex",
@@ -81,39 +83,39 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
           <HourglassBottomIcon
             sx={{
               fontSize: 18,
-              color: isConfirmed ? "#16a34a" : "#f59e0b",
+              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
             }}
           />
           <Typography
             sx={{
               fontSize: 13,
-              color: isConfirmed ? "#16a34a" : "#f59e0b",
+              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
               fontWeight: 600,
             }}
           >
-            {isConfirmed ? "Participation confirmée" : "En attente"}
+            {showAsConfirmed ? "Participation confirmée" : "En attente"}
           </Typography>
         </Box>
 
-        {!isConfirmed && (
+        {!isConfirmed && !isProfileComplete && (
           <Button
             onClick={() => onConfirm(competition)}
             sx={{
               textTransform: "none",
               fontWeight: 700,
-              backgroundColor: isProfileComplete ? "#16a34a" : "#2563eb",
+              backgroundColor: "#2563eb",
               color: "#fff",
               px: 2,
               "&:hover": {
-                backgroundColor: isProfileComplete ? "#15803d" : "#1d4ed8",
+                backgroundColor: "#1d4ed8",
               },
             }}
           >
-            {isProfileComplete ? "Confirmée" : "Confirmer ma participation"}
+            Confirmer ma participation
           </Button>
         )}
 
-        {isConfirmed && (
+        {showAsConfirmed && (
           <Chip label="Confirmée" color="success" size="small" />
         )}
       </Box>
