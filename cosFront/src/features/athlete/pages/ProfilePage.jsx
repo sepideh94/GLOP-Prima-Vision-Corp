@@ -12,7 +12,16 @@ import {
   Alert,
   CircularProgress,
   Paper,
+  Checkbox,
+  Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
+import ArticleIcon from "@mui/icons-material/Article";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -87,6 +96,11 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [charterAccepted, setCharterAccepted] = useState(() => {
+    const stored = localStorage.getItem("athlete_eu_charter_accepted");
+    return stored === "true";
+  });
+  const [charterModalOpen, setCharterModalOpen] = useState(false);
 
   useEffect(() => {
     loadProfile();
@@ -128,6 +142,19 @@ export default function ProfilePage() {
     setError("");
   };
 
+  const handleCharterToggle = (event) => {
+    const checked = event.target.checked;
+    setCharterAccepted(checked);
+    localStorage.setItem("athlete_eu_charter_accepted", checked ? "true" : "false");
+
+    if (checked && errors.charterAccepted) {
+      setErrors((prev) => ({
+        ...prev,
+        charterAccepted: undefined,
+      }));
+    }
+  };
+
   const handleFileChange = (field, file) => {
     if (file) {
       handleChange(field, file);
@@ -153,6 +180,14 @@ export default function ProfilePage() {
     e.preventDefault();
     setError("");
     setSuccess(false);
+
+    if (!charterAccepted) {
+      setErrors((prev) => ({
+        ...prev,
+        charterAccepted: "Vous devez accepter la charte européenne de l'athlète pour continuer.",
+      }));
+      return;
+    }
 
     const isValid = await validate();
     if (!isValid) {
@@ -382,6 +417,46 @@ export default function ProfilePage() {
             )}
           </FormControl>
 
+          {/* Charte européenne du sport (aperçu + case à cocher) */}
+          <Box
+            sx={{
+              mb: 4,
+              p: 3,
+              borderRadius: 2,
+              backgroundColor: "#F1F5F9",
+              border: "1px solid #E2E8F0",
+            }}
+          >
+            <Typography sx={{ fontWeight: 700, fontSize: 16, mb: 1 }}>
+              Charte européenne du sport
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Checkbox
+                checked={charterAccepted}
+                onChange={handleCharterToggle}
+                color="primary"
+              />
+              <Typography
+                onClick={() => setCharterModalOpen(true)}
+                sx={{
+                  cursor: "pointer",
+                  textDecoration: "underline",
+                  userSelect: "none",
+                  "&:hover": {
+                    color: "#2563eb",
+                  },
+                }}
+              >
+                J&apos;accepte la charte européenne de l&apos;athlète.
+              </Typography>
+            </Box>
+            {errors.charterAccepted && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                {errors.charterAccepted}
+              </Typography>
+            )}
+          </Box>
+
           {/* Bouton de soumission */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
             <Button
@@ -407,6 +482,110 @@ export default function ProfilePage() {
           </Box>
         </form>
       </Paper>
+
+      {/* Modale pour afficher la charte complète */}
+      <Dialog
+        open={charterModalOpen}
+        onClose={() => setCharterModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+        sx={{
+          "& .MuiPaper-root": {
+            borderRadius: 4,
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 2 }}>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center" gap={1.2}>
+              <ArticleIcon color="primary" />
+              <Typography fontSize={24} fontWeight={900}>
+                Charte Européenne du Sport
+              </Typography>
+            </Box>
+            <IconButton onClick={() => setCharterModalOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent sx={{ pt: 3 }}>
+          <Box
+            sx={{
+              border: "1px solid #e5e7eb",
+              borderRadius: 3,
+              p: 3,
+              maxHeight: "60vh",
+              overflowY: "auto",
+              backgroundColor: "#f8fafc",
+            }}
+          >
+            <Typography fontWeight={900} mb={2} fontSize={18}>
+              CHARTE EUROPÉENNE DU SPORT
+            </Typography>
+
+            <Typography variant="body2" paragraph>
+              <strong>Article 1 – Objectif de la Charte</strong>
+              <br />
+              Les gouvernements, en vue de la promotion du sport en tant que facteur
+              important du développement humain, prennent les mesures nécessaires
+              pour donner effet aux dispositions de la présente Charte conformément
+              aux principes énoncés dans le Code d&apos;éthique sportive.
+            </Typography>
+
+            <Typography variant="body2" paragraph>
+              <strong>Article 2 – Définition et champ d&apos;application</strong>
+              <br />
+              On entend par « sport » toutes formes d&apos;activités physiques qui, à
+              travers une participation organisée ou non, ont pour objectif
+              l&apos;expression ou l&apos;amélioration de la condition physique et
+              psychique, le développement des relations sociales ou l&apos;obtention
+              de résultats en compétition.
+            </Typography>
+
+            <Typography variant="body2" paragraph>
+              <strong>Article 3 – Le rôle des pouvoirs publics</strong>
+              <br />
+              Les pouvoirs publics encouragent la pratique du sport pour tous,
+              garantissent l&apos;égalité d&apos;accès, luttent contre le dopage et assurent la
+              protection de l&apos;intégrité morale et physique des sportifs.
+            </Typography>
+
+            <Typography variant="body2" paragraph>
+              <strong>Article 4 – Éthique et fair-play</strong>
+              <br />
+              La pratique sportive repose sur le respect des règles, des
+              adversaires, des officiels et de l&apos;esprit sportif. Toute forme de
+              tricherie, de violence ou de discrimination est strictement
+              proscrite.
+            </Typography>
+
+            <Typography variant="body2">
+              <strong>Article 5 – Protection des données</strong>
+              <br />
+              Les participants reconnaissent que leurs données personnelles peuvent
+              être utilisées dans le cadre de l&apos;organisation des compétitions,
+              conformément aux réglementations en vigueur (RGPD).
+            </Typography>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => setCharterModalOpen(false)}
+            variant="contained"
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              px: 4,
+            }}
+          >
+            Fermer
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

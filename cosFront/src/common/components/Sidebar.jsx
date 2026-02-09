@@ -82,8 +82,8 @@ export default function Sidebar() {
         ))}
       </List>
 
-      {/* Menu Profile avec Avatar + Nom en bas */}
-      {user && (
+      {/* Bloc profil (avatar + nom) uniquement pour les athlètes */}
+      {user && role === "ATHLETE" && (
         <>
           <Divider sx={{ borderColor: "rgba(148,163,184,0.2)", mx: 2 }} />
           <Box
@@ -96,7 +96,7 @@ export default function Sidebar() {
             }}
           >
             <Box
-              onClick={() => navigate("/profile")}
+              onClick={() => navigate("/athlete/profile")}
               sx={{
                 borderRadius: 2,
                 width: "calc(100% - 16px)",
