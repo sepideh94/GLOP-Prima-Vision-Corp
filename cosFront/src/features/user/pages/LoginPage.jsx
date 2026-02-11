@@ -53,7 +53,7 @@ const LoginPage = () => {
       const redirectPath = roleRoutes[userRole.toUpperCase()] || "/spectator";
       navigate(redirectPath);
     } catch (err) {
-      setError("Email ou mot de passe incorrect.");
+      setError(err.response?.data?.message || "Email ou mot de passe incorrect.");
     } finally {
       setLoading(false);
     }

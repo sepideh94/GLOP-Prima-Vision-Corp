@@ -11,8 +11,11 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    // Ne pas ajouter le token pour les routes d'authentification
-    if (!config.url?.includes("/auth/signin") && !config.url?.includes("/auth/signup")) {
+    // Ne pas ajouter le token pour les routes publiques
+    const publicRoutes = ["/auth/signin", "/auth/signup", "/api/countries"];
+    const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
+    
+    if (!isPublicRoute) {
       const token = localStorage.getItem("token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

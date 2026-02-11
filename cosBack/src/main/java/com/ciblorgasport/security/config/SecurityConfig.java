@@ -89,6 +89,9 @@ public class SecurityConfig {
                  .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password/complete").permitAll()
 
 
+                // Countries (public)
+                .requestMatchers(HttpMethod.GET, "/api/countries").permitAll()
+
                 // Events
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
