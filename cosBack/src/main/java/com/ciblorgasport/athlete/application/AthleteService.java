@@ -70,7 +70,7 @@ public class AthleteService {
                 athlete.setHasAcceptedCharte(true);
                 athlete.setCharterAcceptedAt(LocalDateTime.now()); 
             }
-        }
+        } 
         
         Athlete saved = athleteRepository.save(athlete);
         
