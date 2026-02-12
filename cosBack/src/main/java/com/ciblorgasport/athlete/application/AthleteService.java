@@ -81,6 +81,7 @@ public class AthleteService {
             participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
             participationRepository.saveAll(participations);
         }
+        
         return AthleteResponse.fromEntity(saved);
     }
 
