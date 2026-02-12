@@ -1,5 +1,6 @@
 package com.ciblorgasport.athlete.application;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +12,8 @@ import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
+import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
@@ -62,8 +65,22 @@ public class AthleteService {
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
         if (request.getHasAcceptedCharte() != null) athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
-
+        if (request.getHasAcceptedCharte() != null) {
+            if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
+                athlete.setHasAcceptedCharte(true);
+                athlete.setCharterAcceptedAt(LocalDateTime.now()); 
+            }
+        }
+        
         Athlete saved = athleteRepository.save(athlete);
+        
+        if (saved.isProfileComplete()) {
+            List<Participation> participations = participationRepository
+                    .findByCompetitorIdAndCompetitorType(saved.getId(), CompetitorType.ATHLETE);
+            
+            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+            participationRepository.saveAll(participations);
+        }
         return AthleteResponse.fromEntity(saved);
     }
 

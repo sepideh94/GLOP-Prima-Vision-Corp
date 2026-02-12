@@ -28,9 +28,4 @@ public class AthleteParticipationController {
         return ResponseEntity.ok(participationService.getAthleteDashboardCards(user.getId()));
     }
 
-    @PostMapping("/{participationId}/confirm")
-    public ResponseEntity<Void> confirm(@PathVariable Long participationId, @AuthenticationPrincipal UserAccount user) {
-        participationService.confirmParticipation(participationId, user.getId());
-        return ResponseEntity.ok().build();
-    }
 }

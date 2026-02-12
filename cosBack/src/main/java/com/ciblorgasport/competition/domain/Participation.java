@@ -60,20 +60,6 @@ public class Participation {
     private LocalDateTime updatedAt;
     
     
-    @Builder.Default
-    private boolean charterAccepted = false;
-    
-    @Column(name = "charterAccepted_at")
-    private LocalDateTime charterAcceptedAt;
-    
-    public void confirmCharter() {
-        if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("La compétition est terminée.");
-        }
-        this.charterAccepted = true;
-        this.charterAcceptedAt = LocalDateTime.now();
-        this.status = ParticipationStatus.CONFIRMED;
-    }
     
     
     
