@@ -21,4 +21,7 @@ public interface TrialService {
     void delete(Long id);
 
     TrialResponse cancelTrial(Long id, String userEmail);
+    
+    public List<TrialResponse> getTrialsForAthlete(Long competitionId, Long athleteId);
+
 }
