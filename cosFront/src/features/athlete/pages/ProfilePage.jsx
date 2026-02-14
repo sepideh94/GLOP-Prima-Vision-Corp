@@ -193,7 +193,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleCharterToggle = (event) => {
+  /*const handleCharterToggle = (event) => {
     const checked = event.target.checked;
     setCharterAccepted(checked);
 
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         charterAccepted: undefined,
       }));
     }
-  };
+  };*/
 
   const validate = async () => {
     try {
