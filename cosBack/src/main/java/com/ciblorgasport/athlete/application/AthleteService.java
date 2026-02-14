@@ -84,6 +84,16 @@ public class AthleteService {
         
         return AthleteResponse.fromEntity(saved);
     }
+    
+    private void checkAndConfirmParticipations(Athlete athlete) {
+        if (athlete.isProfileComplete()) {
+            List<Participation> participations = participationRepository
+                    .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
+            
+            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+            participationRepository.saveAll(participations);
+        }
+    }
 
     @Transactional
     public void uploadMedicalCertificate(Long athleteId, MultipartFile file) {
@@ -98,7 +108,9 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setMedicalCertificate(document);
-        athleteRepository.save(athlete);
+        Athlete savedAthlete= athleteRepository.save(athlete);
+        
+        this.checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadMedicalCertificate(Long athleteId) {
@@ -150,7 +162,8 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setPassportDocument(document);
-        athleteRepository.save(athlete);
+        Athlete savedAthlete=athleteRepository.save(athlete);
+        this.checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadPassport(Long athleteId) {
