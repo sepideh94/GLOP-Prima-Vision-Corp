@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ciblorgasport.commissionner.application.CommissionnerCreationService;
+import com.ciblorgasport.commissionner.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.dto.CreateCommissionnerRequest;
 import com.ciblorgasport.user.dto.UserResponse;

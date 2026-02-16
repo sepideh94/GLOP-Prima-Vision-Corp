@@ -1,4 +1,4 @@
-package com.ciblorgasport.commissionner.domain;
+package com.ciblorgasport.commissionner;
 
 import com.ciblorgasport.user.domain.UserAccount;
 
