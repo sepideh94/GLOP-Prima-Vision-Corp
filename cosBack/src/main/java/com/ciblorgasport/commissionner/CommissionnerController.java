@@ -1,4 +1,4 @@
-package com.ciblorgasport.commissionner.api;
+package com.ciblorgasport.commissionner;
 
 import java.util.List;
 import java.util.Map;
