@@ -23,4 +23,8 @@ public class EmailServiceTestImpl implements EmailService {
     @Override
     public void sendAthleteInviteEmail(String to, String firstName, String token) {
     }
+
+	@Override
+	public void sendVolonteerInviteEmail(String to, String firstName, String token) {		
+	}
 }

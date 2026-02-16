@@ -187,14 +187,15 @@ public class AuthenticationService {
 
     if (at.getType() != TokenType.PASSWORD_RESET
             && at.getType() != TokenType.INVITE_COMMISSIONNER
-            && at.getType() != TokenType.INVITE_ATHLETE) {
+            && at.getType() != TokenType.INVITE_ATHLETE
+            && at.getType() != TokenType.INVITE_VOLONTEER) {
         throw new IllegalArgumentException("Token invalide.");
     }
 
     UserAccount user = at.getUser();
     user.setPassword(passwordEncoder.encode(newPassword));
 
-    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE) {
+    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE|| at.getType() == TokenType.INVITE_VOLONTEER) {
         user.setActive(true);
     }
 

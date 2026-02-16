@@ -34,6 +34,7 @@ import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.volonteer.application.VolonteerCreationService;
+import com.ciblorgasport.volonteer.application.VolonteerImportService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +53,9 @@ public class CommissionnerController {
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
-
+	private final VolonteerImportService volonteerImportService;
+    private final VolonteerCreationService volonteerCreationService;
+	
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
         UserAccount created = athleteCreationService.createUser(request);
@@ -66,18 +69,6 @@ public class CommissionnerController {
         );
     }
 
-    @PostMapping("/create-volonteer")
-    public ResponseEntity<?> createVolonteer(@Valid @RequestBody CreateUserRequest request) {
-        UserAccount created = volontaireService.createUser(request);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            Map.of(
-              "id", created.getId(),
-              "email", created.getEmail(),
-              "role", created.getRoleName().replace("ROLE_", "")
-            )
-        );
-    }
 
     /**
      * Import d'athlètes dans le contexte d'une compétition.
@@ -97,23 +88,29 @@ public class CommissionnerController {
                 "skipped", result.skipped()
         ));
     }
+    
+    
+    /**
+     * Importe des volontaires via un fichier CSV pour une compétition.
+     */
+    @PostMapping("/competitions/{competitionId}/import-volonteers")
+    public ResponseEntity<VolonteerImportService.ImportResult> importVolonteers(
+            @PathVariable Long competitionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        
+        return ResponseEntity.ok(volonteerImportService.importVolonteersForCompetition(file, competitionId));
+    }
 
     /**
-     * @deprecated Utiliser /competitions/{competitionId}/import-athletes à la place
+     * Création manuelle d'un volontaire.
+     * Le service se chargera d'envoyer le mail d'invitation automatiquement.
      */
-    @PostMapping("/import-athletes")
-    public ResponseEntity<?> importAthletes(@RequestParam("file") MultipartFile file) throws Exception {
-        List<CSVRecord> records = csvService.parseCsv(file);
-        records.forEach(r -> userAccountService.createAndInviteUser(r, athleteCreationService));
-        return ResponseEntity.ok("Import athlètes terminé");
+    @PostMapping("/create-volonteers")
+    public ResponseEntity<UserAccount> createVolonteer(@RequestBody CreateUserRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(volonteerCreationService.createUser(request));
     }
 
-    @PostMapping("/import-volonteers")
-    public ResponseEntity<?> importVolonteers(@RequestParam("file") MultipartFile file) throws Exception {
-        List<CSVRecord> records = csvService.parseCsv(file);
-        records.forEach(r -> userAccountService.createAndInviteUser(r, volontaireService));
-        return ResponseEntity.ok("Import volontaires terminé");
-    }
 
     // ==================== COMPETITIONS ====================
 
