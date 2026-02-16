@@ -21,6 +21,7 @@ import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
+import com.ciblorgasport.volonteer.application.VolonteerImportService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +34,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final VolonteerImportService volonteerImportService;
 
     private final EmailService emailService;
     private final ActivationTokenRepository activationTokenRepository;
@@ -197,6 +199,7 @@ public class AuthenticationService {
 
     if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE|| at.getType() == TokenType.INVITE_VOLONTEER) {
         user.setActive(true);
+        volonteerImportService.updateVolonteerAssignmentsToAccepted(user.getId());
     }
 
     userRepository.save(user);

@@ -35,6 +35,7 @@ import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.volonteer.application.VolonteerCreationService;
 import com.ciblorgasport.volonteer.application.VolonteerImportService;
+import com.ciblorgasport.volonteer.domain.Volonteer;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -105,10 +106,16 @@ public class CommissionnerController {
      * Création manuelle d'un volontaire.
      * Le service se chargera d'envoyer le mail d'invitation automatiquement.
      */
-    @PostMapping("/create-volonteers")
-    public ResponseEntity<UserAccount> createVolonteer(@RequestBody CreateUserRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(volonteerCreationService.createUser(request));
+    @PostMapping("/competitions/{competitionId}/create-volonteer")
+    public ResponseEntity<UserAccount> createVolonteerManual(
+            @PathVariable Long competitionId,
+            @RequestBody CreateUserRequest request) {
+        
+        Volonteer volonteer = (Volonteer) volonteerCreationService.createUser(request);
+       
+        volonteerImportService.inviteToCompetition(volonteer, competitionId);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(volonteer);
     }
 
 
