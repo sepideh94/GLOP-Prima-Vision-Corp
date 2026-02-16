@@ -36,7 +36,7 @@ public class VolonteerCreationService implements UserCreationService {
                 .build();
 
         Volonteer volonteerSaved= (Volonteer) userService.save(newVolonteer);
-        
+       
         String token = tokenService.createInviteToken(volonteerSaved);
         emailService.sendVolonteerInviteEmail(volonteerSaved.getEmail(), volonteerSaved.getFirstName(), token);
         

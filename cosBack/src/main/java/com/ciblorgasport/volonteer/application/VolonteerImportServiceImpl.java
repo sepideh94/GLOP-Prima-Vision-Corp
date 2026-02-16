@@ -47,8 +47,7 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
         for (CSVRecord record : records) {
             try {
                 Volonteer volonteer = getOrCreateVolonteer(record);
-                boolean wasInvited = inviteToCompetition(volonteer, competition);
-
+                boolean wasInvited = inviteToCompetitionEntity(volonteer, competition);
                 if (wasInvited) {
                     invitedCount++;
                     if (!volonteer.isActive()) {
@@ -91,9 +90,14 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
                 });
     }
 
-    private boolean inviteToCompetition(Volonteer v, Competition c) {
+    public boolean inviteToCompetition(Volonteer v, Long competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new EntityNotFoundException("Compétition non trouvée"));
+        return inviteToCompetitionEntity(v, competition);
+    }
+
+    private boolean inviteToCompetitionEntity(Volonteer v, Competition c) {
         if (assignmentRepository.existsByVolonteerIdAndCompetitionId(v.getId(), c.getId())) {
-            log.info("Le volontaire {} est déjà affecté à la compétition {}", v.getEmail(), c.getName());
             return false;
         }
 
@@ -105,5 +109,19 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
 
         assignmentRepository.save(assignment);
         return true;
+    }
+
+    @Override
+    @Transactional
+    public void updateVolonteerAssignmentsToAccepted(Long volonteerId) {
+
+    	List<VolonteerAssignment> assignments = assignmentRepository.findByVolonteerId(volonteerId);
+        
+        assignments.forEach(assignment -> {
+            assignment.setStatus(ParticipationStatus.CONFIRMED);
+            assignmentRepository.save(assignment);
+        });
+        
+        log.info("Statut mis à jour pour {} assignation(s) du volontaire ID: {}", assignments.size(), volonteerId);
     }
 }
