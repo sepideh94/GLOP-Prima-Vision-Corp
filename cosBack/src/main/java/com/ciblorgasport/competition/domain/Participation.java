@@ -1,6 +1,7 @@
 package com.ciblorgasport.competition.domain;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -57,4 +58,23 @@ public class Participation {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    
+    @Builder.Default
+    private boolean charterAccepted = false;
+    
+    @Column(name = "charterAccepted_at")
+    private LocalDateTime charterAcceptedAt;
+    
+    public void confirmCharter() {
+        if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("La compétition est terminée.");
+        }
+        this.charterAccepted = true;
+        this.charterAcceptedAt = LocalDateTime.now();
+        this.status = ParticipationStatus.CONFIRMED;
+    }
+    
+    
+    
 }

@@ -526,32 +526,33 @@ export default function UsersManagementPage() {
                       <TableCell>{getStatusChip(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)}</TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", gap: 1 }}>
-                          <Tooltip title="Voir les détails">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewDetails(user)}
-                              sx={{ color: appTheme.colors.cyan }}
-                            >
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
+                          <Tooltip title="Voir les détails (bientôt disponible)">
+                            <span>
+                              <IconButton
+                                size="small"
+                                disabled
+                                sx={{ color: appTheme.colors.cyan, opacity: 0.5 }}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
                           <Tooltip
                             title={
-                              (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? "Désactiver" : "Activer"
+                              (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
+                                ? "Désactiver (bientôt disponible)"
+                                : "Activer (bientôt disponible)"
                             }
                           >
                             <span>
                               <IconButton
                                 size="small"
-                                onClick={() => handleToggleStatus(user)}
-                                disabled={
-                                  (user.role || "").toUpperCase() === "ADMIN" ||
-                                  (user.role || "").toUpperCase() === "ROLE_ADMIN"
-                                }
+                                disabled
                                 sx={{
                                   color: (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
                                     ? "#ef4444"
                                     : "#22c55e",
+                                  opacity: 0.5,
                                 }}
                               >
                                 {(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? (
@@ -562,14 +563,16 @@ export default function UsersManagementPage() {
                               </IconButton>
                             </span>
                           </Tooltip>
-                          <Tooltip title="Réinitialiser le mot de passe">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleResetPassword(user)}
-                              sx={{ color: appTheme.colors.violet }}
-                            >
-                              <LockResetIcon fontSize="small" />
-                            </IconButton>
+                          <Tooltip title="Réinitialiser le mot de passe (bientôt disponible)">
+                            <span>
+                              <IconButton
+                                size="small"
+                                disabled
+                                sx={{ color: appTheme.colors.violet, opacity: 0.5 }}
+                              >
+                                <LockResetIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
                         </Box>
                       </TableCell>

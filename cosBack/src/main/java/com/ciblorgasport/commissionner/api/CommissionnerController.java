@@ -181,4 +181,10 @@ public class CommissionnerController {
         List<ParticipantResponse> participations = participationService.getParticipationsByAthlete(athleteId);
         return ResponseEntity.ok(participations);
     }
+
+    @GetMapping("/athletes/{athleteId}/profile")
+    public ResponseEntity<AthleteResponse> getAthleteProfile(@PathVariable("athleteId") Long athleteId) {
+        AthleteResponse profile = athleteService.getAthleteProfile(athleteId);
+        return ResponseEntity.ok(profile);
+    }
 }

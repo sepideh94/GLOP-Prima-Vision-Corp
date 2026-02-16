@@ -91,7 +91,7 @@ export default function CompetitionFormDialog({
     try {
       await onSave(form);
     } catch (err) {
-      setBackendError(err.message || "Une erreur s'est produite");
+      setBackendError(err.response?.data?.message || "Une erreur s'est produite");
     }
   };
 

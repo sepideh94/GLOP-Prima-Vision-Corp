@@ -29,6 +29,11 @@ import CommissionerTrialListPage from
 import CommissionerParticipantsPage from
   "../features/participant/pages/CommissionerParticipantsPage.jsx";
 
+import AthleteCompetitionsPage from
+  "../features/athlete/pages/AthleteCompetitionsPage.jsx";
+
+import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
+
 
 export default function App() {
   return (
@@ -79,6 +84,16 @@ export default function App() {
               <Route
                 path="/commissioner/participants"
                 element={<CommissionerParticipantsPage />}
+              />
+
+              {/* ATHLETE */}
+              <Route
+                path="/athlete/competitions"
+                element={<AthleteCompetitionsPage />}
+              />
+              <Route
+                path="/athlete/profile"
+                element={<ProfilePage />}
               />
 
             </Route>

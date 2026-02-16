@@ -89,6 +89,9 @@ public class SecurityConfig {
                  .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password/complete").permitAll()
 
 
+                // Countries (public)
+                .requestMatchers(HttpMethod.GET, "/api/countries").permitAll()
+
                 // Events
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
@@ -99,6 +102,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
                 .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
                 .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
+                .requestMatchers("/api/public/participation").permitAll()
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())
