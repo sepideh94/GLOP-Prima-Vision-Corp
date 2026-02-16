@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 

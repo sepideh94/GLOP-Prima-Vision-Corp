@@ -8,7 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.ciblorgasport.admin.domain.Admin;
+import com.ciblorgasport.admin.Admin;
 
 import jakarta.persistence.*;
 import lombok.*;

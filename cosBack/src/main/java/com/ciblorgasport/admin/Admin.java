@@ -1,4 +1,4 @@
-package com.ciblorgasport.admin.domain;
+package com.ciblorgasport.admin;
 
 import com.ciblorgasport.user.domain.UserAccount;
 

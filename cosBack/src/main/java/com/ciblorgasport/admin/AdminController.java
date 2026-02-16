@@ -1,4 +1,4 @@
-package com.ciblorgasport.admin.controller;
+package com.ciblorgasport.admin;
 
 import java.util.List;
 import java.util.Map;
