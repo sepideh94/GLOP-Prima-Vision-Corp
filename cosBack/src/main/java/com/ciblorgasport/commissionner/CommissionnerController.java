@@ -126,13 +126,11 @@ public class CommissionnerController {
     // ==================== COMPETITION (SINGLE) ====================
 
     @GetMapping("/competitions/{competitionId}")
-    public ResponseEntity<CompetitionResponse> getCompetition(
-        @PathVariable Long competitionId) {
+    public ResponseEntity<CompetitionResponse> getCompetition( @PathVariable Long competitionId) {
 
-    CompetitionResponse competition =
-            competitionService.getCompetitionById(competitionId);
-
-    return ResponseEntity.ok(competition);
+	    CompetitionResponse competition = competitionService.getCompetitionById(competitionId);
+	
+	    return ResponseEntity.ok(competition);
     }
 
     // ==================== ÉPREUVES (TRIALS) ====================
