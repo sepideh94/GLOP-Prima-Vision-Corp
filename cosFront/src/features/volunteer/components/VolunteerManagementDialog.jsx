@@ -20,6 +20,7 @@ import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import appTheme from "../../../common/theme/appTheme";
+import volunteerService from "../services/volunteerService";
 
 export default function VolunteerManagementDialog({
   open,
@@ -48,7 +49,7 @@ export default function VolunteerManagementDialog({
     reader.onload = () => {
       const lines = reader.result
         .split("\n")
-        .map((l) => l.trim())
+        .map((l) => l.replace(/\r/g, "").trim()) 
         .filter(Boolean);
 
       if (lines.length < 2) {
@@ -57,15 +58,15 @@ export default function VolunteerManagementDialog({
       }
 
       const header = lines[0].replace(/\s/g, "");
-      if (header !== "email,firstName,lastName") {
+      if (header !== "email;firstName;lastName") {
         setError(
-          "Format CSV invalide. L'en-tête doit être : email,firstName,lastName"
+          "Format CSV invalide. L'en-tête doit être : email;firstName;lastName"
         );
         return;
       }
 
       const rows = lines.slice(1).map((line) => {
-        const [email, firstName, lastName] = line.split(",");
+        const [email, firstName, lastName] = line.split(";");
 
         return {
           email: email?.trim(),
@@ -109,17 +110,12 @@ export default function VolunteerManagementDialog({
       return;
     }
 
-    if (!competitionId) {
-      setError("Aucune compétition sélectionnée");
-      return;
-    }
-
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      await new Promise((r) => setTimeout(r, 1200));
+      await volunteerService.importVolunteers(competitionId, file);
 
       setPreview((prev) =>
         prev.map((p) => ({
@@ -128,15 +124,18 @@ export default function VolunteerManagementDialog({
         }))
       );
 
-      setSuccess("Invitations envoyées aux volontaires !");
-    } catch {
-      setError("Erreur lors de l'import des volontaires");
+      setSuccess("Invitations envoyées avec succès !");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors de l'import des volontaires"
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setError("");
     setSuccess("");
 
@@ -145,8 +144,21 @@ export default function VolunteerManagementDialog({
       return;
     }
 
-    setSuccess("Volontaire créé avec succès");
-    setForm({ firstName: "", lastName: "", email: "" });
+    try {
+      await volunteerService.createVolunteer(competitionId, {
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+      }); 
+
+      setSuccess("Invitation envoyée au volontaire !");
+      setForm({ firstName: "", lastName: "", email: "" });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors de la création du volontaire"
+      );
+    }
   };
 
   const handleClose = () => {
