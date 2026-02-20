@@ -15,6 +15,25 @@ import competitionService from "../../competition/services/competitionService";
 
 import ImportParticipantsDialog from "../../participant/pages/ImportParticipantsDialog";
 import VolunteerManagementDialog from "../../volunteer/components/VolunteerManagementDialog";
+import TrialDetailDialog from "./TrialDetailDialog";
+
+
+const getStatusStyle = (statusLabel) => ({
+  padding: "4px 12px",
+  borderRadius: appTheme.radius.pill,
+  fontWeight: 600,
+  fontSize: 13,
+  whiteSpace: "nowrap",
+  background:
+    statusLabel === "À venir"
+      ? "rgba(250,204,21,0.25)"
+      : statusLabel === "En cours"
+      ? "rgba(34,211,238,0.25)"
+      : statusLabel === "Annulée"
+      ? "rgba(239,68,68,0.25)"
+      : "rgba(34,197,94,0.25)",
+  color: appTheme.colors.dark,
+});
 
 export default function CommissionerTrialListPage() {
   const { competitionId } = useParams();
@@ -27,6 +46,9 @@ export default function CommissionerTrialListPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [openImport, setOpenImport] = useState(false);
   const [openVolunteerDialog, setOpenVolunteerDialog] = useState(false);
+
+  const [openDetail, setOpenDetail] = useState(false);
+  const [viewingTrial, setViewingTrial] = useState(null);
 
   useEffect(() => {
     competitionService
@@ -43,6 +65,8 @@ export default function CommissionerTrialListPage() {
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+      
+      {/* Retour */}
       <Button
         startIcon={<ArrowBackIcon />}
         onClick={() =>
@@ -64,6 +88,7 @@ export default function CommissionerTrialListPage() {
         Retour
       </Button>
 
+      {/* Titre + boutons */}
       <Box
         sx={{
           mb: 3,
@@ -78,7 +103,8 @@ export default function CommissionerTrialListPage() {
           Gestion des épreuves
         </Typography>
 
-        <Box sx={{ display: "flex", gap: 2 }}>
+        {/* 🔥 Boutons rapprochés */}
+        <Box sx={{ display: "flex", gap: 1 }}>
           <Tooltip
             title={
               competition?.statusLabel === "Terminée"
@@ -124,13 +150,6 @@ export default function CommissionerTrialListPage() {
               borderRadius: appTheme.radius.pill,
               background: "linear-gradient(135deg, #facc15, #22c55e)",
               color: appTheme.colors.dark,
-              boxShadow: "0 6px 16px rgba(34,197,94,0.35)",
-              transition: "all 0.25s ease",
-              "&:hover": {
-                background: "linear-gradient(135deg, #eab308, #16a34a)",
-                transform: "translateY(-2px)",
-                boxShadow: "0 10px 22px rgba(34,197,94,0.45)",
-              },
             }}
           >
             Ajouter des volontaires
@@ -138,6 +157,7 @@ export default function CommissionerTrialListPage() {
         </Box>
       </Box>
 
+      {/* Nom compétition */}
       <Box
         sx={{
           mb: 4,
@@ -155,6 +175,7 @@ export default function CommissionerTrialListPage() {
         </Typography>
       </Box>
 
+      {/* Table */}
       <div className="card" style={{ borderRadius: 22 }}>
         <div className="card-header d-flex justify-content-between">
           <strong>Liste des épreuves</strong>
@@ -187,9 +208,27 @@ export default function CommissionerTrialListPage() {
                   <td>{t.endDate}</td>
                   <td>{t.mode}</td>
                   <td>{t.categoryGender}</td>
-                  <td>{t.statusLabel}</td>
                   <td>
-                    <VisibilityIcon />
+                    <span style={getStatusStyle(t.statusLabel)}>
+                      {t.statusLabel}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className="btn d-flex align-items-center"
+                      style={{
+                        borderRadius: appTheme.radius.pill,
+                        background: "linear-gradient(135deg, #a78bfa, #8b5cf6)",
+                        color: "#fff",
+                        padding: "4px 12px",
+                      }}
+                      onClick={() => {
+                        setViewingTrial(t);
+                        setOpenDetail(true);
+                      }}
+                    >
+                      <VisibilityIcon sx={{ fontSize: 16 }} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -197,6 +236,13 @@ export default function CommissionerTrialListPage() {
           </table>
         </div>
       </div>
+
+      <TrialDetailDialog
+        open={openDetail}
+        onClose={() => setOpenDetail(false)}
+        trial={viewingTrial}
+        competition={competition}
+      />
 
       <ImportParticipantsDialog
         open={openImport}

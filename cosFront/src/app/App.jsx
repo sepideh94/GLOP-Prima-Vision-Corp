@@ -29,17 +29,20 @@ import CommissionerTrialListPage from
 import CommissionerParticipantsPage from
   "../features/participant/pages/CommissionerParticipantsPage.jsx";
 
+import CommissionerVolunteersPage from
+  "../features/volunteer/pages/CommissionerVolunteersPage.jsx"; // ✅ AJOUT
+
 import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
 
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
-
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+
           {/* PUBLIC */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
@@ -85,6 +88,10 @@ export default function App() {
                 path="/commissioner/participants"
                 element={<CommissionerParticipantsPage />}
               />
+              <Route
+                path="/commissioner/volunteers"
+                element={<CommissionerVolunteersPage />}
+              /> {/* ✅ NOUVELLE PAGE */}
 
               {/* ATHLETE */}
               <Route
@@ -102,6 +109,7 @@ export default function App() {
           {/* FALLBACK */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

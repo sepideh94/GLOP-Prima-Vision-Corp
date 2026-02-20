@@ -28,6 +28,27 @@ const volunteerService = {
 
   return response.data;
 },
+
+/* =========================
+     GET VOLUNTEERS BY COMPETITION
+  ========================== */
+  getVolunteersByCompetition: async (competitionId) => {
+    const response = await api.get(
+      `${BASE_URL}/${competitionId}/volunteers`
+    );
+    return response.data;
+  },
+
+  /* =========================
+     GET ALL VOLUNTEERS
+     (si ton backend le permet)
+  ========================== */
+  getAllVolunteers: async () => {
+    const response = await api.get(
+      "/api/commissioner/volunteers"
+    );
+    return response.data;
+  },
 };
 
 export default volunteerService;

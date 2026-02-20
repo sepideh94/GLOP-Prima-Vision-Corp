@@ -36,6 +36,8 @@ export default function VolunteerManagementDialog({
     email: "",
   });
 
+  const [formErrors, setFormErrors] = useState({});
+
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,13 +45,45 @@ export default function VolunteerManagementDialog({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  /* =========================
+     VALIDATION FORMULAIRE
+  ========================== */
+
+  const validateForm = () => {
+    const errors = {};
+
+    if (!form.lastName.trim()) {
+      errors.lastName = "Le nom est obligatoire";
+    }
+
+    if (!form.firstName.trim()) {
+      errors.firstName = "Le prénom est obligatoire";
+    }
+
+    if (!form.email.trim()) {
+      errors.email = "L'email est obligatoire";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(form.email)) {
+        errors.email = "Format d'email invalide";
+      }
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  /* =========================
+     IMPORT CSV
+  ========================== */
+
   const parseCsv = (selectedFile) => {
     const reader = new FileReader();
 
     reader.onload = () => {
       const lines = reader.result
         .split("\n")
-        .map((l) => l.replace(/\r/g, "").trim()) 
+        .map((l) => l.replace(/\r/g, "").trim())
         .filter(Boolean);
 
       if (lines.length < 2) {
@@ -135,24 +169,26 @@ export default function VolunteerManagementDialog({
     }
   };
 
+  /* =========================
+     CREATE VOLUNTEER
+  ========================== */
+
   const handleCreate = async () => {
     setError("");
     setSuccess("");
 
-    if (!form.firstName || !form.lastName || !form.email) {
-      setError("Tous les champs sont obligatoires");
-      return;
-    }
+    if (!validateForm()) return;
 
     try {
       await volunteerService.createVolunteer(competitionId, {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-      }); 
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+      });
 
       setSuccess("Invitation envoyée au volontaire !");
       setForm({ firstName: "", lastName: "", email: "" });
+      setFormErrors({});
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -164,6 +200,7 @@ export default function VolunteerManagementDialog({
   const handleClose = () => {
     setTab(0);
     setForm({ firstName: "", lastName: "", email: "" });
+    setFormErrors({});
     setFile(null);
     setPreview([]);
     setError("");
@@ -204,7 +241,6 @@ export default function VolunteerManagementDialog({
       </Tabs>
 
       <DialogContent dividers>
-
         {tab === 0 && (
           <>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -224,18 +260,29 @@ export default function VolunteerManagementDialog({
               >
                 <UploadFileIcon sx={{ fontSize: 50, mb: 1 }} />
                 <Typography fontWeight={800}>
-                  {file ? file.name : "Cliquez pour sélectionner un fichier CSV"}
+                  {file
+                    ? file.name
+                    : "Cliquez pour sélectionner un fichier CSV"}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   Taille maximale : 5 MB
                 </Typography>
-                <input hidden type="file" accept=".csv" onChange={handleFileChange} />
+                <input
+                  hidden
+                  type="file"
+                  accept=".csv"
+                  onChange={handleFileChange}
+                />
               </Box>
             </Box>
 
             {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
             {success && (
-              <Alert severity="success" icon={<CheckCircleIcon />} sx={{ mt: 2 }}>
+              <Alert
+                severity="success"
+                icon={<CheckCircleIcon />}
+                sx={{ mt: 2 }}
+              >
                 {success}
               </Alert>
             )}
@@ -284,6 +331,8 @@ export default function VolunteerManagementDialog({
               onChange={(e) =>
                 setForm({ ...form, lastName: e.target.value })
               }
+              error={!!formErrors.lastName}
+              helperText={formErrors.lastName}
               fullWidth
             />
             <TextField
@@ -292,6 +341,8 @@ export default function VolunteerManagementDialog({
               onChange={(e) =>
                 setForm({ ...form, firstName: e.target.value })
               }
+              error={!!formErrors.firstName}
+              helperText={formErrors.firstName}
               fullWidth
             />
             <TextField
@@ -301,13 +352,15 @@ export default function VolunteerManagementDialog({
               onChange={(e) =>
                 setForm({ ...form, email: e.target.value })
               }
+              error={!!formErrors.email}
+              helperText={formErrors.email}
               fullWidth
             />
           </Box>
         )}
       </DialogContent>
 
-      <DialogActions sx={{ p: 3, gap: 2 }}>
+      <DialogActions sx={{ p: 3, gap: 0.5 }}>
         <Button
           onClick={handleClose}
           sx={{
@@ -354,7 +407,7 @@ export default function VolunteerManagementDialog({
               fontWeight: 700,
               px: 3,
               borderRadius: appTheme.radius.pill,
-              background: "linear-gradient(135deg, #facc15, #22c55e)",
+              background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
               color: appTheme.colors.dark,
             }}
           >

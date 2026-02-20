@@ -175,17 +175,18 @@ export default function ProfilePage() {
   };
 
   const handleCharterToggle = (event) => {
-    const checked = event.target.checked;
-    setCharterAccepted(checked);
-    localStorage.setItem("athlete_eu_charter_accepted", checked ? "true" : "false");
+  const checked = event.target.checked;
+  setCharterAccepted(checked);
 
-    if (checked && errors.charterAccepted) {
-      setErrors((prev) => ({
-        ...prev,
-        charterAccepted: undefined,
-      }));
-    }
-  };
+  localStorage.setItem("athlete_eu_charter_accepted", checked ? "true" : "false");
+
+  if (checked && errors.charterAccepted) {
+    setErrors((prev) => ({
+      ...prev,
+      charterAccepted: undefined,
+    }));
+  }
+};
 
   const handleFileChange = (field, file) => {
     if (file) {
@@ -193,17 +194,6 @@ export default function ProfilePage() {
     }
   };
 
-  /*const handleCharterToggle = (event) => {
-    const checked = event.target.checked;
-    setCharterAccepted(checked);
-
-    if (checked && errors.charterAccepted) {
-      setErrors((prev) => ({
-        ...prev,
-        charterAccepted: undefined,
-      }));
-    }
-  };*/
 
   const validate = async () => {
     try {
