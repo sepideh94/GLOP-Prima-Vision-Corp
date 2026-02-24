@@ -22,9 +22,11 @@ import com.ciblorgasport.athlete.application.AthleteCreationService;
 import com.ciblorgasport.athlete.application.AthleteImportService;
 import com.ciblorgasport.athlete.application.AthleteService;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.common.service.CsvImportService;
 import com.ciblorgasport.competition.application.CompetitionService;
 import com.ciblorgasport.competition.application.ParticipationService;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.trial.application.TrialService;
@@ -36,6 +38,7 @@ import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.volonteer.application.VolonteerCreationService;
 import com.ciblorgasport.volonteer.application.VolonteerImportService;
 import com.ciblorgasport.volonteer.domain.Volonteer;
+import com.ciblorgasport.volonteer.domain.VolonteerCompetitionResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -90,7 +93,8 @@ public class CommissionnerController {
         ));
     }
     
-    
+    // ==================== Volontaires ====================
+
     /**
      * Importe des volontaires via un fichier CSV pour une compétition.
      */
@@ -117,7 +121,16 @@ public class CommissionnerController {
         
         return ResponseEntity.status(HttpStatus.CREATED).body(volonteer);
     }
-
+    	
+    /**
+     * Récupère la liste des volontaires d'une compétition avec leur statut.
+     */
+    @GetMapping("/competitions/{competitionId}/volonteers")
+    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByCompetition(@PathVariable Long competitionId) {
+        
+        List<VolonteerCompetitionResponse> volonteers = volonteerImportService.getVolonteersByCompetition(competitionId);
+        return ResponseEntity.ok(volonteers);
+    }
 
     // ==================== COMPETITIONS ====================
 
@@ -173,9 +186,10 @@ public class CommissionnerController {
     }
 
     @GetMapping("/competitions/{competitionId}/athletes")
-    public ResponseEntity<List<AthleteResponse>> getAthletesByCompetition(
-            @PathVariable("competitionId") Long competitionId) {
-        List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+    public ResponseEntity<List<CompetitionAthleteResponse>> getAthletesByCompetition( @PathVariable("competitionId") Long competitionId) {
+        
+        List<CompetitionAthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+        
         return ResponseEntity.ok(athletes);
     }
 
