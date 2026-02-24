@@ -10,4 +10,6 @@ public interface VolonteerAssignmentRepository extends JpaRepository<VolonteerAs
 	boolean existsByVolonteerIdAndCompetitionId(Long volonteerId, Long competitionId);
 
 	List<VolonteerAssignment> findByVolonteerId(Long volonteerId);
+	
+	List<VolonteerAssignment> findByCompetitionId(Long competitionId);
 }

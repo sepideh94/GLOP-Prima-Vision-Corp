@@ -3,6 +3,8 @@ package com.ciblorgasport.volonteer.application;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -10,6 +12,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.web.multipart.MultipartFile;
 import com.ciblorgasport.volonteer.domain.Volonteer;
 import com.ciblorgasport.volonteer.domain.VolonteerAssignment;
+import com.ciblorgasport.volonteer.domain.VolonteerCompetitionResponse;
 import com.ciblorgasport.volonteer.infrastructure.VolonteerAssignmentRepository;
 import com.ciblorgasport.volonteer.infrastructure.VolonteerRepository;
 import com.ciblorgasport.common.service.CsvImportService;
@@ -123,5 +126,21 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
         });
         
         log.info("Statut mis à jour pour {} assignation(s) du volontaire ID: {}", assignments.size(), volonteerId);
+    }
+    
+    @Override
+    public List<VolonteerCompetitionResponse> getVolonteersByCompetition(Long competitionId) {
+        return assignmentRepository.findByCompetitionId(competitionId).stream()
+                .map(assignment -> {
+                    Volonteer v = assignment.getVolonteer();
+                    return VolonteerCompetitionResponse.builder()
+                            .id(v.getId())
+                            .firstName(v.getFirstName())
+                            .lastName(v.getLastName())
+                            .email(v.getEmail())
+                            .status(assignment.getStatus()) 
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }
