@@ -10,10 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
@@ -36,16 +38,30 @@ public class AthleteService {
                 .collect(Collectors.toList());
     }
 
-    public List<AthleteResponse> getAthletesByCompetition(Long competitionId) {
-        List<Long> athleteIds = participationRepository.findByCompetitionId(competitionId).stream()
-                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                .map(p -> p.getCompetitorId())
-                .distinct()
-                .toList();
+    
+    public List<CompetitionAthleteResponse> getAthletesByCompetition(Long competitionId) {
 
-        return athleteRepository.findAllById(athleteIds).stream()
-                .map(AthleteResponse::fromEntity)
-                .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
+    	List<Participation> participations = participationRepository.findByCompetitionId(competitionId)
+                .stream()
+                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                .toList();
+        
+        return participations.stream()
+                .map(p -> {
+                    
+                    Athlete athlete = athleteRepository.findById(p.getCompetitorId())
+                            .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé pour l'ID: " + p.getCompetitorId()));
+
+                    return new CompetitionAthleteResponse(
+                        AthleteResponse.builder()
+                            .id(athlete.getId())
+                            .firstName(athlete.getFirstName())
+                            .lastName(athlete.getLastName())
+                            .email(athlete.getEmail())
+                            .build(),
+                            p.getStatus()
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
