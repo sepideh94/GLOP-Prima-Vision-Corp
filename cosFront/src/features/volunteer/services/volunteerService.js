@@ -1,6 +1,6 @@
 import api from "../../../common/api/axiosInstance";
 
-const BASE_URL = "/api/commissioner/competitions"; 
+const BASE_URL = "/api/commissioner/competitions";
 
 const volunteerService = {
 
@@ -13,39 +13,23 @@ const volunteerService = {
   },
 
   importVolunteers: async (competitionId, file) => {
-  const formData = new FormData();
-  formData.append("file", file);
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const response = await api.post(
-    `/api/commissioner/competitions/${competitionId}/import-volonteers`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
-
-  return response.data;
-},
-
-/* =========================
-     GET VOLUNTEERS BY COMPETITION
-  ========================== */
-  getVolunteersByCompetition: async (competitionId) => {
-    const response = await api.get(
-      `${BASE_URL}/${competitionId}/volunteers`
+    const response = await api.post(
+      `${BASE_URL}/${competitionId}/import-volonteers`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
     );
+
     return response.data;
   },
 
-  /* =========================
-     GET ALL VOLUNTEERS
-     (si ton backend le permet)
-  ========================== */
-  getAllVolunteers: async () => {
+  getVolunteersByCompetition: async (competitionId) => {
     const response = await api.get(
-      "/api/commissioner/volunteers"
+      `${BASE_URL}/${competitionId}/volonteers`
     );
     return response.data;
   },

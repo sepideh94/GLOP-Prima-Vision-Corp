@@ -24,39 +24,31 @@ export default function CommissionerVolunteersPage() {
 
   const [volunteers, setVolunteers] = useState([]);
   const [competitions, setCompetitions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const [selectedCompetition, setSelectedCompetition] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* =========================
-     LOAD COMPETITIONS
-  ========================== */
-
   useEffect(() => {
-    fetchInitialData();
+    fetchCompetitions();
   }, []);
 
   useEffect(() => {
     fetchVolunteers();
   }, [selectedCompetition]);
 
-  const fetchInitialData = async () => {
+  const fetchCompetitions = async () => {
     try {
       const events = await competitionService.getEvents();
       const allCompetitions = [];
 
       for (const event of events) {
-        try {
-          const comps =
-            await competitionService.getCompetitionsByEventForCommissioner(
-              event.id
-            );
-          allCompetitions.push(...comps);
-        } catch (e) {
-          console.error("Erreur compétition:", e);
-        }
+        const comps =
+          await competitionService.getCompetitionsByEventForCommissioner(
+            event.id
+          );
+        allCompetitions.push(...comps);
       }
 
       setCompetitions(allCompetitions);
@@ -65,27 +57,22 @@ export default function CommissionerVolunteersPage() {
     }
   };
 
-  /* =========================
-     LOAD VOLUNTEERS
-  ========================== */
-
   const fetchVolunteers = async () => {
+    if (!selectedCompetition) {
+      setVolunteers([]);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      let data;
+      const data =
+        await volunteerService.getVolunteersByCompetition(
+          selectedCompetition
+        );
 
-      if (selectedCompetition) {
-        data =
-          await volunteerService.getVolunteersByCompetition(
-            selectedCompetition
-          );
-      } else {
-        data = await volunteerService.getAllVolunteers();
-      }
-
-      setVolunteers(data);
+      setVolunteers(data || []);
     } catch (err) {
       console.error("Erreur chargement volontaires:", err);
       setError("Impossible de charger les volontaires");
@@ -93,10 +80,6 @@ export default function CommissionerVolunteersPage() {
       setLoading(false);
     }
   };
-
-  /* =========================
-     SEARCH FILTER
-  ========================== */
 
   const filteredVolunteers = useMemo(() => {
     if (!searchTerm) return volunteers;
@@ -111,21 +94,33 @@ export default function CommissionerVolunteersPage() {
     );
   }, [volunteers, searchTerm]);
 
-  /* =========================
-     STATUS STYLE
-  ========================== */
+  const STATUS_LABELS = {
+    INVITED: "Invité",
+    CONFIRMED: "Confirmé",
+    CANCELLED: "Annulé",
+    PENDING: "En attente",
+  };
+
+  const translateStatus = (status) => {
+    return STATUS_LABELS[status] || "Non défini";
+  };
 
   const getStatusStyle = (status) => ({
-    padding: "4px 12px",
+    padding: "6px 14px",
     borderRadius: appTheme.radius.pill,
     fontWeight: 600,
     fontSize: 13,
+    minWidth: 110,
+    textAlign: "center",
+    display: "inline-block",
     background:
       status === "CONFIRMED"
         ? "rgba(34,197,94,0.25)"
         : status === "INVITED"
         ? "rgba(250,204,21,0.25)"
-        : "rgba(239,68,68,0.25)",
+        : status === "CANCELLED"
+        ? "rgba(239,68,68,0.25)"
+        : "rgba(148,163,184,0.25)",
     color: appTheme.colors.dark,
   });
 
@@ -163,7 +158,9 @@ export default function CommissionerVolunteersPage() {
             label="Compétition"
             onChange={(e) => setSelectedCompetition(e.target.value)}
           >
-            <MenuItem value="">Toutes les compétitions</MenuItem>
+            <MenuItem value="">
+              Sélectionner une compétition
+            </MenuItem>
             {competitions.map((c) => (
               <MenuItem key={c.id} value={c.id}>
                 {c.name}
@@ -190,14 +187,22 @@ export default function CommissionerVolunteersPage() {
         </div>
 
         <div className="card-body">
-          {loading ? (
+          {!selectedCompetition ? (
+            <Typography
+              sx={{ textAlign: "center", color: "text.secondary", p: 3 }}
+            >
+              Veuillez sélectionner une compétition.
+            </Typography>
+          ) : loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
               <CircularProgress />
             </Box>
           ) : error ? (
             <Typography color="error">{error}</Typography>
           ) : filteredVolunteers.length === 0 ? (
-            <Typography sx={{ textAlign: "center", color: "text.secondary" }}>
+            <Typography
+              sx={{ textAlign: "center", color: "text.secondary" }}
+            >
               Aucun volontaire trouvé.
             </Typography>
           ) : (
@@ -206,7 +211,9 @@ export default function CommissionerVolunteersPage() {
                 <tr>
                   <td><strong>Nom</strong></td>
                   <td><strong>Email</strong></td>
-                  <td><strong>Statut</strong></td>
+                  <td style={{ textAlign: "center" }}>
+                    <strong>Statut</strong>
+                  </td>
                 </tr>
               </thead>
               <tbody>
@@ -214,9 +221,9 @@ export default function CommissionerVolunteersPage() {
                   <tr key={v.id}>
                     <td>{v.firstName} {v.lastName}</td>
                     <td>{v.email}</td>
-                    <td>
+                    <td style={{ textAlign: "center" }}>
                       <span style={getStatusStyle(v.status)}>
-                        {v.status}
+                        {translateStatus(v.status)}
                       </span>
                     </td>
                   </tr>

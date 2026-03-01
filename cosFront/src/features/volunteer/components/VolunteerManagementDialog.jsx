@@ -45,10 +45,6 @@ export default function VolunteerManagementDialog({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  /* =========================
-     VALIDATION FORMULAIRE
-  ========================== */
-
   const validateForm = () => {
     const errors = {};
 
@@ -72,10 +68,6 @@ export default function VolunteerManagementDialog({
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-
-  /* =========================
-     IMPORT CSV
-  ========================== */
 
   const parseCsv = (selectedFile) => {
     const reader = new FileReader();
@@ -168,10 +160,6 @@ export default function VolunteerManagementDialog({
       setLoading(false);
     }
   };
-
-  /* =========================
-     CREATE VOLUNTEER
-  ========================== */
 
   const handleCreate = async () => {
     setError("");

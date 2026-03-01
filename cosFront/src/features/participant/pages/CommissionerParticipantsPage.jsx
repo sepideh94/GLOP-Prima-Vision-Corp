@@ -77,7 +77,7 @@ export default function CommissionerParticipantsPage() {
         data = await athleteService.getAllAthletes();
       }
 
-      setAthletes(data);
+      setAthletes(data || []);
     } catch (err) {
       console.error(err);
       setError("Impossible de charger les athlètes");
@@ -86,17 +86,31 @@ export default function CommissionerParticipantsPage() {
     }
   };
 
+  const STATUS_LABELS = {
+    INVITED: "Invité",
+    CONFIRMED: "Confirmé",
+    CANCELLED: "Annulé",
+    COMPLETED: "Terminé",
+  };
+
+  const translateStatus = (status) => {
+    return STATUS_LABELS[status] || "Non défini";
+  };
+
   const filteredAthletes = useMemo(() => {
     if (!searchTerm) return athletes;
 
     const term = searchTerm.toLowerCase();
 
-    return athletes.filter(
-      (a) =>
-        a.firstName?.toLowerCase().includes(term) ||
-        a.lastName?.toLowerCase().includes(term) ||
-        a.email?.toLowerCase().includes(term)
-    );
+    return athletes.filter((item) => {
+      const athleteData = item.athlete ? item.athlete : item;
+
+      return (
+        athleteData.firstName?.toLowerCase().includes(term) ||
+        athleteData.lastName?.toLowerCase().includes(term) ||
+        athleteData.email?.toLowerCase().includes(term)
+      );
+    });
   }, [athletes, searchTerm]);
 
   const handleOpenModal = (athlete) => {
@@ -115,7 +129,7 @@ export default function CommissionerParticipantsPage() {
     fontSize: 13,
     fontWeight: 700,
     display: "inline-block",
-    minWidth: 100,
+    minWidth: 110,
     textAlign: "center",
     background:
       status === "CONFIRMED"
@@ -151,7 +165,6 @@ export default function CommissionerParticipantsPage() {
         Gestion des athlètes
       </Typography>
 
-      {/* Filtres */}
       <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
         <FormControl sx={{ minWidth: 220 }}>
           <InputLabel>Compétition</InputLabel>
@@ -201,53 +214,53 @@ export default function CommissionerParticipantsPage() {
                 <tr>
                   <th style={{ width: "35%" }}>Nom</th>
                   <th style={{ width: "35%" }}>Email</th>
-
-                  {selectedCompetition ? (
-                    <th style={{ width: "30%", textAlign: "center" }}>
-                      Statut
-                    </th>
-                  ) : (
-                    <th style={{ width: "30%", textAlign: "center" }}>
-                      Actions
-                    </th>
-                  )}
+                  <th style={{ width: "30%", textAlign: "center" }}>
+                    {selectedCompetition ? "Statut" : "Actions"}
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                {filteredAthletes.map((a) => (
-                  <tr key={a.id}>
-                    <td>{a.firstName} {a.lastName}</td>
-                    <td>{a.email}</td>
+                {filteredAthletes.map((item, index) => {
+                  const athleteData = item.athlete ? item.athlete : item;
 
-                    {selectedCompetition ? (
-                      <td style={{ textAlign: "center" }}>
-                        <span style={getStatusStyle(a.status)}>
-                          {a.status || "Non défini"}
-                        </span>
+                  return (
+                    <tr key={athleteData.id || index}>
+                      <td>
+                        {athleteData.firstName} {athleteData.lastName}
                       </td>
-                    ) : (
-                      <td style={{ textAlign: "center" }}>
-                        <Button
-                          size="small"
-                          startIcon={<VisibilityIcon />}
-                          onClick={() => handleOpenModal(a)}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            px: 2,
-                            borderRadius: appTheme.radius.pill,
-                            background:
-                              "linear-gradient(135deg, #a78bfa, #8b5cf6)",
-                            color: "#fff",
-                          }}
-                        >
-                          Participations
-                        </Button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
+
+                      <td>{athleteData.email}</td>
+
+                      {selectedCompetition ? (
+                        <td style={{ textAlign: "center" }}>
+                          <span style={getStatusStyle(item.status)}>
+                            {translateStatus(item.status)}
+                          </span>
+                        </td>
+                      ) : (
+                        <td style={{ textAlign: "center" }}>
+                          <Button
+                            size="small"
+                            startIcon={<VisibilityIcon />}
+                            onClick={() => handleOpenModal(athleteData)}
+                            sx={{
+                              textTransform: "none",
+                              fontWeight: 700,
+                              px: 2,
+                              borderRadius: appTheme.radius.pill,
+                              background:
+                                "linear-gradient(135deg, #a78bfa, #8b5cf6)",
+                              color: "#fff",
+                            }}
+                          >
+                            Participations
+                          </Button>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           )}
