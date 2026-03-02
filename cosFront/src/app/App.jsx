@@ -19,6 +19,7 @@ import EventsList from "../features/events/pages/EventsList.jsx";
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
+import VolunteerSchedulePage from "../features/user/pages/VolunteerSchedulePage.jsx";
 
 import CommissionerCompetitionListPage from
   "../features/competition/pages/CommissionerCompetitionListPage.jsx";
@@ -70,6 +71,10 @@ export default function App() {
               <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
+              />
+              <Route
+                path="/admin/volunteer-schedule"
+                element={<VolunteerSchedulePage />}
               />
 
               {/* COMMISSIONER */}

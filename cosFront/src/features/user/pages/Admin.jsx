@@ -7,7 +7,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People } from "@mui/icons-material";
+import { Event, EmojiEvents, People, Schedule } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -37,6 +37,13 @@ export default function Admin() {
       icon: <People sx={{ fontSize: 42 }} />,
       color: appTheme.colors.violet,
       route: "/admin/users",
+    },
+    {
+      title: "Planning des volontaires",
+      subtitle: "Gérer les horaires et affectations",
+      icon: <Schedule sx={{ fontSize: 42 }} />,
+      color: "#f97316",
+      route: "/admin/volunteer-schedule",
     },
   ];
 
