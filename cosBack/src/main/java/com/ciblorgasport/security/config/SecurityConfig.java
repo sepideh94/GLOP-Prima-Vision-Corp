@@ -97,6 +97,12 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
 
+                .requestMatchers(HttpMethod.POST, "/api/incidents/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/incidents/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PATCH, "/api/incidents/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/api/incidents/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/incidents/**").authenticated()
+
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/commissioner/**").hasRole("COMMISSIONNER")
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
