@@ -15,4 +15,6 @@ public interface VolonteerImportService {
     record ImportResult(int processed, int invited) {}
     boolean inviteToCompetition(Volonteer v, Long competitionId);
     void updateVolonteerAssignmentsToAccepted(Long volonteerId);
-    List<VolonteerCompetitionResponse> getVolonteersByCompetition(Long competitionId);}
+    List<VolonteerCompetitionResponse> getVolonteersByCompetition(Long competitionId);
+    List<VolonteerCompetitionResponse> getAllVolonteersByEvent(Long eventId);
+}

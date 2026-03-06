@@ -16,4 +16,6 @@ public class VolonteerCompetitionResponse {
     private String lastName;
     private String email;
     private ParticipationStatus status;
+    private Long competitionId; 
+    private String competitionName;
 }

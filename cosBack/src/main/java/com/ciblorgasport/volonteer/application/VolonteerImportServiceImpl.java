@@ -18,6 +18,7 @@ import com.ciblorgasport.volonteer.infrastructure.VolonteerRepository;
 import com.ciblorgasport.common.service.CsvImportService;
 import com.ciblorgasport.competition.domain.*;
 import com.ciblorgasport.competition.infrastructure.*;
+import com.ciblorgasport.event.infrastructure.EventRepository;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -139,8 +140,31 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
                             .lastName(v.getLastName())
                             .email(v.getEmail())
                             .status(assignment.getStatus()) 
+                            .competitionId(assignment.getCompetition().getId())
+	                        .competitionName(assignment.getCompetition().getName())
                             .build();
                 })
                 .collect(Collectors.toList());
     }
+
+	@Override
+	public List<VolonteerCompetitionResponse> getAllVolonteersByEvent(Long eventId) {
+		List<Competition> competitions = competitionRepository.findByParentEventId(eventId);
+	    
+	    return competitions.stream()
+	            .flatMap(competition -> assignmentRepository.findByCompetitionId(competition.getId()).stream())
+	            .map(assignment -> {
+	                Volonteer v = assignment.getVolonteer();
+	                return VolonteerCompetitionResponse.builder()
+	                        .id(v.getId())
+	                        .firstName(v.getFirstName())
+	                        .lastName(v.getLastName())
+	                        .email(v.getEmail())
+	                        .status(assignment.getStatus())
+	                        .competitionId(assignment.getCompetition().getId())
+	                        .competitionName(assignment.getCompetition().getName())
+	                        .build();
+	            })
+	            .collect(Collectors.toList());
+	}
 }
