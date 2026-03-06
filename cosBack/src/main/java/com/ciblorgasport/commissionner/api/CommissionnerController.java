@@ -131,6 +131,11 @@ public class CommissionnerController {
         List<VolonteerCompetitionResponse> volonteers = volonteerImportService.getVolonteersByCompetition(competitionId);
         return ResponseEntity.ok(volonteers);
     }
+    
+    @GetMapping("/events/{eventId}/volonteers")
+    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByEvent(@PathVariable Long eventId) {
+        return ResponseEntity.ok(volonteerImportService.getAllVolonteersByEvent(eventId));
+    }
 
     // ==================== COMPETITIONS ====================
 
