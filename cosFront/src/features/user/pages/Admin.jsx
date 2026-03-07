@@ -1,4 +1,3 @@
-
 import {
   Box,
   Typography,
@@ -7,10 +6,9 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People } from "@mui/icons-material";
+import { Event, EmojiEvents, People, ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
-
 
 export default function Admin() {
 
@@ -32,6 +30,13 @@ export default function Admin() {
       route: "/admin/competitions",
     },
     {
+      title: "Gestion des incidents",
+      subtitle: "Déclarer et suivre les incidents",
+      icon: <ReportProblem sx={{ fontSize: 42 }} />,
+      color: "#f59e0b",
+      route: "/admin/incidents",
+    },
+    {
       title: "Gestion des utilisateurs",
       subtitle: "Contrôler les accès et maintenir la sécurité",
       icon: <People sx={{ fontSize: 42 }} />,
@@ -46,7 +51,7 @@ export default function Admin() {
        sx={{
        fontSize: 32,
        fontWeight: 900,
-       mb: 7,   
+       mb: 7,
       }}
       >
         Tableau de bord
@@ -67,8 +72,8 @@ export default function Admin() {
 
       <Card
         sx={{
-          width: 260,            
-          height: 170,           
+          width: 260,
+          height: 170,
           borderRadius: 4,
           background: appTheme.gradients.card,
           boxShadow: appTheme.shadows.card,
@@ -78,7 +83,6 @@ export default function Admin() {
           flexDirection: "column",
         }}
       >
-        {/* Barre colorée */}
         <Box
           sx={{
             position: "absolute",
@@ -107,7 +111,6 @@ export default function Admin() {
               color: appTheme.colors.textPrimary,
             }}
           >
-            {/* Icône */}
             <Box
               sx={{
                 width: 44,
@@ -124,7 +127,6 @@ export default function Admin() {
               {s.icon}
             </Box>
 
-            {/* Titre */}
             <Typography
               sx={{
                 fontWeight: 700,
@@ -136,7 +138,6 @@ export default function Admin() {
               {s.title}
             </Typography>
 
-            {/* Sous-titre */}
             <Typography
               sx={{
                 fontSize: 12.5,

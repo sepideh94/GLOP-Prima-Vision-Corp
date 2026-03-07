@@ -19,6 +19,7 @@ import EventsList from "../features/events/pages/EventsList.jsx";
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
+import IncidentsPage from "../features/incident/pages/IncidentsPage.jsx";
 
 import CommissionerCompetitionListPage from
   "../features/competition/pages/CommissionerCompetitionListPage.jsx";
@@ -40,24 +41,20 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* PUBLIC */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* PROTECTED */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
 
-              {/* DASHBOARDS */}
               <Route path="/admin" element={<Admin />} />
               <Route path="/athlete" element={<Athlete />} />
               <Route path="/commissioner" element={<Commissioner />} />
               <Route path="/spectator" element={<Spectator />} />
               <Route path="/volunteer" element={<Volunteer />} />
 
-              {/* ADMIN */}
               <Route path="/events" element={<EventsList />} />
               <Route
                 path="/admin/competitions"
@@ -68,11 +65,14 @@ export default function App() {
                 element={<TrialListPage />}
               />
               <Route
+                path="/admin/incidents"
+                element={<IncidentsPage />}
+              />
+              <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
               />
 
-              {/* COMMISSIONER */}
               <Route
                 path="/commissioner/competitions"
                 element={<CommissionerCompetitionListPage />}
@@ -86,7 +86,6 @@ export default function App() {
                 element={<CommissionerParticipantsPage />}
               />
 
-              {/* ATHLETE */}
               <Route
                 path="/athlete/competitions"
                 element={<AthleteCompetitionsPage />}
@@ -99,7 +98,6 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* FALLBACK */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
