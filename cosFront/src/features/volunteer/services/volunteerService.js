@@ -33,6 +33,14 @@ const volunteerService = {
     );
     return response.data;
   },
+
+  getVolunteersByEvent: async (eventId) => {
+    const response = await api.get(
+      `/api/commissioner/events/${eventId}/volonteers`
+    );
+    return response.data;
+  },
+
 };
 
 export default volunteerService;
