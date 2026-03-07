@@ -1,4 +1,4 @@
-package com.ciblorgasport.commissionner.api;
+package com.ciblorgasport.commissionner;
 
 import java.util.List;
 import java.util.Map;
@@ -126,13 +126,11 @@ public class CommissionnerController {
     // ==================== COMPETITION (SINGLE) ====================
 
     @GetMapping("/competitions/{competitionId}")
-    public ResponseEntity<CompetitionResponse> getCompetition(
-        @PathVariable Long competitionId) {
+    public ResponseEntity<CompetitionResponse> getCompetition( @PathVariable Long competitionId) {
 
-    CompetitionResponse competition =
-            competitionService.getCompetitionById(competitionId);
-
-    return ResponseEntity.ok(competition);
+	    CompetitionResponse competition = competitionService.getCompetitionById(competitionId);
+	
+	    return ResponseEntity.ok(competition);
     }
 
     // ==================== ÉPREUVES (TRIALS) ====================
