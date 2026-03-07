@@ -1,36 +1,34 @@
-import axios from "axios";
-
-const API_URL = "/api/incidents";
+import api from "../../../common/api/axiosInstance";
 
 const incidentService = {
 
-  getAll: async () => {
-    const res = await axios.get(API_URL);
+  async getAll() {
+    const res = await api.get("/api/incidents");
     return res.data;
   },
 
-  getById: async (id) => {
-    const res = await axios.get(`${API_URL}/${id}`);
+  async getById(id) {
+    const res = await api.get(`/api/incidents/${id}`);
     return res.data;
   },
 
-  create: async (data) => {
-    const res = await axios.post(API_URL, data);
+  async create(data) {
+    const res = await api.post("/api/incidents", data);
     return res.data;
   },
 
-  update: async (id, data) => {
-    const res = await axios.put(`${API_URL}/${id}`, data);
+  async update(id, data) {
+    const res = await api.put(`/api/incidents/${id}`, data);
     return res.data;
   },
 
-  changeStatus: async (id, status) => {
-    const res = await axios.patch(`${API_URL}/${id}/status`, { status });
+  async changeStatus(id, status) {
+    const res = await api.patch(`/api/incidents/${id}/status`, { status });
     return res.data;
   },
 
-  delete: async (id) => {
-    const res = await axios.delete(`${API_URL}/${id}`);
+  async delete(id) {
+    const res = await api.delete(`/api/incidents/${id}`);
     return res.data;
   }
 

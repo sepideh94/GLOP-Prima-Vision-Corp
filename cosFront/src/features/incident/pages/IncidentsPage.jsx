@@ -11,36 +11,63 @@ import {
 import appTheme from "../../../common/theme/appTheme";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import EditIcon from "@mui/icons-material/Edit";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
-import incidentService from "../services/incidentService";
 
-const truncateText = (text, maxLength) => {
-  if (!text) return "";
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-};
+import incidentService from "../services/incidentService";
+import competitionService from "../../competition/services/competitionService";
+
+import IncidentTable from "../components/IncidentTable";
+import IncidentFormDialog from "../components/IncidentFormDialog";
 
 export default function IncidentsPage() {
   const navigate = useNavigate();
 
   const [incidents, setIncidents] = useState([]);
+  const [competitions, setCompetitions] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [openForm, setOpenForm] = useState(false);
 
   useEffect(() => {
     loadIncidents();
+    loadCompetitions();
   }, []);
 
   const loadIncidents = async () => {
     try {
       const data = await incidentService.getAll();
-      const safeData = Array.isArray(data) ? data : [];
-      setIncidents(safeData);
+      setIncidents(Array.isArray(data) ? data : []);
     } catch {
       setIncidents([]);
     }
+  };
+
+  const loadCompetitions = async () => {
+    try {
+      const events = await competitionService.getEvents();
+
+      let allCompetitions = [];
+
+      for (const event of events) {
+        const eventId = event.id || event.idEvent;
+        const comps = await competitionService.getCompetitionsByEvent(eventId);
+
+        if (Array.isArray(comps)) {
+          allCompetitions = [...allCompetitions, ...comps];
+        }
+      }
+
+      setCompetitions(allCompetitions);
+    } catch (error) {
+      console.error("Erreur chargement compétitions", error);
+      setCompetitions([]);
+    }
+  };
+
+  const getCompetitionName = (id) => {
+    const comp = competitions.find(
+      (c) => c.id === id || c.idCompetition === id
+    );
+    return comp ? comp.name : "-";
   };
 
   const handleSort = (key) => {
@@ -53,13 +80,14 @@ export default function IncidentsPage() {
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  const filteredIncidents = incidents.filter((i) => {
+  const filteredIncidents = incidents.filter((incident) => {
     if (!normalizedSearch) return true;
+
     return (
-      (i.title || "").toLowerCase().includes(normalizedSearch) ||
-      (i.description || "").toLowerCase().includes(normalizedSearch) ||
-      (i.impactLevel || "").toLowerCase().includes(normalizedSearch) ||
-      (i.status || "").toLowerCase().includes(normalizedSearch)
+      (incident.title || "").toLowerCase().includes(normalizedSearch) ||
+      (incident.description || "").toLowerCase().includes(normalizedSearch) ||
+      (incident.impactLevel || "").toLowerCase().includes(normalizedSearch) ||
+      (incident.status || "").toLowerCase().includes(normalizedSearch)
     );
   });
 
@@ -74,6 +102,7 @@ export default function IncidentsPage() {
 
     if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
     if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+
     return 0;
   });
 
@@ -103,6 +132,7 @@ export default function IncidentsPage() {
 
         <Button
           startIcon={<AddIcon />}
+          onClick={() => setOpenForm(true)}
           sx={{
             textTransform: "none",
             fontWeight: 700,
@@ -134,113 +164,24 @@ export default function IncidentsPage() {
         />
       </Card>
 
-      <div className="card" style={{ borderRadius: 22, overflow: "hidden" }}>
-        <div className="card-header d-flex justify-content-between">
-          <strong>Liste des incidents</strong>
-        </div>
+      <IncidentTable
+        incidents={sortedIncidents}
+        competitions={competitions}
+        getCompetitionName={getCompetitionName}
+        onSort={handleSort}
+      />
 
-        <div className="card-body">
-          <table className="table align-middle table-hover">
-            <thead>
-              <tr>
-                <td
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleSort("title")}
-                >
-                  <strong>Titre</strong>{" "}
-                  <UnfoldMoreIcon
-                    sx={{
-                      fontSize: 16,
-                      verticalAlign: "middle",
-                      ml: 0.5,
-                    }}
-                  />
-                </td>
-
-                <td
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleSort("impactLevel")}
-                >
-                  <strong>Impact</strong>{" "}
-                  <UnfoldMoreIcon
-                    sx={{
-                      fontSize: 16,
-                      verticalAlign: "middle",
-                      ml: 0.5,
-                    }}
-                  />
-                </td>
-
-                <td
-                  style={{ cursor: "pointer" }}
-                  onClick={() => handleSort("status")}
-                >
-                  <strong>Statut</strong>{" "}
-                  <UnfoldMoreIcon
-                    sx={{
-                      fontSize: 16,
-                      verticalAlign: "middle",
-                      ml: 0.5,
-                    }}
-                  />
-                </td>
-
-                <td>
-                  <strong>Compétition</strong>
-                </td>
-
-                <td>
-                  <strong>Actions</strong>
-                </td>
-              </tr>
-            </thead>
-
-            <tbody>
-              {sortedIncidents.map((i) => (
-                <tr key={i.id}>
-                  <td className="fw-bold">{i.title}</td>
-
-                  <td>{i.impactLevel}</td>
-
-                  <td>{i.status}</td>
-
-                  <td>{i.competitionId ? i.competitionId : "-"}</td>
-
-                  <td>
-                    <button
-                      className="btn"
-                      style={{
-                        borderRadius: appTheme.radius.pill,
-                        background:
-                          "linear-gradient(135deg, #a78bfa, #8b5cf6)",
-                        color: "#fff",
-                        fontWeight: 700,
-                        padding: "4px 12px",
-                        marginRight: 8,
-                      }}
-                    >
-                      <VisibilityIcon sx={{ fontSize: 16 }} />
-                    </button>
-
-                    <button
-                      className="btn"
-                      style={{
-                        borderRadius: appTheme.radius.pill,
-                        background: appTheme.gradients.navbar,
-                        color: appTheme.colors.dark,
-                        fontWeight: 700,
-                        padding: "4px 12px",
-                      }}
-                    >
-                      <EditIcon sx={{ fontSize: 16 }} />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <IncidentFormDialog
+        open={openForm}
+        onClose={() => setOpenForm(false)}
+        competitions={competitions}
+        onSave={async (form) => {
+          await incidentService.create(form);
+          const updated = await incidentService.getAll();
+          setIncidents(updated);
+          setOpenForm(false);
+        }}
+      />
     </Box>
   );
 }
