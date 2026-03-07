@@ -1,4 +1,4 @@
-package com.ciblorgasport.schedule;
+package com.ciblorgasport.schedule.domain;
 
 
 public enum ScheduleType {

@@ -1,4 +1,4 @@
-package com.ciblorgasport.schedule;
+package com.ciblorgasport.schedule.domain;
 
 
 import com.ciblorgasport.common.model.Status;
