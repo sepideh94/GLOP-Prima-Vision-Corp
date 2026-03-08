@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,7 +28,10 @@ import com.ciblorgasport.competition.application.CompetitionService;
 import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
+import com.ciblorgasport.trial.application.TrialParticipantService;
 import com.ciblorgasport.trial.application.TrialService;
+import com.ciblorgasport.trial.dto.AssignAthletesRequest;
+import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
 import com.ciblorgasport.user.application.UserAccountService;
@@ -52,6 +56,7 @@ public class CommissionnerController {
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
+	private final TrialParticipantService trialParticipantService;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -158,6 +163,37 @@ public class CommissionnerController {
         return ResponseEntity.ok(cancelledTrial);
     }
 
+    @PostMapping("/trials/{id}/athletes")
+    public ResponseEntity<List<TrialParticipantResponse>> assignAthletes(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody AssignAthletesRequest request) {
+        List<TrialParticipantResponse> result =
+            trialParticipantService.assignAthletes(id, request.getAthleteIds());
+        return new ResponseEntity<>(result, HttpStatus.CREATED);
+    }
+
+    @GetMapping("/trials/{id}/athletes")
+    public ResponseEntity<List<TrialParticipantResponse>> getTrialAthletes(
+            @PathVariable("id") Long id) {
+        List<TrialParticipantResponse> result =
+            trialParticipantService.getByTrialId(id);
+        return ResponseEntity.ok(result);
+    }
+
+    @DeleteMapping("/trials/{id}/athletes/{athleteId}")
+    public ResponseEntity<Void> removeAthlete(
+            @PathVariable("id") Long id,
+            @PathVariable("athleteId") Long athleteId) {
+        trialParticipantService.removeAthlete(id, athleteId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/trials/{id}/eligible-athletes")
+    public ResponseEntity<List<AthleteResponse>> getEligibleAthletes(
+            @PathVariable("id") Long id) {
+        return ResponseEntity.ok(trialParticipantService.getEligibleAthletes(id));
+    }
+
     // ==================== ATHLETES ====================
 
     @GetMapping("/athletes")
@@ -169,8 +205,21 @@ public class CommissionnerController {
     @GetMapping("/competitions/{competitionId}/athletes")
     public ResponseEntity<List<AthleteResponse>> getAthletesByCompetition(
             @PathVariable("competitionId") Long competitionId) {
-        List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
-        return ResponseEntity.ok(athletes);
+        // #region agent log (stdout for docker logs)
+        System.err.println("[DEBUG] {\"location\":\"CommissionnerController.getAthletesByCompetition:entry\",\"message\":\"entry\",\"data\":{\"competitionId\":\"" + competitionId + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+        // #endregion
+        try {
+            List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+            return ResponseEntity.ok(athletes);
+        } catch (Throwable t) {
+            // #region agent log (stdout for docker logs)
+            String msg = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
+            String trace = t.getClass().getName() + ": " + msg;
+            if (t.getCause() != null) trace += " | cause: " + t.getCause().getClass().getName() + ": " + (t.getCause().getMessage() != null ? t.getCause().getMessage().replace("\"", "'") : "");
+            System.err.println("[DEBUG] {\"location\":\"CommissionnerController.getAthletesByCompetition:catch\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + msg + "\",\"trace\":\"" + trace + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            throw t;
+        }
     }
 
     @GetMapping("/athletes/{athleteId}/participations")

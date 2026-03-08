@@ -111,7 +111,7 @@ export default function CommissionerTrialListPage() {
       .then(setCompetition);
 
     trialService
-      .getTrialsByCompetition(competitionId)
+      .getTrialsByCompetitionCommissioner(competitionId)
       .then(setTrials)
       .finally(() => setLoading(false));
   }, [competitionId]);
@@ -121,7 +121,6 @@ export default function CommissionerTrialListPage() {
   const handleSave = async (form) => {
     const payload = {
       trialName: form.trialName,
-      roundNumber: form.roundNumber ? Number(form.roundNumber) : null,
       description: form.description || null,
       rules: form.rules || null,
       startDate: form.startDate,
@@ -138,7 +137,6 @@ export default function CommissionerTrialListPage() {
       categoryGender: form.categoryGender,
       siteId: Number(form.siteId),
       competitionId: Number(competitionId),
-      roundId: Number(form.roundId),
     };
 
     const updated = await trialService.updateTrialCommissioner(
@@ -379,6 +377,7 @@ export default function CommissionerTrialListPage() {
         initialData={editingTrial}
         competition={competition}
         existingTrials={trials}
+        showParticipants
       />
 
       <TrialDetailDialog
