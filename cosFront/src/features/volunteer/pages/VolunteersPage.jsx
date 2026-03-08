@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -19,15 +19,20 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import appTheme from "../../../common/theme/appTheme";
 import volunteerService from "../services/volunteerService";
 import competitionService from "../../competition/services/competitionService";
-import VolonteerParticipationsModal from "../components/VolonteerParticipationsModal";
+import VolunteerParticipationsModal from "../components/VolonteerParticipationsModal";
 
-export default function CommissionerVolunteersPage() {
 
+const STATUS_LABELS = {
+  INVITED: "Invité",
+  CONFIRMED: "Confirmé",
+  CANCELLED: "Annulé",
+};
+
+export default function VolunteersPage() {
   const navigate = useNavigate();
 
   const [volunteers, setVolunteers] = useState([]);
   const [competitions, setCompetitions] = useState([]);
-  const [events, setEvents] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,86 +43,72 @@ export default function CommissionerVolunteersPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
 
-  useEffect(() => {
-    fetchInitialData();
+  const fetchCompetitions = useCallback(async () => {
+  try {
+    const events = await competitionService.getEvents();
+
+    const competitionsRequests = events.map((event) =>
+      competitionService.getCompetitionsByEvent(event.id)
+    );
+
+    const results = await Promise.all(competitionsRequests);
+
+    const allCompetitions = results.flat();
+
+    setCompetitions(allCompetitions);
+  } catch (err) {
+    console.error("Erreur chargement compétitions", err);
+  }
   }, []);
 
-  useEffect(() => {
-    fetchVolunteers();
-  }, [selectedCompetition]);
-
-  const fetchInitialData = async () => {
-
-    try {
-
-      const eventsData = await competitionService.getEvents();
-      setEvents(eventsData);
-
-      const allCompetitions = [];
-
-      for (const event of eventsData) {
-
-        const comps =
-          await competitionService.getCompetitionsByEventForCommissioner(
-            event.id
-          );
-
-        allCompetitions.push(...comps);
-      }
-
-      setCompetitions(allCompetitions);
-
-    } catch (err) {
-
-      console.error(err);
-
-    }
-  };
-
-  const fetchVolunteers = async () => {
-
+  const fetchVolunteers = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-
       let data = [];
 
       if (selectedCompetition) {
-
         data = await volunteerService.getVolunteersByCompetition(
           selectedCompetition
         );
-
       } else {
+        const requests = competitions.map((comp) =>
+          volunteerService.getVolunteersByCompetition(comp.id)
+        );
 
-        for (const comp of competitions) {
+        const results = await Promise.all(requests);
 
-          const res =
-            await volunteerService.getVolunteersByCompetition(comp.id);
+        data = results.flat();
 
-          data.push(...res);
-        }
+        const uniqueVolunteers = new Map();
+        data.forEach((v) => {
+          uniqueVolunteers.set(v.id, v);
+        });
 
-        data = [...new Map(data.map(v => [v.id, v])).values()];
+        data = Array.from(uniqueVolunteers.values());
       }
 
       setVolunteers(data);
-
     } catch (err) {
-
-      console.error(err);
+      console.error("Erreur chargement volontaires", err);
       setError("Impossible de charger les volontaires");
-
     } finally {
-
       setLoading(false);
-
     }
-  };
+  }, [selectedCompetition, competitions]);
+
+  useEffect(() => {
+    fetchCompetitions();
+  }, [fetchCompetitions]);
+
+  useEffect(() => {
+    if (competitions.length) {
+      fetchVolunteers();
+    }
+  }, [competitions, selectedCompetition, fetchVolunteers]);
 
   const filteredVolunteers = useMemo(() => {
-
     if (!searchTerm) return volunteers;
 
     const term = searchTerm.toLowerCase();
@@ -128,18 +119,7 @@ export default function CommissionerVolunteersPage() {
         v.lastName?.toLowerCase().includes(term) ||
         v.email?.toLowerCase().includes(term)
     );
-
   }, [volunteers, searchTerm]);
-
-  const STATUS_LABELS = {
-    INVITED: "Invité",
-    CONFIRMED: "Confirmé",
-    CANCELLED: "Annulé",
-  };
-
-  const translateStatus = (status) => {
-    return STATUS_LABELS[status] || status;
-  };
 
   const getStatusStyle = (status) => ({
     padding: "6px 14px",
@@ -169,12 +149,10 @@ export default function CommissionerVolunteersPage() {
   };
 
   return (
-
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
-
       <Button
         startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/commissioner")}
+        onClick={() => navigate("/admin")}
         sx={{
           mb: 2,
           textTransform: "none",
@@ -194,7 +172,6 @@ export default function CommissionerVolunteersPage() {
       </Typography>
 
       <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
-
         <FormControl sx={{ minWidth: 220 }}>
           <InputLabel>Compétition</InputLabel>
 
@@ -203,7 +180,6 @@ export default function CommissionerVolunteersPage() {
             label="Compétition"
             onChange={(e) => setSelectedCompetition(e.target.value)}
           >
-
             <MenuItem value="">Toutes les compétitions</MenuItem>
 
             {competitions.map((c) => (
@@ -211,9 +187,7 @@ export default function CommissionerVolunteersPage() {
                 {c.name}
               </MenuItem>
             ))}
-
           </Select>
-
         </FormControl>
 
         <TextField
@@ -224,31 +198,22 @@ export default function CommissionerVolunteersPage() {
             startAdornment: <SearchIcon sx={{ mr: 1 }} />,
           }}
         />
-
       </Box>
 
       <div className="card" style={{ borderRadius: 22 }}>
-
         <div className="card-header">
           <strong>Liste des volontaires</strong>
         </div>
 
         <div className="card-body">
-
           {loading ? (
-
             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
               <CircularProgress />
             </Box>
-
           ) : error ? (
-
             <Typography color="error">{error}</Typography>
-
           ) : (
-
             <table className="table align-middle">
-
               <thead>
                 <tr>
                   <th>Nom</th>
@@ -260,27 +225,22 @@ export default function CommissionerVolunteersPage() {
               </thead>
 
               <tbody>
-
                 {filteredVolunteers.map((v) => (
-
                   <tr key={v.id}>
-
-                    <td>{v.firstName} {v.lastName}</td>
+                    <td>
+                      {v.firstName} {v.lastName}
+                    </td>
 
                     <td>{v.email}</td>
 
                     {selectedCompetition ? (
-
                       <td style={{ textAlign: "center" }}>
                         <span style={getStatusStyle(v.status)}>
-                          {translateStatus(v.status)}
+                          {STATUS_LABELS[v.status] || v.status}
                         </span>
                       </td>
-
                     ) : (
-
                       <td style={{ textAlign: "center" }}>
-
                         <Button
                           size="small"
                           startIcon={<VisibilityIcon />}
@@ -297,31 +257,21 @@ export default function CommissionerVolunteersPage() {
                         >
                           Participations
                         </Button>
-
                       </td>
-
                     )}
-
                   </tr>
-
                 ))}
-
               </tbody>
-
             </table>
-
           )}
-
         </div>
-
       </div>
 
-      <VolonteerParticipationsModal
+      <VolunteerParticipationsModal
         open={modalOpen}
         onClose={handleCloseModal}
         volunteer={selectedVolunteer}
       />
-
     </Box>
   );
 }

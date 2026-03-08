@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   Box,
   Typography,
@@ -21,11 +22,19 @@ import athleteService from "../services/athleteService";
 import competitionService from "../../competition/services/competitionService";
 import AthleteParticipationsModal from "../components/AthleteParticipationsModal";
 
+const STATUS_LABELS = {
+  INVITED: "Invité",
+  CONFIRMED: "Confirmé",
+  CANCELLED: "Annulé",
+  COMPLETED: "Terminé",
+};
+
 export default function CommissionerParticipantsPage() {
   const navigate = useNavigate();
 
   const [athletes, setAthletes] = useState([]);
   const [competitions, setCompetitions] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -35,47 +44,30 @@ export default function CommissionerParticipantsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAthlete, setSelectedAthlete] = useState(null);
 
-  useEffect(() => {
-    fetchInitialData();
-  }, []);
-
-  useEffect(() => {
-    fetchAthletes();
-  }, [selectedCompetition]);
-
-  const fetchInitialData = async () => {
+  const fetchCompetitions = useCallback(async () => {
     try {
       const events = await competitionService.getEvents();
-      const allCompetitions = [];
 
-      for (const event of events) {
-        const comps =
-          await competitionService.getCompetitionsByEventForCommissioner(
-            event.id
-          );
-        allCompetitions.push(...comps);
-      }
+      const competitionsRequests = events.map((event) =>
+        competitionService.getCompetitionsByEventForCommissioner(event.id)
+      );
 
-      setCompetitions(allCompetitions);
+      const results = await Promise.all(competitionsRequests);
+
+      setCompetitions(results.flat());
     } catch (err) {
       console.error("Erreur chargement compétitions:", err);
     }
-  };
+  }, []);
 
-  const fetchAthletes = async () => {
+  const fetchAthletes = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      let data;
-
-      if (selectedCompetition) {
-        data = await athleteService.getAthletesByCompetition(
-          selectedCompetition
-        );
-      } else {
-        data = await athleteService.getAllAthletes();
-      }
+      const data = selectedCompetition
+        ? await athleteService.getAthletesByCompetition(selectedCompetition)
+        : await athleteService.getAllAthletes();
 
       setAthletes(data || []);
     } catch (err) {
@@ -84,18 +76,15 @@ export default function CommissionerParticipantsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCompetition]);
 
-  const STATUS_LABELS = {
-    INVITED: "Invité",
-    CONFIRMED: "Confirmé",
-    CANCELLED: "Annulé",
-    COMPLETED: "Terminé",
-  };
+  useEffect(() => {
+    fetchCompetitions();
+  }, [fetchCompetitions]);
 
-  const translateStatus = (status) => {
-    return STATUS_LABELS[status] || "Non défini";
-  };
+  useEffect(() => {
+    fetchAthletes();
+  }, [fetchAthletes]);
 
   const filteredAthletes = useMemo(() => {
     if (!searchTerm) return athletes;
@@ -103,7 +92,7 @@ export default function CommissionerParticipantsPage() {
     const term = searchTerm.toLowerCase();
 
     return athletes.filter((item) => {
-      const athleteData = item.athlete ? item.athlete : item;
+      const athleteData = item.athlete ?? item;
 
       return (
         athleteData.firstName?.toLowerCase().includes(term) ||
@@ -113,15 +102,7 @@ export default function CommissionerParticipantsPage() {
     });
   }, [athletes, searchTerm]);
 
-  const handleOpenModal = (athlete) => {
-    setSelectedAthlete(athlete);
-    setModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setModalOpen(false);
-    setSelectedAthlete(null);
-  };
+  const translateStatus = (status) => STATUS_LABELS[status] || "Non défini";
 
   const getStatusStyle = (status) => ({
     padding: "6px 14px",
@@ -141,6 +122,16 @@ export default function CommissionerParticipantsPage() {
         : "rgba(148,163,184,0.25)",
     color: appTheme.colors.dark,
   });
+
+  const handleOpenModal = (athlete) => {
+    setSelectedAthlete(athlete);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedAthlete(null);
+  };
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
@@ -168,12 +159,14 @@ export default function CommissionerParticipantsPage() {
       <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
         <FormControl sx={{ minWidth: 220 }}>
           <InputLabel>Compétition</InputLabel>
+
           <Select
             value={selectedCompetition}
             label="Compétition"
             onChange={(e) => setSelectedCompetition(e.target.value)}
           >
             <MenuItem value="">Toutes les compétitions</MenuItem>
+
             {competitions.map((c) => (
               <MenuItem key={c.id} value={c.id}>
                 {c.name}
@@ -222,10 +215,10 @@ export default function CommissionerParticipantsPage() {
 
               <tbody>
                 {filteredAthletes.map((item, index) => {
-                  const athleteData = item.athlete ? item.athlete : item;
+                  const athleteData = item.athlete ?? item;
 
                   return (
-                    <tr key={athleteData.id || index}>
+                    <tr key={athleteData.id ?? index}>
                       <td>
                         {athleteData.firstName} {athleteData.lastName}
                       </td>
