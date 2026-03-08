@@ -41,6 +41,7 @@ public class AuthenticationService {
     private String appBaseUrl;
 
     private String normalizeEmail(String email) {
+    	
         return email == null ? null : email.trim().toLowerCase();
     }
 
@@ -80,6 +81,7 @@ public class AuthenticationService {
     }
 
     public String activateAccount(String token) {
+    	
         ActivationToken at = activationTokenRepository.findByTokenAndType(token, TokenType.ACTIVATION)
                 .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
 
@@ -107,6 +109,7 @@ public class AuthenticationService {
     }
 
     public JwtAuthenticationResponse signin(SignInRequest request) {
+    	
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
@@ -115,94 +118,97 @@ public class AuthenticationService {
 
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
+        
         return JwtAuthenticationResponse.builder().token(jwt).role(role).build();
     }
 
     public String forgotPassword(String email) {
-    String normalized = normalizeEmail(email);
-
-    userRepository.findByEmail(normalized).ifPresent(user -> {
-        String token = UUID.randomUUID().toString();
-
-        if (!user.isActive()) {
-            ActivationToken activationToken = ActivationToken.builder()
-                    .token(token)
-                    .type(TokenType.ACTIVATION)
-                    .user(user)
-                    .expiresAt(LocalDateTime.now().plusHours(24))
-                    .used(false)
-                    .build();
-
-            activationTokenRepository.save(activationToken);
-
-            try {
-                emailService.sendActivationEmail(user.getEmail(), user.getFirstName(), token);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return;
-        }
-
-        ActivationToken resetToken = ActivationToken.builder()
-                .token(token)
-                .type(TokenType.PASSWORD_RESET)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusMinutes(30))
-                .used(false)
-                .build();
-
-        activationTokenRepository.save(resetToken);
-
-        try {
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    });
-
-    return "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé.";
-}
+	    String normalized = normalizeEmail(email);
+	
+	    userRepository.findByEmail(normalized).ifPresent(user -> {
+	        String token = UUID.randomUUID().toString();
+	
+	        if (!user.isActive()) {
+	            ActivationToken activationToken = ActivationToken.builder()
+	                    .token(token)
+	                    .type(TokenType.ACTIVATION)
+	                    .user(user)
+	                    .expiresAt(LocalDateTime.now().plusHours(24))
+	                    .used(false)
+	                    .build();
+	
+	            activationTokenRepository.save(activationToken);
+	
+	            try {
+	                emailService.sendActivationEmail(user.getEmail(), user.getFirstName(), token);
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	            }
+	            return;
+	        }
+	
+	        ActivationToken resetToken = ActivationToken.builder()
+	                .token(token)
+	                .type(TokenType.PASSWORD_RESET)
+	                .user(user)
+	                .expiresAt(LocalDateTime.now().plusMinutes(30))
+	                .used(false)
+	                .build();
+	
+	        activationTokenRepository.save(resetToken);
+	
+	        try {
+	        	
+	            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
+	        } 
+	        catch (Exception e) {
+	            e.printStackTrace();
+	        }
+	    });
+	
+	    return "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé.";
+	}
 
 
     public void completeForgotPassword(String token, String newPassword, String confirmNewPassword) {
 
-    if (!Objects.equals(newPassword, confirmNewPassword)) {
-        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
+	    if (!Objects.equals(newPassword, confirmNewPassword)) {
+	        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
+	    }
+	
+	    if (newPassword == null || newPassword.length() < 8) {
+	        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
+	    }
+	
+	    ActivationToken at = activationTokenRepository.findByToken(token)
+	            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+	
+	    if (at.isUsed()) {
+	        throw new IllegalArgumentException("Token déjà utilisé.");
+	    }
+	
+	    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
+	        throw new IllegalArgumentException("Token expiré.");
+	    }
+	
+	    if (at.getType() != TokenType.PASSWORD_RESET
+	            && at.getType() != TokenType.INVITE_COMMISSIONNER
+	            && at.getType() != TokenType.INVITE_ATHLETE) {
+	        throw new IllegalArgumentException("Token invalide.");
+	    }
+	
+	    UserAccount user = at.getUser();
+	    user.setPassword(passwordEncoder.encode(newPassword));
+	
+	    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE) {
+	        user.setActive(true);
+	    }
+	
+	    userRepository.save(user);
+	
+	    at.setUsed(true);
+	    activationTokenRepository.save(at);
     }
-
-    if (newPassword == null || newPassword.length() < 8) {
-        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
-    }
-
-    ActivationToken at = activationTokenRepository.findByToken(token)
-            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
-
-    if (at.isUsed()) {
-        throw new IllegalArgumentException("Token déjà utilisé.");
-    }
-
-    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-        throw new IllegalArgumentException("Token expiré.");
-    }
-
-    if (at.getType() != TokenType.PASSWORD_RESET
-            && at.getType() != TokenType.INVITE_COMMISSIONNER
-            && at.getType() != TokenType.INVITE_ATHLETE) {
-        throw new IllegalArgumentException("Token invalide.");
-    }
-
-    UserAccount user = at.getUser();
-    user.setPassword(passwordEncoder.encode(newPassword));
-
-    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE) {
-        user.setActive(true);
-    }
-
-    userRepository.save(user);
-
-    at.setUsed(true);
-    activationTokenRepository.save(at);
-}
 
 
 }
