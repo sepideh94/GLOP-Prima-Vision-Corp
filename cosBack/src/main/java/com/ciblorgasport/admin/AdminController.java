@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,9 +71,7 @@ public class AdminController {
      * Importe des volontaires via un fichier CSV pour une compétition.
      */
     @PostMapping("/competitions/{competitionId}/import-volonteers")
-    public ResponseEntity<VolonteerImportService.ImportResult> importVolonteers(
-            @PathVariable Long competitionId,
-            @RequestParam("file") MultipartFile file) throws Exception {
+    public ResponseEntity<VolonteerImportService.ImportResult> importVolonteers(@PathVariable Long competitionId, @RequestParam("file") MultipartFile file) throws Exception {
         
         return ResponseEntity.ok(volonteerImportService.importVolonteersForCompetition(file, competitionId));
     }
@@ -81,9 +81,7 @@ public class AdminController {
      * Le service se chargera d'envoyer le mail d'invitation automatiquement.
      */
     @PostMapping("/competitions/{competitionId}/create-volonteer")
-    public ResponseEntity<UserAccount> createVolonteerManual(
-            @PathVariable Long competitionId,
-            @RequestBody CreateUserRequest request) {
+    public ResponseEntity<UserAccount> createVolonteerManual( @PathVariable Long competitionId,@RequestBody CreateUserRequest request) {
         
         Volonteer volonteer = (Volonteer) volonteerCreationService.createUser(request);
        
