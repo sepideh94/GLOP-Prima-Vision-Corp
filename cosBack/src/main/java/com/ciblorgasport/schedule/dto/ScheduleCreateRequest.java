@@ -1,7 +1,10 @@
-package com.ciblorgasport.schedule.domain;
+package com.ciblorgasport.schedule.dto;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+
+import com.ciblorgasport.schedule.domain.ScheduleType;
+import com.ciblorgasport.site.dto.SiteResponse;
 
 @Data
 public class ScheduleCreateRequest {
