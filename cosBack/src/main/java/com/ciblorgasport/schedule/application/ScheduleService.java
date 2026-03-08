@@ -1,11 +1,11 @@
 package com.ciblorgasport.schedule.application;
 
-import com.ciblorgasport.schedule.domain.ScheduleCreateRequest;
-import com.ciblorgasport.schedule.domain.ScheduleItem;
+import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
+import com.ciblorgasport.schedule.dto.ScheduleResponse;
 import com.ciblorgasport.user.domain.UserAccount;
 
 public interface ScheduleService {
 	
-	public ScheduleItem createSchedule(ScheduleCreateRequest request, UserAccount currentUser);
+	public ScheduleResponse createSchedule(ScheduleCreateRequest request, UserAccount currentUser);
 
 }

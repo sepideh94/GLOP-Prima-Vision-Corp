@@ -2,7 +2,7 @@ package com.ciblorgasport.schedule;
 
 import com.ciblorgasport.schedule.application.ScheduleService;
 import com.ciblorgasport.schedule.domain.ScheduleItem;
-import com.ciblorgasport.schedule.domain.ScheduleCreateRequest;
+import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
