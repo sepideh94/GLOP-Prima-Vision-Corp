@@ -51,14 +51,9 @@ public class CommissionnerController {
 	private final AthleteCreationService athleteCreationService;
 	private final AthleteImportService athleteImportService;
 	private final AthleteService athleteService;
-	private final VolonteerCreationService volontaireService;
-	private final UserAccountService userAccountService;
-	private final CsvImportService csvService;
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
-	private final VolonteerImportService volonteerImportService;
-    private final VolonteerCreationService volonteerCreationService;
 	
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -93,50 +88,7 @@ public class CommissionnerController {
         ));
     }
     
-    // ==================== Volontaires ====================
-
-    /**
-     * Importe des volontaires via un fichier CSV pour une compétition.
-     */
-    @PostMapping("/competitions/{competitionId}/import-volonteers")
-    public ResponseEntity<VolonteerImportService.ImportResult> importVolonteers(
-            @PathVariable Long competitionId,
-            @RequestParam("file") MultipartFile file) throws Exception {
-        
-        return ResponseEntity.ok(volonteerImportService.importVolonteersForCompetition(file, competitionId));
-    }
-
-    /**
-     * Création manuelle d'un volontaire.
-     * Le service se chargera d'envoyer le mail d'invitation automatiquement.
-     */
-    @PostMapping("/competitions/{competitionId}/create-volonteer")
-    public ResponseEntity<UserAccount> createVolonteerManual(
-            @PathVariable Long competitionId,
-            @RequestBody CreateUserRequest request) {
-        
-        Volonteer volonteer = (Volonteer) volonteerCreationService.createUser(request);
-       
-        volonteerImportService.inviteToCompetition(volonteer, competitionId);
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(volonteer);
-    }
-    	
-    /**
-     * Récupère la liste des volontaires d'une compétition avec leur statut.
-     */
-    @GetMapping("/competitions/{competitionId}/volonteers")
-    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByCompetition(@PathVariable Long competitionId) {
-        
-        List<VolonteerCompetitionResponse> volonteers = volonteerImportService.getVolonteersByCompetition(competitionId);
-        return ResponseEntity.ok(volonteers);
-    }
-    
-    @GetMapping("/events/{eventId}/volonteers")
-    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByEvent(@PathVariable Long eventId) {
-        return ResponseEntity.ok(volonteerImportService.getAllVolonteersByEvent(eventId));
-    }
-
+   
     // ==================== COMPETITIONS ====================
 
     @GetMapping("/events/{eventId}/competitions")
