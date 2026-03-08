@@ -1,6 +1,7 @@
 package com.ciblorgasport.athlete.domain;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import com.ciblorgasport.common.domain.Competitor;
 import com.ciblorgasport.storage.domain.Document;
@@ -50,6 +51,9 @@ public class Athlete extends UserAccount implements Competitor {
 	@Column(name = "has_accepted_charte", nullable = false, columnDefinition = "boolean default false")
 	@Builder.Default
 	private boolean hasAcceptedCharte = false;
+	
+    @Column(name = "charterAccepted_at")
+    private LocalDateTime charterAcceptedAt;
 
 	@OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "medical_certificate_id")
@@ -68,6 +72,16 @@ public class Athlete extends UserAccount implements Competitor {
 	@Override
 	public boolean isEnabled() {
 	    return isActive();
+	}
+	
+	public boolean isProfileComplete() {
+	    return nationality != null && 
+	           birthDate != null && 
+	           sexe != null && 
+	           passportNumber != null && 
+	           passportDocument != null && 
+	           medicalCertificate != null && 
+	           hasAcceptedCharte;
 	}
 
 	public boolean isAthlete(){

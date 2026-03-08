@@ -21,6 +21,7 @@ import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
+import com.ciblorgasport.volonteer.application.VolonteerImportService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +34,7 @@ public class AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final VolonteerImportService volonteerImportService;
 
     private final EmailService emailService;
     private final ActivationTokenRepository activationTokenRepository;
@@ -172,43 +174,45 @@ public class AuthenticationService {
 
     public void completeForgotPassword(String token, String newPassword, String confirmNewPassword) {
 
-	    if (!Objects.equals(newPassword, confirmNewPassword)) {
-	        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
-	    }
-	
-	    if (newPassword == null || newPassword.length() < 8) {
-	        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
-	    }
-	
-	    ActivationToken at = activationTokenRepository.findByToken(token)
-	            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
-	
-	    if (at.isUsed()) {
-	        throw new IllegalArgumentException("Token déjà utilisé.");
-	    }
-	
-	    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-	        throw new IllegalArgumentException("Token expiré.");
-	    }
-	
-	    if (at.getType() != TokenType.PASSWORD_RESET
-	            && at.getType() != TokenType.INVITE_COMMISSIONNER
-	            && at.getType() != TokenType.INVITE_ATHLETE) {
-	        throw new IllegalArgumentException("Token invalide.");
-	    }
-	
-	    UserAccount user = at.getUser();
-	    user.setPassword(passwordEncoder.encode(newPassword));
-	
-	    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE) {
-	        user.setActive(true);
-	    }
-	
-	    userRepository.save(user);
-	
-	    at.setUsed(true);
-	    activationTokenRepository.save(at);
+    if (!Objects.equals(newPassword, confirmNewPassword)) {
+        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
     }
+
+    if (newPassword == null || newPassword.length() < 8) {
+        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
+    }
+
+    ActivationToken at = activationTokenRepository.findByToken(token)
+            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+
+    if (at.isUsed()) {
+        throw new IllegalArgumentException("Token déjà utilisé.");
+    }
+
+    if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
+        throw new IllegalArgumentException("Token expiré.");
+    }
+
+    if (at.getType() != TokenType.PASSWORD_RESET
+            && at.getType() != TokenType.INVITE_COMMISSIONNER
+            && at.getType() != TokenType.INVITE_ATHLETE
+            && at.getType() != TokenType.INVITE_VOLONTEER) {
+        throw new IllegalArgumentException("Token invalide.");
+    }
+
+    UserAccount user = at.getUser();
+    user.setPassword(passwordEncoder.encode(newPassword));
+
+    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE|| at.getType() == TokenType.INVITE_VOLONTEER) {
+        user.setActive(true);
+        volonteerImportService.updateVolonteerAssignmentsToAccepted(user.getId());
+    }
+
+    userRepository.save(user);
+
+    at.setUsed(true);
+    activationTokenRepository.save(at);
+}
 
 
 }

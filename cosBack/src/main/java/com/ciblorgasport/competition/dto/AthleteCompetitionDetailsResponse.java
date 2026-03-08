@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class AthleteCompetitionDetailsResponse {
+	
+	private Long competitionId;
 	private Long participationId;
     private String competitionName;
     private String eventName;
@@ -19,6 +21,7 @@ public class AthleteCompetitionDetailsResponse {
 
     public static AthleteCompetitionDetailsResponse fromEntity(Participation p) {
         return AthleteCompetitionDetailsResponse.builder()
+        		.competitionId(p.getCompetition().getId())
                 .participationId(p.getId())
                 .competitionName(p.getCompetition().getName())
                 .eventName(p.getCompetition().getParentEvent() != null ? p.getCompetition().getParentEvent().getName() : "")

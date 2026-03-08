@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
@@ -79,16 +80,14 @@ public class ParticipationService {
     }
 
     @Transactional
-    public void confirmParticipation(Long participationId, Long athleteId) {
-        Participation participation = participationRepository.findById(participationId)
-                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
-
-        if (!participation.getCompetitorId().equals(athleteId)) {
-            throw new AccessDeniedException("Accès non autorisé");
+    public void confirmAllParticipationsForAthlete(Long athleteId) {
+        List<Participation> participations = participationRepository
+                .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE);
+        
+        for (Participation p : participations) {
+            p.setStatus(ParticipationStatus.CONFIRMED);
         }
-
-        participation.confirmCharter();
-        participationRepository.save(participation);
+        participationRepository.saveAll(participations);
     }
 
     @Transactional
