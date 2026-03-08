@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.csv.CSVRecord;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -71,13 +70,45 @@ public class UserAccountService implements UserDetailsService {
 	public List<UserResponse> getAllUsersForAdmin() {
 	    return userRepo.findAll().stream()
 	            .map((UserAccount user) -> UserResponse.builder()
+	                    .id(user.getId())
 	                    .firstName(user.getFirstName())
 	                    .lastName(user.getLastName())
 	                    .email(user.getEmail())
 	                    .role(user.getRoleName().replace("ROLE_", ""))
-	                    .isAccountActive(user.isEnabled()) 
+	                    .isAccountActive(user.isEnabled())
 	                    .build())
 	            .collect(Collectors.toList());
+	}
+
+	public UserResponse getUserByIdForAdmin(Long id) {
+	    UserAccount user = userRepo.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	    return UserResponse.builder()
+	            .id(user.getId())
+	            .firstName(user.getFirstName())
+	            .lastName(user.getLastName())
+	            .email(user.getEmail())
+	            .role(user.getRoleName().replace("ROLE_", ""))
+	            .isAccountActive(user.isEnabled())
+	            .build();
+	}
+
+	@Transactional
+	public void setUserActive(Long id, boolean active) {
+	    UserAccount user = userRepo.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	    user.setActive(active);
+	    userRepo.save(user);
+	}
+
+	@Transactional
+	public String resetUserPasswordByAdmin(Long id) {
+	    UserAccount user = userRepo.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
+	    user.setPassword(passwordEncoder.encode(tempPassword));
+	    userRepo.save(user);
+	    return tempPassword;
 	}
 	
 	public void createAndInviteUser(CSVRecord record, UserCreationService creationService) {

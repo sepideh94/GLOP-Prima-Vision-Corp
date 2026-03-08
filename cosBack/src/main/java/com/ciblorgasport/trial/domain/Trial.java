@@ -3,6 +3,8 @@ package com.ciblorgasport.trial.domain;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.common.utils.StatusChecker;
@@ -12,6 +14,7 @@ import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -22,10 +25,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Table(name = "trial")
@@ -43,10 +49,6 @@ public class Trial implements StatusChecker {
     @Enumerated(EnumType.STRING)
     private TrialName trialName;
 
-    /**
-     * Optional number to differentiate multiple trials of the same type in the same round
-     * Example: Heat 1, Heat 2, Heat 3 for qualification rounds
-     */
     private Integer roundNumber;
 
     @Column(columnDefinition = "TEXT")
@@ -99,6 +101,11 @@ public class Trial implements StatusChecker {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_round")
     private Round round;
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "trial", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TrialParticipant> participants = new ArrayList<>();
 
     @Override
     public boolean hasStarted() {
@@ -165,6 +172,20 @@ public class Trial implements StatusChecker {
      * @param cancelledBy The user (Admin or Commissioner) who cancelled the trial
      * @throws IllegalStateException if the trial is already cancelled or completed
      */
+    /**
+     * Retourne la stratégie métier associée au mode de cette épreuve.
+     * <p>
+     * Point d'entrée unique pour accéder aux règles spécifiques au mode
+     * (type de participant attendu, maximum par série, validation...).
+     * L'enum {@link TrialMode} reste l'unique source de vérité persistée ;
+     * la stratégie est résolue à la demande sans modifier le schéma JPA.
+     *
+     * @return la {@link TrialModeStrategy} correspondant au mode de l'épreuve
+     */
+    public TrialModeStrategy getModeStrategy() {
+        return TrialModeStrategyFactory.getStrategy(this.mode);
+    }
+
     public void cancel(UserAccount cancelledBy) {
         Status currentStatus = getStatus();
 
