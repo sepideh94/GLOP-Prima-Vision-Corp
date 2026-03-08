@@ -82,8 +82,8 @@ export default function Sidebar() {
         ))}
       </List>
 
-      {/* Menu Profile avec Avatar + Nom en bas - Uniquement pour les athlètes */}
-      {user && user.role && user.role.toUpperCase() === "ATHLETE" && (
+      {/* Menu Profile avec Avatar + Nom en bas - Pour athlètes et spectateurs */}
+      {user && user.role && (user.role.toUpperCase() === "ATHLETE" || user.role.toUpperCase() === "SPECTATOR") && (
         <>
           <Divider sx={{ borderColor: "rgba(148,163,184,0.2)", mx: 2 }} />
           <Box
@@ -96,7 +96,13 @@ export default function Sidebar() {
             }}
           >
             <Box
-              onClick={() => navigate("/athlete/profile")}
+              onClick={() => {
+                if (user.role.toUpperCase() === "ATHLETE") {
+                  navigate("/athlete/profile");
+                } else if (user.role.toUpperCase() === "SPECTATOR") {
+                  navigate("/spectator/profile");
+                }
+              }}
               sx={{
                 borderRadius: 2,
                 width: "calc(100% - 16px)",

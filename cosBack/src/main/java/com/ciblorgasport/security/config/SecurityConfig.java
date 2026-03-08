@@ -97,6 +97,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/events/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.PUT, "/api/events/**").hasRole("ADMIN")
 
+                // Compétitions - Lecture seule pour tous les utilisateurs authentifiés
+                .requestMatchers(HttpMethod.GET, "/api/admin/competitions/by-event/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/admin/competitions/{id}").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/admin/competitions/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/api/admin/competitions/**").hasRole("ADMIN")
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/commissioner/**").hasRole("COMMISSIONNER")
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
