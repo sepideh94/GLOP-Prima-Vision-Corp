@@ -7,6 +7,11 @@ const trialService = {
     return res.data;
   },
 
+  getTrialsByCompetitionCommissioner: async (competitionId) => {
+    const res = await api.get(`/api/commissioner/competitions/${competitionId}/trials`);
+    return res.data;
+  },
+
   createTrial: async (data) => {
     const res = await api.post("/api/trials", data);
     return res.data;
@@ -29,6 +34,30 @@ const trialService = {
 
   cancelTrialCommissioner: async (id) => {
     const res = await api.patch(`/api/commissioner/trials/${id}/cancel`);
+    return res.data;
+  },
+
+  getCompetitionAthletes: async (competitionId) => {
+    const res = await api.get(`/api/commissioner/competitions/${competitionId}/athletes`);
+    return res.data;
+  },
+
+  getTrialAthletes: async (trialId) => {
+    const res = await api.get(`/api/commissioner/trials/${trialId}/athletes`);
+    return res.data;
+  },
+
+  assignAthletes: async (trialId, athleteIds) => {
+    const res = await api.post(`/api/commissioner/trials/${trialId}/athletes`, { athleteIds });
+    return res.data;
+  },
+
+  removeAthlete: async (trialId, athleteId) => {
+    await api.delete(`/api/commissioner/trials/${trialId}/athletes/${athleteId}`);
+  },
+
+  getEligibleAthletes: async (trialId) => {
+    const res = await api.get(`/api/commissioner/trials/${trialId}/eligible-athletes`);
     return res.data;
   },
 };

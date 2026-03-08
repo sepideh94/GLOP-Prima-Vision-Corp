@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.ciblorgasport.admin.domain.Admin;
+import com.ciblorgasport.admin.Admin;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.site.domain.Site;
 

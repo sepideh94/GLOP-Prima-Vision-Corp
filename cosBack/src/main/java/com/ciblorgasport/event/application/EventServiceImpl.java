@@ -22,30 +22,33 @@ public class EventServiceImpl implements EventService {
     
     @Override
     public Event createFromDto(EventCreateRequest req) {
-    Event e = new Event();
-    e.setName(req.getName());
-    e.setDescription(req.getDescription());
-    e.setStartDate(req.getStartDate());
-    e.setEndDate(req.getEndDate());   
-
-    return repository.save(e);
-}
+    	
+	    Event e = new Event();
+	    e.setName(req.getName());
+	    e.setDescription(req.getDescription());
+	    e.setStartDate(req.getStartDate());
+	    e.setEndDate(req.getEndDate());   
+	
+	    return repository.save(e);
+    }
 
     @Override
     public Event updateFromDto(Long id, EventUpdateRequest req) {
-    Event existing = repository.findById(id)
-            .orElseThrow(() -> new EventNotFoundException(id));
-
-    existing.setName(req.getName());
-    existing.setDescription(req.getDescription());
-    existing.setStartDate(req.getStartDate());
-
-    if (req.getEndDate() != null) {
-        existing.setEndDate(req.getEndDate()); 
+    	
+	    Event existing = repository.findById(id)
+	            .orElseThrow(() -> new EventNotFoundException(id));
+	
+	    existing.setName(req.getName());
+	    existing.setDescription(req.getDescription());
+	    existing.setStartDate(req.getStartDate());
+	
+	    if (req.getEndDate() != null) {
+	    	
+	        existing.setEndDate(req.getEndDate()); 
+	    }
+	
+	    return repository.save(existing);
     }
-
-    return repository.save(existing);
-}
 
     @Override
     public List<Event> getAll() {
@@ -54,7 +57,6 @@ public class EventServiceImpl implements EventService {
     
     @Override
     public Event getById(Long id) {
-        return repository.findById(id)
-                .orElseThrow(() -> new EventNotFoundException(id));
+        return repository.findById(id).orElseThrow(() -> new EventNotFoundException(id));
     }
 }

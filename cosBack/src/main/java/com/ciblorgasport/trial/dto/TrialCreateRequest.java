@@ -7,7 +7,6 @@ import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.TrialMode;
 import com.ciblorgasport.trial.domain.TrialName;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -16,11 +15,6 @@ public class TrialCreateRequest {
 
     @NotNull(message = "Le nom de l'épreuve est obligatoire.")
     private TrialName trialName;
-
-    /**
-     * Optional round number (e.g., 1, 2, 3 for Heat 1, Heat 2, Heat 3)
-     */
-    private Integer roundNumber;
 
     private String description;
 
@@ -50,6 +44,14 @@ public class TrialCreateRequest {
     @NotNull(message = "La compétition est obligatoire.")
     private Long competitionId;
 
-    @NotNull(message = "Le round est obligatoire.")
+    /**
+     * Optionnel. Si non fourni, le round par défaut est QUALIFICATION_HEAT.
+     */
     private Long roundId;
+
+    /**
+     * Nom du round (QUALIFICATION_HEAT, DEMI_FINALE, FINALE).
+     * Utilisé si roundId est null. Si les deux sont null, défaut = QUALIFICATION_HEAT.
+     */
+    private String roundName;
 }

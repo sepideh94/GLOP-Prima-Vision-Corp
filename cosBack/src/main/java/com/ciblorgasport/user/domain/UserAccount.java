@@ -8,7 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import com.ciblorgasport.admin.domain.Admin;
+import com.ciblorgasport.admin.Admin;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -98,10 +98,25 @@ public abstract class UserAccount implements UserDetails {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public boolean isAdmin(){return false;}
-    public boolean isCommissionner(){return false;}
-    public boolean isAthlete(){return false;}
-    public boolean isVolonteer(){return false;}
-    public boolean isSpectator(){return false;}
+    public boolean isAdmin(){
+    	return false;
+    
+    }
+    
+    public boolean isCommissionner(){
+    	return false;
+    }
+    
+    public boolean isAthlete(){
+    	return false;
+    }
+    
+    public boolean isVolonteer(){
+    	return false;
+    }
+    
+    public boolean isSpectator(){
+    	return false;
+    }
 
 }
