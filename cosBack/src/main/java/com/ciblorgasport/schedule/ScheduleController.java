@@ -3,8 +3,11 @@ package com.ciblorgasport.schedule;
 import com.ciblorgasport.schedule.application.ScheduleService;
 import com.ciblorgasport.schedule.domain.ScheduleItem;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
+import com.ciblorgasport.schedule.dto.ScheduleResponse;
 import com.ciblorgasport.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -17,14 +20,14 @@ public class ScheduleController {
     private final ScheduleService scheduleService;
 
     @PostMapping
-    public ResponseEntity<ScheduleItem> create(
-            @RequestBody ScheduleCreateRequest request,
-            @AuthenticationPrincipal UserAccount currentUser) {
+    public ResponseEntity<ScheduleResponse> create(@RequestBody ScheduleCreateRequest request,@AuthenticationPrincipal UserAccount currentUser) {
         
         if (!currentUser.isAdmin() && !currentUser.isCommissionner()) {
-            return ResponseEntity.status(403).build();
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        return ResponseEntity.ok(scheduleService.createSchedule(request, currentUser));
+        ScheduleResponse response = scheduleService.createSchedule(request, currentUser);
+        
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }
