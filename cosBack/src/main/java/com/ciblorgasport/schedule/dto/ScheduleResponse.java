@@ -26,4 +26,5 @@ public class ScheduleResponse {
     private SiteResponse site;
     private Long competitionId;
     private String competitionName;
+    private String assignedUserName;
 }
