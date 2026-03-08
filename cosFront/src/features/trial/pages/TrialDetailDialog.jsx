@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -8,9 +9,18 @@ import {
   Typography,
   Divider,
   Grid,
+  Tabs,
+  Tab,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  CircularProgress,
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import appTheme from "../../../common/theme/appTheme";
+import trialService from "../services/trialService";
 
 const TRIAL_NAME_OPTIONS = [
   { value: "FIFTY_M_FREESTYLE", label: "50m nage libre" },
@@ -49,11 +59,6 @@ const SITE_OPTIONS = [
   { value: 2, label: "Site 2 - Piscine secondaire" },
 ];
 
-const ROUND_OPTIONS = [
-  { value: 1, label: "Round 1 - Qualifications" },
-  { value: 2, label: "Round 2 - Demi-finale" },
-  { value: 3, label: "Round 3 - Finale" },
-];
 
 const getLabelFromEnum = (value, options) => {
   const option = options.find((opt) => opt.value === value);
@@ -86,6 +91,27 @@ const DetailRow = ({ label, value }) => (
 );
 
 export default function TrialDetailDialog({ open, onClose, trial, competition }) {
+  const [tab, setTab] = useState(0);
+  const [participants, setParticipants] = useState([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setTab(0);
+      setParticipants([]);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (open && trial?.id) {
+      setLoadingParticipants(true);
+      trialService.getTrialAthletes(trial.id)
+        .then(setParticipants)
+        .catch(() => setParticipants([]))
+        .finally(() => setLoadingParticipants(false));
+    }
+  }, [open, trial?.id]);
+
   if (!trial) return null;
 
   return (
@@ -108,7 +134,16 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
         Détails de l'épreuve
       </DialogTitle>
       <DialogContent dividers>
-        <Box sx={{ mt: 1 }}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          sx={{ mb: 2, borderBottom: "1px solid #e0e0e0" }}
+        >
+          <Tab label="Informations" />
+          <Tab label={`Participants (${participants.length})`} />
+        </Tabs>
+
+        {tab === 0 && <Box sx={{ mt: 1 }}>
           {competition && (
             <Box
               sx={{
@@ -141,13 +176,13 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
               <DetailRow label="Mode" value={getLabelFromEnum(trial.mode, MODE_OPTIONS)} />
               <DetailRow label="Catégorie" value={getLabelFromEnum(trial.categoryGender, CATEGORY_OPTIONS)} />
               <DetailRow label="Site" value={getLabelFromEnum(trial.siteId, SITE_OPTIONS)} />
-              <DetailRow label="Round" value={getLabelFromEnum(trial.roundId, ROUND_OPTIONS)} />
+              <DetailRow label="Round" value={trial.roundDisplayName || "-"} />
             </Grid>
             <Grid item xs={12} md={6}>
               <DetailRow label="Date" value={formatDate(trial.startDate)} />
               <DetailRow label="Heure de début" value={formatTime(trial.startHour)} />
               <DetailRow label="Heure de fin" value={formatTime(trial.endHour)} />
-              <DetailRow label="Numéro de round" value={trial.roundNumber || "-"} />
+              <DetailRow label="Numéro de série" value={trial.roundNumber || "-"} />
               <DetailRow label="Statut" value={trial.statusLabel} />
             </Grid>
           </Grid>
@@ -169,7 +204,42 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
               )}
             </>
           )}
-        </Box>
+        </Box>}
+
+        {tab === 1 && (
+          <Box sx={{ mt: 1 }}>
+            {loadingParticipants ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={32} />
+              </Box>
+            ) : participants.length === 0 ? (
+              <Typography sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
+                Aucun participant assigné à cette épreuve.
+              </Typography>
+            ) : (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Nom</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Prénom</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {participants.map((p, i) => (
+                    <TableRow key={p.id}>
+                      <TableCell>{i + 1}</TableCell>
+                      <TableCell>{p.athleteLastName}</TableCell>
+                      <TableCell>{p.athleteFirstName}</TableCell>
+                      <TableCell>{p.athleteEmail}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </Box>
+        )}
       </DialogContent>
       <DialogActions>
         <Button

@@ -11,12 +11,15 @@ import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
+import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialName;
 import com.ciblorgasport.trial.dto.TrialCreateRequest;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.Round;
+import com.ciblorgasport.trial.round.domain.RoundName;
 import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
@@ -69,6 +72,51 @@ public class TrialServiceImpl implements TrialService {
         }
     }
 
+    /**
+     * Valide que tous les trials du round précédent sont terminés
+     * avant la date de début du nouveau trial.
+     */
+    private void validatePreviousRoundCompleted(
+            Competition competition,
+            TrialName trialName,
+            CategoryGender categoryGender,
+            LocalDateTime newTrialStart,
+            RoundName previousRoundName,
+            String previousRoundLabel) {
+
+        List<Trial> previousRoundTrials = trialRepository
+            .findActiveByCompetitionAndTrialNameAndCategoryGenderAndRoundName(
+                competition, trialName, categoryGender, previousRoundName);
+
+        if (previousRoundTrials.isEmpty()) {
+            throw new IllegalArgumentException(
+                "Aucune " + previousRoundLabel
+                + " n'existe pour cette épreuve. "
+                + "Veuillez d'abord créer les "
+                + previousRoundLabel + ".");
+        }
+
+        for (Trial prevTrial : previousRoundTrials) {
+            if (prevTrial.getEndDate() == null || prevTrial.getEndHour() == null) {
+                throw new IllegalArgumentException(
+                    "La série \"" + prevTrial.getName()
+                    + "\" n'a pas de date de fin définie.");
+            }
+
+            LocalDateTime prevEnd = LocalDateTime.of(
+                prevTrial.getEndDate(), prevTrial.getEndHour());
+
+            if (newTrialStart.isBefore(prevEnd) || newTrialStart.isEqual(prevEnd)) {
+                throw new IllegalArgumentException(
+                    "La date de début de l'épreuve doit être postérieure "
+                    + "à la fin de toutes les " + previousRoundLabel
+                    + ". La série \"" + prevTrial.getName()
+                    + "\" se termine le "
+                    + prevEnd.format(DATETIME_FORMATTER) + ".");
+            }
+        }
+    }
+
     @Transactional
     @Override
     public TrialResponse create(TrialCreateRequest request) {
@@ -78,25 +126,62 @@ public class TrialServiceImpl implements TrialService {
         Competition competition = competitionRepository.findById(request.getCompetitionId())
                 .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
 
-        Round round = roundRepository.findById(request.getRoundId())
-                .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+        // Résoudre le round : roundId > roundName > défaut QUALIFICATION_HEAT
+        Round round;
+        if (request.getRoundId() != null) {
+            round = roundRepository.findById(request.getRoundId())
+                    .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+        } else if (request.getRoundName() != null && !request.getRoundName().isBlank()) {
+            RoundName requestedRound;
+            try {
+                requestedRound = RoundName.valueOf(request.getRoundName());
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Phase invalide : " + request.getRoundName());
+            }
+            round = roundRepository.findByName(requestedRound)
+                    .orElseThrow(() -> new RuntimeException("Round introuvable : " + request.getRoundName()));
+        } else {
+            round = roundRepository.findByName(RoundName.QUALIFICATION_HEAT)
+                    .orElseThrow(() -> new RuntimeException("Round QUALIFICATION_HEAT introuvable en base de données."));
+        }
 
         // Validate trial dates against competition dates
         LocalDateTime trialStart = LocalDateTime.of(request.getStartDate(), request.getStartHour());
         LocalDateTime trialEnd = LocalDateTime.of(request.getEndDate(), request.getEndHour());
         validateTrialDates(trialStart, trialEnd, competition);
 
+        // Round-specific validation and auto-generation
+        RoundName roundName = round.getName();
+        Integer roundNumber = null;
+
+        if (roundName == RoundName.QUALIFICATION_HEAT) {
+            // Auto-generate roundNumber: MAX(existing) + 1, starting at 1
+            Integer maxRoundNumber = trialRepository.findMaxRoundNumber(
+                competition, request.getTrialName(), request.getCategoryGender(), round);
+            roundNumber = (maxRoundNumber != null) ? maxRoundNumber + 1 : 1;
+
+        } else if (roundName == RoundName.DEMI_FINALE) {
+            validatePreviousRoundCompleted(
+                competition, request.getTrialName(), request.getCategoryGender(),
+                trialStart, RoundName.QUALIFICATION_HEAT, "qualifications");
+
+        } else if (roundName == RoundName.FINALE) {
+            validatePreviousRoundCompleted(
+                competition, request.getTrialName(), request.getCategoryGender(),
+                trialStart, RoundName.DEMI_FINALE, "demi-finales");
+        }
+
         Trial newTrial = new Trial();
 
         // Generate name: trialName + roundName + optional roundNumber
         String generatedName = request.getTrialName().getDisplayName() + " - " + round.getDisplayName();
-        if (request.getRoundNumber() != null) {
-            generatedName += " " + request.getRoundNumber();
+        if (roundNumber != null) {
+            generatedName += " " + roundNumber;
         }
 
         newTrial.setName(generatedName);
         newTrial.setTrialName(request.getTrialName());
-        newTrial.setRoundNumber(request.getRoundNumber());
+        newTrial.setRoundNumber(roundNumber);
         newTrial.setDescription(request.getDescription());
         newTrial.setRules(request.getRules());
         newTrial.setStartDate(request.getStartDate());
@@ -124,8 +209,14 @@ public class TrialServiceImpl implements TrialService {
         Competition competition = competitionRepository.findById(request.getCompetitionId())
                 .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
 
-        Round round = roundRepository.findById(request.getRoundId())
-                .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+        // Si roundId fourni, l'utiliser ; sinon, conserver le round existant
+        Round round;
+        if (request.getRoundId() != null) {
+            round = roundRepository.findById(request.getRoundId())
+                    .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+        } else {
+            round = existingTrial.getRound();
+        }
 
         // Validate trial dates against competition dates
         LocalDateTime trialStart = LocalDateTime.of(request.getStartDate(), request.getStartHour());
@@ -134,13 +225,12 @@ public class TrialServiceImpl implements TrialService {
 
         // Generate name: trialName + roundName + optional roundNumber
         String generatedName = request.getTrialName().getDisplayName() + " - " + round.getDisplayName();
-        if (request.getRoundNumber() != null) {
-            generatedName += " " + request.getRoundNumber();
+        if (existingTrial.getRoundNumber() != null) {
+            generatedName += " " + existingTrial.getRoundNumber();
         }
 
         existingTrial.setName(generatedName);
         existingTrial.setTrialName(request.getTrialName());
-        existingTrial.setRoundNumber(request.getRoundNumber());
         existingTrial.setDescription(request.getDescription());
         existingTrial.setRules(request.getRules());
         existingTrial.setStartDate(request.getStartDate());
@@ -179,6 +269,7 @@ public class TrialServiceImpl implements TrialService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     @Override
     public void delete(Long id) {
         if (!trialRepository.existsById(id)) {

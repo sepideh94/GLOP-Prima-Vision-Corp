@@ -28,12 +28,14 @@ public class ParticipationService {
     private final AthleteRepository athleteRepository;
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
-
+	
+    @Transactional
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
-        List<Participation> participations = participationRepository.findByCompetitionId(competitionId);
+        List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
         return buildParticipantResponses(participations);
     }
 
+    @Transactional
     public List<ParticipantResponse> getParticipationsByAthlete(Long athleteId) {
         List<Participation> participations = participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE);
@@ -66,7 +68,8 @@ public class ParticipationService {
 
         return responses;
     }
-
+    
+    @Transactional
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
         return participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)

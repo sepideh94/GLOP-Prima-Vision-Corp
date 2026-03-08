@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
  * Utilise un pattern polymorphique avec competitorId et competitorType
  * pour supporter différents types de participants (Athlete, Team, etc.).
  */
+
 @Entity
 @Table(name = "participation")
 @Data
@@ -58,11 +59,12 @@ public class Participation {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
+    
+    @Column(name = "charter_accepted", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean charterAccepted = false;
 
-    @Column(name = "charterAccepted_at")
+    @Column(name = "charter_accepted_at")
     private LocalDateTime charterAcceptedAt;
 
     public void confirmCharter() {
