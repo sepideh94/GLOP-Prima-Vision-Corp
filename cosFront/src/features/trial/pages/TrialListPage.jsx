@@ -127,7 +127,6 @@ export default function TrialListPage() {
   const handleSave = async (form) => {
     const payload = {
       trialName: form.trialName,
-      roundNumber: form.roundNumber ? Number(form.roundNumber) : null,
       description: form.description || null,
       rules: form.rules || null,
       startDate: form.startDate,
@@ -144,7 +143,7 @@ export default function TrialListPage() {
       categoryGender: form.categoryGender,
       siteId: Number(form.siteId),
       competitionId: Number(competitionId),
-      roundId: Number(form.roundId),
+      ...(editingTrial ? {} : { roundName: form.roundName || "QUALIFICATION_HEAT" }),
     };
 
     try {
@@ -171,7 +170,7 @@ export default function TrialListPage() {
     if (!trialToCancel) return;
 
     try {
-      const cancelled = await trialService.cancelTrial(trialToCancel.id);
+      const cancelled = await trialService.cancelTrialAdmin(trialToCancel.id);
       setTrials((prev) =>
         prev.map((t) => (t.id === trialToCancel.id ? cancelled : t))
       );

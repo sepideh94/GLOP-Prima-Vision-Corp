@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Grid, Typography, Box } from "@mui/material";
 import CompetitionCard from "../components/CompetitionCard";
 import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
@@ -8,6 +9,7 @@ import athleteProfileService from "../services/athleteProfileService";
 import { useAuth } from "../../../common/contexts/AuthContext";
 
 export default function AthleteCompetitionsPage() {
+  const navigate = useNavigate();
   const [competitions, setCompetitions] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -92,33 +94,20 @@ export default function AthleteCompetitionsPage() {
   }, [userProfile, competitions, hasAutoConfirmed]);
 
   const isProfileComplete = () => {
-    // Vérifier d'abord dans userProfile (depuis l'API)
-    if (userProfile) {
-      return (
-        userProfile.nationality &&
-        userProfile.birthDate &&
-        userProfile.sexe &&
-        userProfile.passportNumber &&
-        userProfile.hasPassport &&
-        userProfile.hasMedicalCertificate
-      );
-    }
-    // Sinon vérifier dans l'objet user depuis AuthContext
-    if (user) {
-      return (
-        user.nationality &&
-        user.dateOfBirth &&
-        user.gender &&
-        user.passportNumber &&
-        user.passportFile &&
-        user.medicalCertificateFile
-      );
-    }
-    return false;
+    if (!userProfile) return false;
+    return (
+      userProfile.nationality &&
+      userProfile.birthDate &&
+      userProfile.sexe &&
+      userProfile.passportNumber &&
+      userProfile.hasPassport &&
+      userProfile.hasMedicalCertificate
+    );
   };
 
   const handleConfirmClick = async (competition) => {
     if (!isProfileComplete()) {
+      // Afficher la modale pour informer qu'il faut compléter le profil
       setShowIncompleteProfileModal(true);
       return;
     }
@@ -135,7 +124,11 @@ export default function AthleteCompetitionsPage() {
           )
         );
       } catch (err) {
-        console.error("Erreur lors de la confirmation:", err);
+        // L'erreur est déjà gérée par l'intercepteur axios si c'est une 401
+        // On affiche juste un message d'erreur pour les autres erreurs
+        if (err.response?.status !== 401) {
+          console.error("Erreur lors de la confirmation:", err);
+        }
       }
       return;
     }
@@ -175,19 +168,24 @@ export default function AthleteCompetitionsPage() {
           open
           competition={selectedCompetition}
           onClose={() => setSelectedCompetition(null)}
-          onConfirm={() => {
-            athleteCompetitionService
-              .confirmParticipation(selectedCompetition.participationId) 
-              .then(() => {
-                setCompetitions((prev) =>
-                  prev.map((c) =>
-                    c.participationId === selectedCompetition.participationId
-                      ? { ...c, status: "CONFIRMED" }
-                      : c
-                  )
-                );
-                setSelectedCompetition(null);
-              });
+          onConfirm={async () => {
+            try {
+              await athleteCompetitionService.confirmParticipation(selectedCompetition.participationId);
+              setCompetitions((prev) =>
+                prev.map((c) =>
+                  c.participationId === selectedCompetition.participationId
+                    ? { ...c, status: "CONFIRMED" }
+                    : c
+                )
+              );
+              setSelectedCompetition(null);
+            } catch (err) {
+              // L'erreur est déjà gérée par l'intercepteur axios si c'est une 401
+              // On affiche juste un message d'erreur pour les autres erreurs
+              if (err.response?.status !== 401) {
+                console.error("Erreur lors de la confirmation de participation:", err);
+              }
+            }
           }}
         />
       )}

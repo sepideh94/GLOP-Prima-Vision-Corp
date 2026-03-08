@@ -16,7 +16,7 @@ export default function IncompleteProfileModal({ open, onClose }) {
 
   const handleGoToProfile = () => {
     onClose();
-    navigate("/profile");
+    navigate("/athlete/profile");
   };
 
   return (
@@ -41,7 +41,7 @@ export default function IncompleteProfileModal({ open, onClose }) {
       </DialogTitle>
       <DialogContent>
         <Typography sx={{ fontSize: 15, color: "#374151", lineHeight: 1.6 }}>
-          Pour participer aux compétitions, vous devez compléter votre profil.
+          Pour confirmer votre participation, vous devez compléter votre profil.
           Veuillez renseigner les informations suivantes :
         </Typography>
         <Box sx={{ mt: 2, pl: 2 }}>

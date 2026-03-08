@@ -1,4 +1,5 @@
 import axios from "axios";
+import { AUTH_LOGOUT_EVENT } from "../contexts/AuthContext";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8083";
 
@@ -12,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Ne pas ajouter le token pour les routes publiques
-    const publicRoutes = ["/auth/signin", "/auth/signup", "/api/countries"];
+    const publicRoutes = ["/api/auth/signin", "/api/auth/signup", "/api/auth/forgot-password", "/api/auth/forgot-password/complete", "/api/countries"];
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
     
     if (!isPublicRoute) {
@@ -30,9 +31,18 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      // Supprimer le token du localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      
+      // Déclencher l'événement personnalisé pour mettre à jour le contexte
+      window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+      
+      // Utiliser un délai pour permettre au contexte de se mettre à jour
+      // avant de rediriger
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 100);
     }
     return Promise.reject(error);
   }

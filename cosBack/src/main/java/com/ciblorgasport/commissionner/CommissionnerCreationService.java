@@ -1,4 +1,4 @@
-package com.ciblorgasport.commissionner.application;
+package com.ciblorgasport.commissionner;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -6,7 +6,6 @@ import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.ciblorgasport.commissionner.domain.Commissionner;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;

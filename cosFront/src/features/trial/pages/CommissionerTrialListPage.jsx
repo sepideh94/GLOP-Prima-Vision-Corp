@@ -56,12 +56,85 @@ export default function CommissionerTrialListPage() {
       .then(setCompetition);
 
     trialService
-      .getTrialsByCompetition(competitionId)
+      .getTrialsByCompetitionCommissioner(competitionId)
       .then(setTrials)
       .finally(() => setLoading(false));
   }, [competitionId]);
 
   if (loading) return <p>Chargement...</p>;
+
+  const handleSave = async (form) => {
+    const payload = {
+      trialName: form.trialName,
+      description: form.description || null,
+      rules: form.rules || null,
+      startDate: form.startDate,
+      startHour:
+        form.startHour && form.startHour.length === 5
+          ? `${form.startHour}:00`
+          : form.startHour,
+      endDate: form.endDate,
+      endHour:
+        form.endHour && form.endHour.length === 5
+          ? `${form.endHour}:00`
+          : form.endHour,
+      mode: form.mode,
+      categoryGender: form.categoryGender,
+      siteId: Number(form.siteId),
+      competitionId: Number(competitionId),
+    };
+
+    const updated = await trialService.updateTrialCommissioner(
+      editingTrial.id,
+      payload
+    );
+
+    setTrials((prev) =>
+      prev.map((t) => (t.id === editingTrial.id ? updated : t))
+    );
+
+    setOpenForm(false);
+    setEditingTrial(null);
+  };
+
+  const handleCancelTrial = async () => {
+    const cancelled = await trialService.cancelTrialCommissioner(
+      trialToCancel.id
+    );
+
+    setTrials((prev) =>
+      prev.map((t) => (t.id === trialToCancel.id ? cancelled : t))
+    );
+
+    setOpenCancelConfirm(false);
+    setTrialToCancel(null);
+  };
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const filteredTrials = trials.filter((t) =>
+    (t.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const sortedTrials = [...filteredTrials].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    if (typeof aValue === "string") aValue = aValue.toLowerCase();
+    if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+    return sortConfig.direction === "asc"
+      ? aValue > bValue ? 1 : -1
+      : aValue < bValue ? 1 : -1;
+  });
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
@@ -236,6 +309,18 @@ export default function CommissionerTrialListPage() {
           </table>
         </div>
       </div>
+
+      <TrialFormDialog
+        open={openForm}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingTrial(null);
+        }}
+        onSave={handleSave}
+        initialData={editingTrial}
+        competition={competition}
+        existingTrials={trials}
+      />
 
       <TrialDetailDialog
         open={openDetail}

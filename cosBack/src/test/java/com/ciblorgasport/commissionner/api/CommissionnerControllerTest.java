@@ -28,6 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.event.domain.Event;
@@ -42,7 +43,6 @@ import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.trial.round.domain.RoundName;
 import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
-import com.ciblorgasport.commissionner.domain.Commissionner;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 @SpringBootTest
