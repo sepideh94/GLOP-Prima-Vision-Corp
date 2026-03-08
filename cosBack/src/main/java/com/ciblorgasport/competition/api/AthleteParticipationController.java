@@ -33,4 +33,11 @@ public class AthleteParticipationController {
         participationService.confirmParticipation(participationId, user.getId());
         return ResponseEntity.ok().build();
     }
+
+    @PostMapping("/{participationId}/forfeit")
+    public ResponseEntity<Void> declareForfeit(@PathVariable Long participationId,
+                                               @AuthenticationPrincipal UserAccount user) {
+        participationService.declareForfeit(participationId, user.getId());
+        return ResponseEntity.ok().build();
+    }
 }

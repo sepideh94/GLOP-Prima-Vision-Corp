@@ -26,10 +26,9 @@ public class ParticipationService {
 
     private final ParticipationRepository participationRepository;
     private final AthleteRepository athleteRepository;
-	private final UserAccountRepository userAccountRepository;
-	private final PasswordEncoder passwordEncoder;
-	
-	
+    private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
+
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
         List<Participation> participations = participationRepository.findByCompetitionId(competitionId);
         return buildParticipantResponses(participations);
@@ -67,7 +66,7 @@ public class ParticipationService {
 
         return responses;
     }
-    
+
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
         return participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)
@@ -75,7 +74,7 @@ public class ParticipationService {
                 .map(AthleteCompetitionDetailsResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional
     public void confirmParticipation(Long participationId, Long athleteId) {
         Participation participation = participationRepository.findById(participationId)
@@ -89,4 +88,20 @@ public class ParticipationService {
         participationRepository.save(participation);
     }
 
+    @Transactional
+    public void declareForfeit(Long participationId, Long athleteId) {
+        Participation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
+
+        if (!participation.getCompetitorId().equals(athleteId)) {
+            throw new AccessDeniedException("Accès non autorisé");
+        }
+
+        if (participation.getCompetitorType() != CompetitorType.ATHLETE) {
+            throw new AccessDeniedException("Seul un athlète peut déclarer forfait.");
+        }
+
+        participation.declareForfeit();
+        participationRepository.save(participation);
+    }
 }

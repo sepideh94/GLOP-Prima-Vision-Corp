@@ -58,14 +58,13 @@ public class Participation {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    
+
     @Builder.Default
     private boolean charterAccepted = false;
-    
+
     @Column(name = "charterAccepted_at")
     private LocalDateTime charterAcceptedAt;
-    
+
     public void confirmCharter() {
         if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
             throw new IllegalStateException("La compétition est terminée.");
@@ -74,7 +73,17 @@ public class Participation {
         this.charterAcceptedAt = LocalDateTime.now();
         this.status = ParticipationStatus.CONFIRMED;
     }
-    
-    
-    
+
+    public void declareForfeit() {
+        if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("La compétition est terminée.");
+        }
+
+        if (this.status == ParticipationStatus.CANCELLED) {
+            throw new IllegalStateException("Le forfait a déjà été déclaré.");
+        }
+
+        this.status = ParticipationStatus.CANCELLED;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
