@@ -104,9 +104,8 @@ public class EmailServiceImpl implements EmailService {
             hello(firstName) +
             "Nous sommes ravis de vous inviter à rejoindre CiblOrgaSport en tant qu’athlète.\n\n" +
             "En tant qu'athlète invité(e), votre présence serait un atout majeur pour cet événement.\n\n" +
-            "Confirmer votre participation\n\n" +
             "Pour accéder aux détails (horaires, règlements) et valider votre inscription, veuillez cliquer sur le lien ci-dessous :\n\n" +
-            "👉 Accéder à l'événement et confirmer ma présence :\n" +
+            "👉 Accéder à l'événement :\n" +
             competitionsLink + "\n\n" +
             "Première connexion ou mot de passe oublié ?\n\n" +
             "Si vous n'avez pas encore activé votre compte athlète ou si vous ne vous souvenez plus de vos identifiants, vous devez définir votre mot de passe pour pouvoir vous connecter.\n\n" +
