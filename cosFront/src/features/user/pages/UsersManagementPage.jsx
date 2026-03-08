@@ -266,6 +266,8 @@ export default function UsersManagementPage() {
       ROLE_ADMIN: "Administrateur",
       COMMISSIONER: "Commissaire",
       ROLE_COMMISSIONER: "Commissaire",
+      COMMISSIONNER: "Commissaire",
+      ROLE_COMMISSIONNER: "Commissaire",
       ATHLETE: "Athlète",
       ROLE_ATHLETE: "Athlète",
       VOLUNTEER: "Bénévole",
@@ -435,7 +437,7 @@ export default function UsersManagementPage() {
           >
             <MenuItem value="ALL">Tous</MenuItem>
             <MenuItem value="ADMIN">Administrateur</MenuItem>
-            <MenuItem value="COMMISSIONER">Commissaire</MenuItem>
+            <MenuItem value="COMMISSIONNER">Commissaire</MenuItem>
             <MenuItem value="ATHLETE">Athlète</MenuItem>
             <MenuItem value="VOLUNTEER">Bénévole</MenuItem>
             <MenuItem value="SPECTATOR">Spectateur</MenuItem>

@@ -133,7 +133,7 @@ public class AthleteImportService {
      */
     private boolean inviteAthleteToCompetition(Athlete athlete, Competition competition) {
         // Vérifier si l'athlète est déjà invité à cette compétition
-        boolean alreadyExists = participationRepository.existsByCompetitionIdAndCompetitorIdAndCompetitorType(
+        boolean alreadyExists = participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorType(
                 competition.getId(),
                 athlete.getId(),
                 CompetitorType.ATHLETE

@@ -24,6 +24,7 @@ import lombok.NoArgsConstructor;
  * Utilise un pattern polymorphique avec competitorId et competitorType
  * pour supporter différents types de participants (Athlete, Team, etc.).
  */
+
 @Entity
 @Table(name = "participation")
 @Data

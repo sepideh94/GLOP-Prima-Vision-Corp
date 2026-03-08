@@ -32,39 +32,52 @@ public class AthleteService {
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
 
+    @Transactional
     public List<AthleteResponse> getAllAthletes() {
         return athleteRepository.findAllByOrderByLastNameAsc().stream()
                 .map(AthleteResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
-    
-    public List<CompetitionAthleteResponse> getAthletesByCompetition(Long competitionId) {
-
-    	List<Participation> participations = participationRepository.findByCompetitionId(competitionId)
-                .stream()
-                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                .toList();
-        
-        return participations.stream()
-                .map(p -> {
-                    
-                    Athlete athlete = athleteRepository.findById(p.getCompetitorId())
-                            .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé pour l'ID: " + p.getCompetitorId()));
-
-                    return new CompetitionAthleteResponse(
-                        AthleteResponse.builder()
-                            .id(athlete.getId())
-                            .firstName(athlete.getFirstName())
-                            .lastName(athlete.getLastName())
-                            .email(athlete.getEmail())
-                            .build(),
-                            p.getStatus()
-                    );
-                })
-                .collect(Collectors.toList());
+    @Transactional
+    public List<AthleteResponse> getAthletesByCompetition(Long competitionId) {
+        List<Long> athleteIds;
+        try {
+            List<com.ciblorgasport.competition.domain.Participation> participations = participationRepository.findByCompetition_Id(competitionId);
+            // #region agent log (stdout for docker logs)
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:afterFindByCompetitionId\",\"message\":\"participations size\",\"data\":{\"size\":\"" + participations.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            athleteIds = participations.stream()
+                    .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                    .map(p -> p.getCompetitorId())
+                    .distinct()
+                    .toList();
+        } catch (Throwable t) {
+            // #region agent log (stdout for docker logs)
+            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:findByCompetitionId\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            throw t;
+        }
+        // #region agent log (stdout for docker logs)
+        System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:athleteIds\",\"message\":\"athleteIds size\",\"data\":{\"size\":\"" + athleteIds.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+        // #endregion
+        try {
+            List<AthleteResponse> result = athleteRepository.findAllById(athleteIds).stream()
+                    .map(AthleteResponse::fromEntity)
+                    .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
+                    .collect(Collectors.toList());
+            return result;
+        } catch (Throwable t) {
+            // #region agent log (stdout for docker logs)
+            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:stream\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            throw t;
+        }
     }
 
+    @Transactional
     public AthleteResponse getAthleteProfile(Long athleteId) {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
