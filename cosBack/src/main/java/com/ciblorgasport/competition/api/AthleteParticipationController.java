@@ -24,20 +24,16 @@ public class AthleteParticipationController {
     private final ParticipationService participationService;
 
     @GetMapping
-    public ResponseEntity<List<AthleteCompetitionDetailsResponse>> getMyCards(@AuthenticationPrincipal UserAccount user) {
+    public ResponseEntity<List<AthleteCompetitionDetailsResponse>> getMyCards(
+            @AuthenticationPrincipal UserAccount user) {
         return ResponseEntity.ok(participationService.getAthleteDashboardCards(user.getId()));
     }
 
     @PostMapping("/{participationId}/confirm")
-    public ResponseEntity<Void> confirm(@PathVariable Long participationId, @AuthenticationPrincipal UserAccount user) {
+    public ResponseEntity<Void> confirm(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserAccount user) {
         participationService.confirmParticipation(participationId, user.getId());
-        return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/{participationId}/forfeit")
-    public ResponseEntity<Void> declareForfeit(@PathVariable Long participationId,
-                                               @AuthenticationPrincipal UserAccount user) {
-        participationService.declareForfeit(participationId, user.getId());
         return ResponseEntity.ok().build();
     }
 }
