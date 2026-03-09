@@ -6,7 +6,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { EmojiEvents, People, VolunteerActivism } from "@mui/icons-material";
+import { EmojiEvents, People } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -27,13 +27,6 @@ export default function Commissioner() {
       icon: <People sx={{ fontSize: 42 }} />,
       color: appTheme.colors.cyan,
       route: "/commissioner/participants",
-    },
-    {
-      title: "Gestion des volontaires",
-      subtitle: "Import et création des volontaires",
-      icon: <VolunteerActivism sx={{ fontSize: 42 }} />,
-      color: appTheme.colors.violet,
-      route: "/commissioner/volunteers",
     },
   ];
 

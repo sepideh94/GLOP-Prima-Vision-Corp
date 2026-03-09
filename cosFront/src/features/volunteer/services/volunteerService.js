@@ -1,6 +1,6 @@
 import api from "../../../common/api/axiosInstance";
 
-const BASE_URL = "/api/commissioner/competitions";
+const BASE_URL = "/api/admin/competitions";
 
 const volunteerService = {
 
@@ -9,6 +9,7 @@ const volunteerService = {
       `${BASE_URL}/${competitionId}/create-volonteer`,
       data
     );
+
     return response.data;
   },
 
@@ -20,7 +21,9 @@ const volunteerService = {
       `${BASE_URL}/${competitionId}/import-volonteers`,
       formData,
       {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
 
@@ -31,13 +34,15 @@ const volunteerService = {
     const response = await api.get(
       `${BASE_URL}/${competitionId}/volonteers`
     );
+
     return response.data;
   },
 
   getVolunteersByEvent: async (eventId) => {
     const response = await api.get(
-      `/api/commissioner/events/${eventId}/volonteers`
+      `/api/admin/events/${eventId}/volonteers`
     );
+
     return response.data;
   },
 

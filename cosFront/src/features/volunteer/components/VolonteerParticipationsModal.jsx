@@ -6,27 +6,34 @@ import {
   Button,
   Typography,
 } from "@mui/material";
+
 import appTheme from "../../../common/theme/appTheme";
 
-export default function VolonteerParticipationsModal({ open, onClose, volunteer }) {
+export default function VolunteerParticipationsModal({
+  open,
+  onClose,
+  volunteer,
+}) {
+  const volunteerName = volunteer
+    ? `${volunteer.firstName || ""} ${volunteer.lastName || ""}`.trim()
+    : "";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
 
       <DialogTitle>
-        Participations de {volunteer?.firstName} {volunteer?.lastName}
+        {volunteerName
+          ? `Participations de ${volunteerName}`
+          : "Participations du volontaire"}
       </DialogTitle>
 
       <DialogContent>
-
         <Typography sx={{ p: 2, textAlign: "center" }}>
           Les participations seront disponibles prochainement.
         </Typography>
-
       </DialogContent>
 
       <DialogActions>
-
         <Button
           onClick={onClose}
           sx={{
@@ -41,7 +48,6 @@ export default function VolonteerParticipationsModal({ open, onClose, volunteer 
         >
           Fermer
         </Button>
-
       </DialogActions>
 
     </Dialog>
