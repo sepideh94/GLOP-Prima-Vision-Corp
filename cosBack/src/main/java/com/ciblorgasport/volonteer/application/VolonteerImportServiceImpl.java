@@ -45,7 +45,7 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
                 .orElseThrow(() -> new EntityNotFoundException("Compétition non trouvée avec l'ID: " + competitionId));
 
         List<CSVRecord> records = csvService.parseCsv(file);
-        List<VolonteerInviteEmail> invitesToSend = new ArrayList<>();
+        //List<VolonteerInviteEmail> invitesToSend = new ArrayList<>();
         int invitedCount = 0;
 
         for (CSVRecord record : records) {
@@ -54,24 +54,24 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
                 boolean wasInvited = inviteToCompetitionEntity(volonteer, competition);
                 if (wasInvited) {
                     invitedCount++;
-                    if (!volonteer.isActive()) {
+                    /*if (!volonteer.isActive()) {
                         String token = volonteerInviteTokenService.createInviteToken(volonteer);
                         invitesToSend.add(new VolonteerInviteEmail(volonteer.getEmail(), volonteer.getFirstName(), token));
-                    }
+                    }*/
                 }
             } catch (Exception e) {
                 log.error("Erreur lors du traitement de l'email {}: {}", record.get("email"), e.getMessage());
             }
         }
 
-        if (!invitesToSend.isEmpty()) {
+        /*if (!invitesToSend.isEmpty()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
                     volonteerInviteBatchService.sendInvites(invitesToSend);
                 }
             });
-        }
+        }*/
 
         return new ImportResult(records.size(), invitedCount);
     }

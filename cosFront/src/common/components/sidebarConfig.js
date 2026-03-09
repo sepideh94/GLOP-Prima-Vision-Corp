@@ -2,7 +2,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
-import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism"; // ✅ ajout
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 
 const sidebarConfig = {
   ADMIN: [
@@ -12,6 +12,11 @@ const sidebarConfig = {
       label: "Gestion des compétitions et épreuves",
       icon: EmojiEventsIcon,
       path: "/admin/competitions",
+    },
+    {
+      label: "Gestion des volontaires",
+      icon: VolunteerActivismIcon,
+      path: "/admin/volunteers",
     },
     {
       label: "Gestion des utilisateurs",
@@ -31,11 +36,6 @@ const sidebarConfig = {
       label: "Gestion des athlètes",
       icon: PeopleIcon,
       path: "/commissioner/participants",
-    },
-    {
-      label: "Gestion des volontaires", 
-      icon: VolunteerActivismIcon,
-      path: "/commissioner/volunteers",
     },
   ],
 

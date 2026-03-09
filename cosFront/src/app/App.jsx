@@ -29,8 +29,8 @@ import CommissionerTrialListPage from
 import CommissionerParticipantsPage from
   "../features/participant/pages/CommissionerParticipantsPage.jsx";
 
-import CommissionerVolunteersPage from
-  "../features/volunteer/pages/CommissionerVolunteersPage.jsx"; // ✅ AJOUT
+import VolunteersPage from
+  "../features/volunteer/pages/VolunteersPage.jsx";
 
 import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
@@ -71,6 +71,10 @@ export default function App() {
                 element={<TrialListPage />}
               />
               <Route
+                path="/admin/volunteers"
+                element={<VolunteersPage />}
+              /> 
+              <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
               />
@@ -88,10 +92,6 @@ export default function App() {
                 path="/commissioner/participants"
                 element={<CommissionerParticipantsPage />}
               />
-              <Route
-                path="/commissioner/volunteers"
-                element={<CommissionerVolunteersPage />}
-              /> {/* ✅ NOUVELLE PAGE */}
 
               {/* ATHLETE */}
               <Route
