@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   Box,
@@ -13,11 +12,12 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 
 import appTheme from "../../../common/theme/appTheme";
+import AdminPageLayout from "../../../common/components/AdminPageLayout";
+
 import athleteService from "../services/athleteService";
 import competitionService from "../../competition/services/competitionService";
 import AthleteParticipationsModal from "../components/AthleteParticipationsModal";
@@ -30,7 +30,6 @@ const STATUS_LABELS = {
 };
 
 export default function CommissionerParticipantsPage() {
-  const navigate = useNavigate();
 
   const [athletes, setAthletes] = useState([]);
   const [competitions, setCompetitions] = useState([]);
@@ -45,7 +44,9 @@ export default function CommissionerParticipantsPage() {
   const [selectedAthlete, setSelectedAthlete] = useState(null);
 
   const fetchCompetitions = useCallback(async () => {
+
     try {
+
       const events = await competitionService.getEvents();
 
       const competitionsRequests = events.map((event) =>
@@ -55,43 +56,61 @@ export default function CommissionerParticipantsPage() {
       const results = await Promise.all(competitionsRequests);
 
       setCompetitions(results.flat());
+
     } catch (err) {
+
       console.error("Erreur chargement compétitions:", err);
+
     }
+
   }, []);
 
   const fetchAthletes = useCallback(async () => {
+
     setLoading(true);
     setError(null);
 
     try {
+
       const data = selectedCompetition
         ? await athleteService.getAthletesByCompetition(selectedCompetition)
         : await athleteService.getAllAthletes();
 
       setAthletes(data || []);
+
     } catch (err) {
+
       console.error(err);
       setError("Impossible de charger les athlètes");
+
     } finally {
+
       setLoading(false);
+
     }
+
   }, [selectedCompetition]);
 
   useEffect(() => {
+
     fetchCompetitions();
+
   }, [fetchCompetitions]);
 
   useEffect(() => {
+
     fetchAthletes();
+
   }, [fetchAthletes]);
 
   const filteredAthletes = useMemo(() => {
+
     if (!searchTerm) return athletes;
 
     const term = searchTerm.toLowerCase();
 
     return athletes.filter((item) => {
+
       const athleteData = item.athlete ?? item;
 
       return (
@@ -99,7 +118,9 @@ export default function CommissionerParticipantsPage() {
         athleteData.lastName?.toLowerCase().includes(term) ||
         athleteData.email?.toLowerCase().includes(term)
       );
+
     });
+
   }, [athletes, searchTerm]);
 
   const translateStatus = (status) => STATUS_LABELS[status] || "Non défini";
@@ -124,39 +145,29 @@ export default function CommissionerParticipantsPage() {
   });
 
   const handleOpenModal = (athlete) => {
+
     setSelectedAthlete(athlete);
     setModalOpen(true);
+
   };
 
   const handleCloseModal = () => {
+
     setModalOpen(false);
     setSelectedAthlete(null);
+
   };
 
   return (
-    <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/commissioner")}
-        sx={{
-          mb: 2,
-          textTransform: "none",
-          fontWeight: 700,
-          px: 3,
-          py: 1.1,
-          borderRadius: appTheme.radius.pill,
-          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-          color: appTheme.colors.dark,
-        }}
-      >
-        Retour
-      </Button>
+
+    <AdminPageLayout backPath="/commissioner">
 
       <Typography sx={{ fontSize: 32, fontWeight: 900, mb: 3 }}>
         Gestion des athlètes
       </Typography>
 
       <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
+
         <FormControl sx={{ minWidth: 220 }}>
           <InputLabel>Compétition</InputLabel>
 
@@ -172,6 +183,7 @@ export default function CommissionerParticipantsPage() {
                 {c.name}
               </MenuItem>
             ))}
+
           </Select>
         </FormControl>
 
@@ -183,26 +195,37 @@ export default function CommissionerParticipantsPage() {
             startAdornment: <SearchIcon sx={{ mr: 1, color: "gray" }} />,
           }}
         />
+
       </Box>
 
       <div className="card" style={{ borderRadius: 22 }}>
+
         <div className="card-header">
           <strong>Liste des athlètes</strong>
         </div>
 
         <div className="card-body">
+
           {loading ? (
+
             <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
               <CircularProgress />
             </Box>
+
           ) : error ? (
+
             <Typography color="error">{error}</Typography>
+
           ) : filteredAthletes.length === 0 ? (
+
             <Typography sx={{ textAlign: "center", p: 3 }}>
               Aucun athlète trouvé.
             </Typography>
+
           ) : (
+
             <table className="table align-middle">
+
               <thead>
                 <tr>
                   <th style={{ width: "35%" }}>Nom</th>
@@ -214,11 +237,15 @@ export default function CommissionerParticipantsPage() {
               </thead>
 
               <tbody>
+
                 {filteredAthletes.map((item, index) => {
+
                   const athleteData = item.athlete ?? item;
 
                   return (
+
                     <tr key={athleteData.id ?? index}>
+
                       <td>
                         {athleteData.firstName} {athleteData.lastName}
                       </td>
@@ -226,13 +253,17 @@ export default function CommissionerParticipantsPage() {
                       <td>{athleteData.email}</td>
 
                       {selectedCompetition ? (
+
                         <td style={{ textAlign: "center" }}>
                           <span style={getStatusStyle(item.status)}>
                             {translateStatus(item.status)}
                           </span>
                         </td>
+
                       ) : (
+
                         <td style={{ textAlign: "center" }}>
+
                           <Button
                             size="small"
                             startIcon={<VisibilityIcon />}
@@ -249,15 +280,25 @@ export default function CommissionerParticipantsPage() {
                           >
                             Participations
                           </Button>
+
                         </td>
+
                       )}
+
                     </tr>
+
                   );
+
                 })}
+
               </tbody>
+
             </table>
+
           )}
+
         </div>
+
       </div>
 
       <AthleteParticipationsModal
@@ -265,6 +306,9 @@ export default function CommissionerParticipantsPage() {
         onClose={handleCloseModal}
         athlete={selectedAthlete}
       />
-    </Box>
+
+    </AdminPageLayout>
+
   );
+
 }

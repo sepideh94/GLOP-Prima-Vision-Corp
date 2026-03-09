@@ -1,10 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 
 import {
   Box,
   Typography,
-  Button,
   TextField,
   FormControl,
   InputLabel,
@@ -13,11 +11,9 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SearchIcon from "@mui/icons-material/Search";
 
-import appTheme from "../../../common/theme/appTheme";
-
+import AdminPageLayout from "../../../common/components/AdminPageLayout";
 import useVolunteers from "../hooks/useVolunteers";
 import { filterVolunteers } from "../utils/filterVolunteers";
 
@@ -25,7 +21,6 @@ import VolunteersTable from "../components/VolunteersTable";
 import VolunteerParticipationsModal from "../components/VolonteerParticipationsModal";
 
 export default function VolunteersPage() {
-  const navigate = useNavigate();
 
   const {
     volunteers,
@@ -63,27 +58,10 @@ export default function VolunteersPage() {
   };
 
   return (
-    <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/admin")}
-        sx={{
-          mb: 2,
-          textTransform: "none",
-          fontWeight: 700,
-          px: 3,
-          py: 1.1,
-          borderRadius: appTheme.radius.pill,
-          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-          color: appTheme.colors.dark,
-        }}
-      >
-        Retour
-      </Button>
-
-      <Typography sx={{ fontSize: 32, fontWeight: 900, mb: 3 }}>
-        Gestion des volontaires
-      </Typography>
+    <AdminPageLayout
+      title="Gestion des volontaires"
+      backPath="/admin"
+    >
 
       <Box sx={{ mb: 3, display: "flex", gap: 2 }}>
         <FormControl sx={{ minWidth: 220 }}>
@@ -141,6 +119,7 @@ export default function VolunteersPage() {
         onClose={() => setModalOpen(false)}
         volunteer={selectedVolunteer}
       />
-    </Box>
+
+    </AdminPageLayout>
   );
 }
