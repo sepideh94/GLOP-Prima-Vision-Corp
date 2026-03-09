@@ -36,4 +36,10 @@ public class AthleteParticipationController {
         return ResponseEntity.ok(trialService.getTrialsForAthlete(competitionId, user.getId()));
     }
 
+    @PostMapping("/{participationId}/forfeit")
+    public ResponseEntity<Void> declareForfeit(@PathVariable Long participationId,
+                                               @AuthenticationPrincipal UserAccount user) {
+        participationService.declareForfeit(participationId, user.getId());
+        return ResponseEntity.ok().build();
+    }
 }

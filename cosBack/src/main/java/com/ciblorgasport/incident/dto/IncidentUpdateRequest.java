@@ -1,0 +1,22 @@
+package com.ciblorgasport.incident.dto;
+
+import com.ciblorgasport.incident.domain.ImpactLevel;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+
+@Data
+public class IncidentUpdateRequest {
+
+    @NotBlank
+    private String title;
+
+    private String description;
+
+    @NotNull
+    private ImpactLevel impactLevel;
+
+    // nullable
+    private Long competitionId;
+}

@@ -27,9 +27,8 @@ public class ParticipationService {
 
     private final ParticipationRepository participationRepository;
     private final AthleteRepository athleteRepository;
-	private final UserAccountRepository userAccountRepository;
-	private final PasswordEncoder passwordEncoder;
-	
+    private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 	
     @Transactional
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
@@ -79,7 +78,7 @@ public class ParticipationService {
                 .map(AthleteCompetitionDetailsResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional
     public void confirmAllParticipationsForAthlete(Long athleteId) {
         List<Participation> participations = participationRepository
@@ -91,4 +90,20 @@ public class ParticipationService {
         participationRepository.saveAll(participations);
     }
 
+    @Transactional
+    public void declareForfeit(Long participationId, Long athleteId) {
+        Participation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
+
+        if (!participation.getCompetitorId().equals(athleteId)) {
+            throw new AccessDeniedException("Accès non autorisé");
+        }
+
+        if (participation.getCompetitorType() != CompetitorType.ATHLETE) {
+            throw new AccessDeniedException("Seul un athlète peut déclarer forfait.");
+        }
+
+        participation.declareForfeit();
+        participationRepository.save(participation);
+    }
 }
