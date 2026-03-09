@@ -7,8 +7,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People, VolunteerActivism } from "@mui/icons-material";
-import { Event, EmojiEvents, People, Schedule } from "@mui/icons-material";
+import { Event, EmojiEvents, People, VolunteerActivism, Schedule } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
