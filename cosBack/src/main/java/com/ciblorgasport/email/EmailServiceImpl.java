@@ -117,4 +117,30 @@ public class EmailServiceImpl implements EmailService {
             "L’équipe CiblOrgaSport"
         );
     }
+
+@Override
+public void sendVolonteerInviteEmail(String to, String firstName, String token) {
+    String resetLink = appBaseUrl + "/reset-password?token=" + token;
+
+    String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
+
+    SimpleMailMessage msg = new SimpleMailMessage();
+    msg.setFrom(from);
+    msg.setTo(to);
+    msg.setSubject("Invitation : Devenez volontaire - CiblOrgaSport");
+    msg.setText(
+        "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
+        "Vous avez été invité(e) à rejoindre l'équipe des volontaires sur CiblOrgaSport.\n\n" +
+        "Votre aide est précieuse pour la réussite de nos compétitions.\n\n" +
+        "👉 Accéder à mon espace volontaire :\n" +
+        volonteerLink + "\n\n" +
+        "🔐 Activer mon compte / Définir mon mot de passe :\n" +
+        resetLink + "\n\n" +
+        "Ce lien est nécessaire pour votre première connexion.\n\n" +
+        "Sportivement,\n" +
+        "L’équipe CiblOrgaSport"
+    );
+
+    mailSender.send(msg);
+}
 }

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
+import com.ciblorgasport.trial.application.TrialService;
+import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class AthleteParticipationController {
 
     private final ParticipationService participationService;
+    private final TrialService trialService;
 
     @GetMapping
     public ResponseEntity<List<AthleteCompetitionDetailsResponse>> getMyCards(
@@ -35,5 +38,12 @@ public class AthleteParticipationController {
             @AuthenticationPrincipal UserAccount user) {
         participationService.confirmParticipation(participationId, user.getId());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{competitionId}/trials")
+    public ResponseEntity<List<TrialResponse>> getMyTrials(
+            @PathVariable Long competitionId,
+            @AuthenticationPrincipal UserAccount user) {
+        return ResponseEntity.ok(trialService.getTrialsForAthlete(competitionId, user.getId()));
     }
 }

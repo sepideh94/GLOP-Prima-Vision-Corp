@@ -23,9 +23,11 @@ import com.ciblorgasport.athlete.application.AthleteCreationService;
 import com.ciblorgasport.athlete.application.AthleteImportService;
 import com.ciblorgasport.athlete.application.AthleteService;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.common.service.CsvImportService;
 import com.ciblorgasport.competition.application.CompetitionService;
 import com.ciblorgasport.competition.application.ParticipationService;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.trial.application.TrialParticipantService;
@@ -38,6 +40,9 @@ import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.volonteer.application.VolonteerCreationService;
+import com.ciblorgasport.volonteer.application.VolonteerImportService;
+import com.ciblorgasport.volonteer.domain.Volonteer;
+import com.ciblorgasport.volonteer.domain.VolonteerCompetitionResponse;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +61,9 @@ public class CommissionnerController {
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
-	private final TrialParticipantService trialParticipantService;
+	private final VolonteerImportService volonteerImportService;
+    private final VolonteerCreationService volonteerCreationService;
+		private final TrialParticipantService trialParticipantService;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -71,18 +78,6 @@ public class CommissionnerController {
         );
     }
 
-    @PostMapping("/create-volonteer")
-    public ResponseEntity<?> createVolonteer(@Valid @RequestBody CreateUserRequest request) {
-        UserAccount created = volontaireService.createUser(request);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-            Map.of(
-              "id", created.getId(),
-              "email", created.getEmail(),
-              "role", created.getRoleName().replace("ROLE_", "")
-            )
-        );
-    }
 
     /**
      * Import d'athlètes dans le contexte d'une compétition.
@@ -102,22 +97,49 @@ public class CommissionnerController {
                 "skipped", result.skipped()
         ));
     }
+    
+    // ==================== Volontaires ====================
 
     /**
-     * @deprecated Utiliser /competitions/{competitionId}/import-athletes à la place
+     * Importe des volontaires via un fichier CSV pour une compétition.
      */
-    @PostMapping("/import-athletes")
-    public ResponseEntity<?> importAthletes(@RequestParam("file") MultipartFile file) throws Exception {
-        List<CSVRecord> records = csvService.parseCsv(file);
-        records.forEach(r -> userAccountService.createAndInviteUser(r, athleteCreationService));
-        return ResponseEntity.ok("Import athlètes terminé");
+    @PostMapping("/competitions/{competitionId}/import-volonteers")
+    public ResponseEntity<VolonteerImportService.ImportResult> importVolonteers(
+            @PathVariable Long competitionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        
+        return ResponseEntity.ok(volonteerImportService.importVolonteersForCompetition(file, competitionId));
     }
 
-    @PostMapping("/import-volonteers")
-    public ResponseEntity<?> importVolonteers(@RequestParam("file") MultipartFile file) throws Exception {
-        List<CSVRecord> records = csvService.parseCsv(file);
-        records.forEach(r -> userAccountService.createAndInviteUser(r, volontaireService));
-        return ResponseEntity.ok("Import volontaires terminé");
+    /**
+     * Création manuelle d'un volontaire.
+     * Le service se chargera d'envoyer le mail d'invitation automatiquement.
+     */
+    @PostMapping("/competitions/{competitionId}/create-volonteer")
+    public ResponseEntity<UserAccount> createVolonteerManual(
+            @PathVariable Long competitionId,
+            @RequestBody CreateUserRequest request) {
+        
+        Volonteer volonteer = (Volonteer) volonteerCreationService.createUser(request);
+       
+        volonteerImportService.inviteToCompetition(volonteer, competitionId);
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(volonteer);
+    }
+    	
+    /**
+     * Récupère la liste des volontaires d'une compétition avec leur statut.
+     */
+    @GetMapping("/competitions/{competitionId}/volonteers")
+    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByCompetition(@PathVariable Long competitionId) {
+        
+        List<VolonteerCompetitionResponse> volonteers = volonteerImportService.getVolonteersByCompetition(competitionId);
+        return ResponseEntity.ok(volonteers);
+    }
+    
+    @GetMapping("/events/{eventId}/volonteers")
+    public ResponseEntity<List<VolonteerCompetitionResponse>> getVolonteersByEvent(@PathVariable Long eventId) {
+        return ResponseEntity.ok(volonteerImportService.getAllVolonteersByEvent(eventId));
     }
 
     // ==================== COMPETITIONS ====================
@@ -205,21 +227,8 @@ public class CommissionnerController {
     @GetMapping("/competitions/{competitionId}/athletes")
     public ResponseEntity<List<AthleteResponse>> getAthletesByCompetition(
             @PathVariable("competitionId") Long competitionId) {
-        // #region agent log (stdout for docker logs)
-        System.err.println("[DEBUG] {\"location\":\"CommissionnerController.getAthletesByCompetition:entry\",\"message\":\"entry\",\"data\":{\"competitionId\":\"" + competitionId + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-        // #endregion
-        try {
-            List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
-            return ResponseEntity.ok(athletes);
-        } catch (Throwable t) {
-            // #region agent log (stdout for docker logs)
-            String msg = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
-            String trace = t.getClass().getName() + ": " + msg;
-            if (t.getCause() != null) trace += " | cause: " + t.getCause().getClass().getName() + ": " + (t.getCause().getMessage() != null ? t.getCause().getMessage().replace("\"", "'") : "");
-            System.err.println("[DEBUG] {\"location\":\"CommissionnerController.getAthletesByCompetition:catch\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + msg + "\",\"trace\":\"" + trace + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            // #endregion
-            throw t;
-        }
+        List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+        return ResponseEntity.ok(athletes);
     }
 
     @GetMapping("/athletes/{athleteId}/participations")

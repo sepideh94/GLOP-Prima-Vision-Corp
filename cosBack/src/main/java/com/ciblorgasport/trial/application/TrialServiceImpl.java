@@ -5,10 +5,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.competition.domain.CompetitorType;
+import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
+import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.domain.CategoryGender;
@@ -36,6 +41,7 @@ public class TrialServiceImpl implements TrialService {
     private final CompetitionRepository competitionRepository;
     private final RoundRepository roundRepository;
     private final UserAccountRepository userAccountRepository;
+    private final ParticipationRepository participationRepository;
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy");
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd-MM-yyyy à HH:mm");
@@ -44,7 +50,6 @@ public class TrialServiceImpl implements TrialService {
         LocalDateTime competitionStart = competition.getStartDate();
         LocalDateTime competitionEnd = competition.getEndDate();
 
-        // trial start is before competition start
         if (trialStartDate.isBefore(competitionStart)) {
             throw new IllegalArgumentException(
                 "La date de début de l'épreuve (" + trialStartDate.format(DATETIME_FORMATTER) +
@@ -53,7 +58,6 @@ public class TrialServiceImpl implements TrialService {
             );
         }
 
-        // trial end is after competition end
         if (trialEndDate.isAfter(competitionEnd)) {
             throw new IllegalArgumentException(
                 "La date de fin de l'épreuve (" + trialEndDate.format(DATETIME_FORMATTER) +
@@ -62,7 +66,6 @@ public class TrialServiceImpl implements TrialService {
             );
         }
 
-        // trial end is before trial start (date and time validation)
         if (trialEndDate.isBefore(trialStartDate) || trialEndDate.isEqual(trialStartDate)) {
             throw new IllegalArgumentException(
                 "La date et heure de fin de l'épreuve (" + trialEndDate.format(DATETIME_FORMATTER) +
@@ -145,7 +148,6 @@ public class TrialServiceImpl implements TrialService {
                     .orElseThrow(() -> new RuntimeException("Round QUALIFICATION_HEAT introuvable en base de données."));
         }
 
-        // Validate trial dates against competition dates
         LocalDateTime trialStart = LocalDateTime.of(request.getStartDate(), request.getStartHour());
         LocalDateTime trialEnd = LocalDateTime.of(request.getEndDate(), request.getEndHour());
         validateTrialDates(trialStart, trialEnd, competition);
@@ -173,7 +175,6 @@ public class TrialServiceImpl implements TrialService {
 
         Trial newTrial = new Trial();
 
-        // Generate name: trialName + roundName + optional roundNumber
         String generatedName = request.getTrialName().getDisplayName() + " - " + round.getDisplayName();
         if (roundNumber != null) {
             generatedName += " " + roundNumber;
@@ -218,12 +219,10 @@ public class TrialServiceImpl implements TrialService {
             round = existingTrial.getRound();
         }
 
-        // Validate trial dates against competition dates
         LocalDateTime trialStart = LocalDateTime.of(request.getStartDate(), request.getStartHour());
         LocalDateTime trialEnd = LocalDateTime.of(request.getEndDate(), request.getEndHour());
         validateTrialDates(trialStart, trialEnd, competition);
 
-        // Generate name: trialName + roundName + optional roundNumber
         String generatedName = request.getTrialName().getDisplayName() + " - " + round.getDisplayName();
         if (existingTrial.getRoundNumber() != null) {
             generatedName += " " + existingTrial.getRoundNumber();
@@ -268,6 +267,22 @@ public class TrialServiceImpl implements TrialService {
                 .map(TrialResponse::fromEntity)
                 .collect(Collectors.toList());
     }
+    
+    @Override
+    public List<TrialResponse> getTrialsForAthlete(Long competitionId, Long athleteId) {
+        Participation participation = participationRepository
+                .findByCompetitionIdAndCompetitorIdAndCompetitorType(
+                    competitionId, 
+                    athleteId, 
+                    CompetitorType.ATHLETE
+                )
+                .orElseThrow(() -> new AccessDeniedException("Inscription non trouvée."));
+
+        if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
+            throw new AccessDeniedException("Accès refusé : Profil incomplet.");
+        }
+        return getByCompetitionId(competitionId);
+    }
 
     @Transactional
     @Override
@@ -288,19 +303,15 @@ public class TrialServiceImpl implements TrialService {
     public TrialResponse cancelTrial(Long id, String userEmail) {
         Trial trial = getTrialByIdOrThrow(id);
 
-        // Check if already cancelled
         if (trial.isCancelled()) {
             throw new IllegalStateException("L'épreuve est déjà annulée.");
         }
 
-        // Get the user who is cancelling
         UserAccount user = userAccountRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Utilisateur introuvable: " + userEmail));
 
-        // Cancel the trial
         trial.cancel(user);
 
-        // Save and return
         Trial cancelledTrial = trialRepository.save(trial);
         return TrialResponse.fromEntity(cancelledTrial);
     }
