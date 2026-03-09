@@ -1,4 +1,4 @@
-package com.ciblorgasport.admin.domain;
+package com.ciblorgasport.admin;
 
 import com.ciblorgasport.user.domain.UserAccount;
 
@@ -25,11 +25,8 @@ public class Admin extends UserAccount {
 		return "ROLE_ADMIN";
 	}
 
-	public boolean isAdmin(){return true;}
-	public boolean isCommissionner(){return false;}
-	public boolean isAthlete(){return false;}
-	public boolean isVolonteer(){return false;}
-	public boolean isSpectator(){return false;}
-	
+	public boolean isAdmin(){
+		return true;
+	}	
    
 }

@@ -8,4 +8,6 @@ import com.ciblorgasport.event.domain.Event;
 
 public interface CompetitionRepository extends JpaRepository<Competition, Long> {
 	List<Competition> findByParentEvent(Event parentEvent);
+
+	List<Competition> findByParentEventId(Long eventId);
 }

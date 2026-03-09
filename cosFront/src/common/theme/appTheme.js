@@ -13,6 +13,7 @@ const appTheme = {
     cyan: "#22D3EE",
     green: "#A3E635",
     violet: "#A78BFA",
+    yellow: "#facc15", 
   },
 
   gradients: {

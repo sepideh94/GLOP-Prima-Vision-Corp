@@ -94,29 +94,15 @@ export default function AthleteCompetitionsPage() {
   }, [userProfile, competitions, hasAutoConfirmed]);
 
   const isProfileComplete = () => {
-    // Vérifier d'abord dans userProfile (depuis l'API)
-    if (userProfile) {
-      return (
-        userProfile.nationality &&
-        userProfile.birthDate &&
-        userProfile.sexe &&
-        userProfile.passportNumber &&
-        userProfile.hasPassport &&
-        userProfile.hasMedicalCertificate
-      );
-    }
-    // Sinon vérifier dans l'objet user depuis AuthContext
-    if (user) {
-      return (
-        user.nationality &&
-        user.dateOfBirth &&
-        user.gender &&
-        user.passportNumber &&
-        user.passportFile &&
-        user.medicalCertificateFile
-      );
-    }
-    return false;
+    if (!userProfile) return false;
+    return (
+      userProfile.nationality &&
+      userProfile.birthDate &&
+      userProfile.sexe &&
+      userProfile.passportNumber &&
+      userProfile.hasPassport &&
+      userProfile.hasMedicalCertificate
+    );
   };
 
   const handleConfirmClick = async (competition) => {

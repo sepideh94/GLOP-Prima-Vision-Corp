@@ -31,6 +31,7 @@ public class TrialResponse {
     private Long siteId;
     private Long competitionId;
     private Long roundId;
+    private String roundDisplayName;
 
     private Status status;
     private String statusLabel;
@@ -63,6 +64,7 @@ public class TrialResponse {
                 .siteId(trial.getSite() != null ? trial.getSite().getId() : null)
                 .competitionId(trial.getCompetition() != null ? trial.getCompetition().getId() : null)
                 .roundId(trial.getRound() != null ? trial.getRound().getId() : null)
+                .roundDisplayName(trial.getRound() != null ? trial.getRound().getDisplayName() : null)
                 .status(status)
                 .statusLabel(status.getLabel())
                 .cancelled(trial.isCancelled())
