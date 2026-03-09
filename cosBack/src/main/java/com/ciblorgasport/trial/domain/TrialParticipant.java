@@ -6,6 +6,8 @@ import com.ciblorgasport.athlete.domain.Athlete;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -41,7 +43,28 @@ public class TrialParticipant {
     @JoinColumn(name = "athlete_id", nullable = false)
     private Athlete athlete;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private TrialParticipantStatus status = TrialParticipantStatus.ACTIVE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public void declareForfeit() {
+        if (this.trial != null && this.trial.hasStarted()) {
+            throw new IllegalStateException("L'épreuve a déjà commencé.");
+        }
+
+        if (this.status == TrialParticipantStatus.FORFEIT) {
+            throw new IllegalStateException("Le forfait a déjà été déclaré pour cette épreuve.");
+        }
+
+        this.status = TrialParticipantStatus.FORFEIT;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

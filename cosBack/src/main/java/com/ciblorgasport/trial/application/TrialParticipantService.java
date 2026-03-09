@@ -19,9 +19,21 @@ public interface TrialParticipantService {
     List<TrialParticipantResponse> getByTrialId(Long trialId);
 
     /**
+     * Récupère toutes les participations aux épreuves
+     * pour un athlète donné.
+     */
+    List<TrialParticipantResponse> getByAthleteId(Long athleteId);
+
+    /**
      * Retire un athlète d'un trial.
      */
     void removeAthlete(Long trialId, Long athleteId);
+
+    /**
+     * Permet à un athlète de déclarer forfait
+     * sur sa participation à une épreuve.
+     */
+    void declareForfeit(Long trialParticipantId, Long athleteId);
 
     /**
      * Retourne les athlètes éligibles pour un trial selon sa phase :

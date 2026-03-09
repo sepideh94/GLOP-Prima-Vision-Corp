@@ -1,6 +1,7 @@
 package com.ciblorgasport.trial.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,19 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
     long countByTrialId(Long trialId);
 
     boolean existsByTrialIdAndAthleteId(Long trialId, Long athleteId);
+
+    /**
+     * Récupère une participation à une épreuve par son id
+     * en vérifiant qu'elle appartient bien à l'athlète connecté.
+     * Utilisé pour la déclaration de forfait.
+     */
+    Optional<TrialParticipant> findByIdAndAthleteId(Long id, Long athleteId);
+
+    /**
+     * Récupère toutes les participations aux épreuves
+     * d'un athlète donné.
+     */
+    List<TrialParticipant> findByAthleteId(Long athleteId);
 
     /**
      * Vérifie si un athlète est déjà assigné à une série de qualification

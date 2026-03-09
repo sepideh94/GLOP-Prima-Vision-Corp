@@ -22,6 +22,7 @@ import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.RoundName;
 
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -52,34 +53,27 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 "Impossible d'assigner des participants à une série déjà commencée.");
         }
 
-        // Seules les séries de qualification permettent l'assignation manuelle
         RoundName roundName = trial.getRound().getName();
 
         if (roundName == RoundName.DEMI_FINALE) {
             throw new IllegalStateException(
-                "Les participants seront automatiquement déterminés "
-                + "après les résultats des qualifications.");
+                "Les participants seront automatiquement déterminés après les résultats des qualifications.");
         }
 
         if (roundName == RoundName.FINALE) {
             throw new IllegalStateException(
-                "Les participants seront automatiquement déterminés "
-                + "après les résultats des demi-finales.");
+                "Les participants seront automatiquement déterminés après les résultats des demi-finales.");
         }
 
         if (roundName != RoundName.QUALIFICATION_HEAT) {
             throw new IllegalStateException(
-                "L'assignation manuelle de participants n'est autorisée "
-                + "que pour les séries de qualification.");
+                "L'assignation manuelle de participants n'est autorisée que pour les séries de qualification.");
         }
 
-        // Résoudre la stratégie une seule fois pour toute l'opération
         TrialModeStrategy strategy = trial.getModeStrategy();
 
-        // Dédupliquer les IDs en entrée
         List<Long> uniqueAthleteIds = athleteIds.stream().distinct().toList();
 
-        // Vérifier le cap via la stratégie (plus de constante hardcodée)
         long currentCount = trialParticipantRepository.countByTrialId(trialId);
         int maxPerHeat = strategy.getMaxParticipantsPerHeat();
 
@@ -88,8 +82,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 "Le nombre maximum de " + strategy.getParticipantTypeLabel()
                 + "s par série est de " + maxPerHeat
                 + ". Actuellement " + currentCount
-                + " " + strategy.getParticipantTypeLabel() + "(s) assigné(s), "
-                + "impossible d'en ajouter " + uniqueAthleteIds.size() + ".");
+                + " " + strategy.getParticipantTypeLabel() + "(s) assigné(s), impossible d'en ajouter "
+                + uniqueAthleteIds.size() + ".");
         }
 
         List<TrialParticipant> newParticipants = new ArrayList<>();
@@ -99,11 +93,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     .orElseThrow(() -> new RuntimeException(
                         "Athlète introuvable avec l'ID: " + athleteId));
 
-            // Adapter Athlete → Participant (couche applicative)
-            // et déléguer la validation du type à la stratégie
             strategy.validateParticipant(toParticipant(athlete));
 
-            // L'athlète doit avoir une participation CONFIRMED pour cette compétition
             boolean hasConfirmedParticipation =
                 participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                     trial.getCompetition().getId(),
@@ -112,25 +103,15 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     ParticipationStatus.CONFIRMED);
 
             if (!hasConfirmedParticipation) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                     "L'athlète " + athlete.getDisplayName()
-                    + " n'a pas de participation confirmée pour cette compétition.");
+                    + " n'a pas de participation CONFIRMED à la compétition.");
             }
 
             if (trialParticipantRepository.existsByTrialIdAndAthleteId(trialId, athleteId)) {
-                throw new IllegalArgumentException(
+                throw new IllegalStateException(
                     "L'athlète " + athlete.getDisplayName()
-                    + " est déjà assigné(e) à cette série.");
-            }
-
-            if (trialParticipantRepository.existsByAthleteInQualificationHeat(
-                    athleteId,
-                    trial.getCompetition().getId(),
-                    trial.getTrialName(),
-                    trial.getCategoryGender())) {
-                throw new IllegalArgumentException(
-                    "L'athlète " + athlete.getDisplayName()
-                    + " est déjà assigné(e) à une autre série de qualification pour cette épreuve.");
+                    + " est déjà assigné à cette épreuve.");
             }
 
             newParticipants.add(TrialParticipant.builder()
@@ -139,9 +120,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     .build());
         }
 
-        List<TrialParticipant> saved = trialParticipantRepository.saveAll(newParticipants);
-
-        return saved.stream()
+        return trialParticipantRepository.saveAll(newParticipants).stream()
                 .map(TrialParticipantResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -152,7 +131,16 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         if (!trialRepository.existsById(trialId)) {
             throw new RuntimeException("Épreuve introuvable avec l'ID: " + trialId);
         }
+
         return trialParticipantRepository.findByTrialId(trialId).stream()
+                .map(TrialParticipantResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
+    public List<TrialParticipantResponse> getByAthleteId(Long athleteId) {
+        return trialParticipantRepository.findByAthleteId(athleteId).stream()
                 .map(TrialParticipantResponse::fromEntity)
                 .collect(Collectors.toList());
     }
@@ -176,6 +164,17 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     "Cet athlète n'est pas assigné à cette série."));
 
         trialParticipantRepository.delete(tp);
+    }
+
+    @Transactional
+    @Override
+    public void declareForfeit(Long trialParticipantId, Long athleteId) {
+        TrialParticipant trialParticipant = trialParticipantRepository
+                .findByIdAndAthleteId(trialParticipantId, athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
+
+        trialParticipant.declareForfeit();
+        trialParticipantRepository.save(trialParticipant);
     }
 
     @Transactional
@@ -204,11 +203,6 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Adapte une entité {@link Athlete} vers l'interface {@link Participant} du domaine trial.
-     * Ce mapping est la responsabilité de la couche applicative : il isole le domaine trial
-     * de la structure concrète de l'entité Athlete.
-     */
     private Participant toParticipant(Athlete athlete) {
         return new Participant() {
             @Override public Long getId() { return athlete.getId(); }
