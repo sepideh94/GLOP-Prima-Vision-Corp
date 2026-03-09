@@ -31,6 +31,9 @@ import CommissionerTrialListPage from
 import CommissionerParticipantsPage from
   "../features/participant/pages/CommissionerParticipantsPage.jsx";
 
+import VolunteersPage from
+  "../features/volunteer/pages/VolunteersPage.jsx";
+
 import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
 
@@ -74,6 +77,10 @@ export default function App() {
                 path="/admin/competitions/:competitionId/trials"
                 element={<TrialListPage />}
               />
+              <Route
+                path="/admin/volunteers"
+                element={<VolunteersPage />}
+              /> 
               <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}

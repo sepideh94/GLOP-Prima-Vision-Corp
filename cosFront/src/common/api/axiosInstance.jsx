@@ -13,7 +13,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // Ne pas ajouter le token pour les routes publiques
-    const publicRoutes = ["/auth/signin", "/auth/signup", "/api/countries"];
+    const publicRoutes = ["/api/auth/signin", "/api/auth/signup", "/api/auth/forgot-password", "/api/auth/forgot-password/complete", "/api/countries"];
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
     
     if (!isPublicRoute) {

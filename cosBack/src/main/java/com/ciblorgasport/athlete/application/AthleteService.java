@@ -1,5 +1,6 @@
 package com.ciblorgasport.athlete.application;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,8 +10,12 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
+import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
@@ -27,25 +32,52 @@ public class AthleteService {
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
 
+    @Transactional
     public List<AthleteResponse> getAllAthletes() {
         return athleteRepository.findAllByOrderByLastNameAsc().stream()
                 .map(AthleteResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public List<AthleteResponse> getAthletesByCompetition(Long competitionId) {
-        List<Long> athleteIds = participationRepository.findByCompetitionId(competitionId).stream()
-                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                .map(p -> p.getCompetitorId())
-                .distinct()
-                .toList();
-
-        return athleteRepository.findAllById(athleteIds).stream()
-                .map(AthleteResponse::fromEntity)
-                .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
-                .collect(Collectors.toList());
+        List<Long> athleteIds;
+        try {
+            List<com.ciblorgasport.competition.domain.Participation> participations = participationRepository.findByCompetition_Id(competitionId);
+            // #region agent log (stdout for docker logs)
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:afterFindByCompetitionId\",\"message\":\"participations size\",\"data\":{\"size\":\"" + participations.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            athleteIds = participations.stream()
+                    .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                    .map(p -> p.getCompetitorId())
+                    .distinct()
+                    .toList();
+        } catch (Throwable t) {
+            // #region agent log (stdout for docker logs)
+            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:findByCompetitionId\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            throw t;
+        }
+        // #region agent log (stdout for docker logs)
+        System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:athleteIds\",\"message\":\"athleteIds size\",\"data\":{\"size\":\"" + athleteIds.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+        // #endregion
+        try {
+            List<AthleteResponse> result = athleteRepository.findAllById(athleteIds).stream()
+                    .map(AthleteResponse::fromEntity)
+                    .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
+                    .collect(Collectors.toList());
+            return result;
+        } catch (Throwable t) {
+            // #region agent log (stdout for docker logs)
+            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:stream\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+            // #endregion
+            throw t;
+        }
     }
 
+    @Transactional
     public AthleteResponse getAthleteProfile(Long athleteId) {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
@@ -62,9 +94,34 @@ public class AthleteService {
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
         if (request.getHasAcceptedCharte() != null) athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
-
+        if (request.getHasAcceptedCharte() != null) {
+            if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
+                athlete.setHasAcceptedCharte(true);
+                athlete.setCharterAcceptedAt(LocalDateTime.now()); 
+            }
+        } 
+        
         Athlete saved = athleteRepository.save(athlete);
+        
+        if (saved.isProfileComplete()) {
+            List<Participation> participations = participationRepository
+                    .findByCompetitorIdAndCompetitorType(saved.getId(), CompetitorType.ATHLETE);
+            
+            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+            participationRepository.saveAll(participations);
+        }
+        
         return AthleteResponse.fromEntity(saved);
+    }
+    
+    private void checkAndConfirmParticipations(Athlete athlete) {
+        if (athlete.isProfileComplete()) {
+            List<Participation> participations = participationRepository
+                    .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
+            
+            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+            participationRepository.saveAll(participations);
+        }
     }
 
     @Transactional
@@ -80,7 +137,9 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setMedicalCertificate(document);
-        athleteRepository.save(athlete);
+        Athlete savedAthlete= athleteRepository.save(athlete);
+        
+        this.checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadMedicalCertificate(Long athleteId) {
@@ -132,7 +191,8 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setPassportDocument(document);
-        athleteRepository.save(athlete);
+        Athlete savedAthlete=athleteRepository.save(athlete);
+        this.checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadPassport(Long athleteId) {

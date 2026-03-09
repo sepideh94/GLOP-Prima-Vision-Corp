@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
@@ -26,15 +27,16 @@ public class ParticipationService {
 
     private final ParticipationRepository participationRepository;
     private final AthleteRepository athleteRepository;
-	private final UserAccountRepository userAccountRepository;
-	private final PasswordEncoder passwordEncoder;
+    private final UserAccountRepository userAccountRepository;
+    private final PasswordEncoder passwordEncoder;
 	
-	
+    @Transactional
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
-        List<Participation> participations = participationRepository.findByCompetitionId(competitionId);
+        List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
         return buildParticipantResponses(participations);
     }
 
+    @Transactional
     public List<ParticipantResponse> getParticipationsByAthlete(Long athleteId) {
         List<Participation> participations = participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE);
@@ -68,6 +70,7 @@ public class ParticipationService {
         return responses;
     }
     
+    @Transactional
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
         return participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)
@@ -75,9 +78,20 @@ public class ParticipationService {
                 .map(AthleteCompetitionDetailsResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional
-    public void confirmParticipation(Long participationId, Long athleteId) {
+    public void confirmAllParticipationsForAthlete(Long athleteId) {
+        List<Participation> participations = participationRepository
+                .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE);
+        
+        for (Participation p : participations) {
+            p.setStatus(ParticipationStatus.CONFIRMED);
+        }
+        participationRepository.saveAll(participations);
+    }
+
+    @Transactional
+    public void declareForfeit(Long participationId, Long athleteId) {
         Participation participation = participationRepository.findById(participationId)
                 .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
 
@@ -85,8 +99,11 @@ public class ParticipationService {
             throw new AccessDeniedException("Accès non autorisé");
         }
 
-        participation.confirmCharter();
+        if (participation.getCompetitorType() != CompetitorType.ATHLETE) {
+            throw new AccessDeniedException("Seul un athlète peut déclarer forfait.");
+        }
+
+        participation.declareForfeit();
         participationRepository.save(participation);
     }
-
 }

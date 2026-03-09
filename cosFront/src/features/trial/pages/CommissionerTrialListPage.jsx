@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+
 import {
   Box,
   Typography,
@@ -12,7 +13,6 @@ import {
   Tooltip,
 } from "@mui/material";
 
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -21,6 +21,7 @@ import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 import appTheme from "../../../common/theme/appTheme";
+import AdminPageLayout from "../../../common/components/AdminPageLayout";
 
 import trialService from "../services/trialService";
 import competitionService from "../../competition/services/competitionService";
@@ -28,7 +29,6 @@ import competitionService from "../../competition/services/competitionService";
 import ImportParticipantsDialog from "../../participant/pages/ImportParticipantsDialog";
 import TrialFormDialog from "./TrialFormDialog";
 import TrialDetailDialog from "./TrialDetailDialog";
-
 
 const getLabelFromEnum = (value, options) => {
   const found = options.find((opt) => opt.value === value);
@@ -85,7 +85,6 @@ const getStatusStyle = (statusLabel) => ({
 export default function CommissionerTrialListPage() {
 
   const { competitionId } = useParams();
-  const navigate = useNavigate();
 
   const [competition, setCompetition] = useState(null);
   const [trials, setTrials] = useState([]);
@@ -111,7 +110,7 @@ export default function CommissionerTrialListPage() {
       .then(setCompetition);
 
     trialService
-      .getTrialsByCompetition(competitionId)
+      .getTrialsByCompetitionCommissioner(competitionId)
       .then(setTrials)
       .finally(() => setLoading(false));
   }, [competitionId]);
@@ -119,9 +118,9 @@ export default function CommissionerTrialListPage() {
   if (loading) return <p>Chargement...</p>;
 
   const handleSave = async (form) => {
+
     const payload = {
       trialName: form.trialName,
-      roundNumber: form.roundNumber ? Number(form.roundNumber) : null,
       description: form.description || null,
       rules: form.rules || null,
       startDate: form.startDate,
@@ -138,7 +137,6 @@ export default function CommissionerTrialListPage() {
       categoryGender: form.categoryGender,
       siteId: Number(form.siteId),
       competitionId: Number(competitionId),
-      roundId: Number(form.roundId),
     };
 
     const updated = await trialService.updateTrialCommissioner(
@@ -155,6 +153,7 @@ export default function CommissionerTrialListPage() {
   };
 
   const handleCancelTrial = async () => {
+
     const cancelled = await trialService.cancelTrialCommissioner(
       trialToCancel.id
     );
@@ -168,10 +167,13 @@ export default function CommissionerTrialListPage() {
   };
 
   const handleSort = (key) => {
+
     let direction = "asc";
+
     if (sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
     }
+
     setSortConfig({ key, direction });
   };
 
@@ -180,6 +182,7 @@ export default function CommissionerTrialListPage() {
   );
 
   const sortedTrials = [...filteredTrials].sort((a, b) => {
+
     if (!sortConfig.key) return 0;
 
     let aValue = a[sortConfig.key];
@@ -194,25 +197,10 @@ export default function CommissionerTrialListPage() {
   });
 
   return (
-    <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() =>
-          navigate(`/commissioner/competitions?eventId=${competition?.parentEventId}`)
-        }
-        sx={{
-          mb: 2,
-          textTransform: "none",
-          fontWeight: 700,
-          px: 3,
-          py: 1.1,
-          borderRadius: appTheme.radius.pill,
-          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-          color: appTheme.colors.dark,
-        }}
-      >
-        Retour
-      </Button>
+
+    <AdminPageLayout
+      backPath={`/commissioner/competitions?eventId=${competition?.parentEventId}`}
+    >
 
       <Box sx={{ mb: 2, display: "flex", justifyContent: "space-between" }}>
         <Typography sx={{ fontSize: 32, fontWeight: 900 }}>
@@ -268,25 +256,29 @@ export default function CommissionerTrialListPage() {
       <div className="card" style={{ borderRadius: 22 }}>
         <div className="card-header d-flex justify-content-between">
           <strong>Liste des épreuves</strong>
+
           <TextField
             size="small"
             placeholder="Rechercher..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+
         </div>
 
         <div className="card-body">
+
           <table className="table align-middle">
+
             <thead>
               <tr>
-                {["name", "startDate", "endDate", "mode", "categoryGender", "statusLabel"].map(
-                  (key, i) => (
-                    <td key={i} onClick={() => handleSort(key)} style={{ cursor: "pointer" }}>
+                {["name","startDate","endDate","mode","categoryGender","statusLabel"].map(
+                  (key,i)=>(
+                    <td key={i} onClick={()=>handleSort(key)} style={{cursor:"pointer"}}>
                       <strong>
-                        {["Nom", "Début", "Fin", "Mode", "Catégorie", "Statut"][i]}
+                        {["Nom","Début","Fin","Mode","Catégorie","Statut"][i]}
                       </strong>
-                      <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                      <UnfoldMoreIcon sx={{fontSize:16,ml:0.5}}/>
                     </td>
                   )
                 )}
@@ -295,173 +287,176 @@ export default function CommissionerTrialListPage() {
             </thead>
 
             <tbody>
-              {sortedTrials.map((t) => (
+
+              {sortedTrials.map((t)=>(
                 <tr key={t.id}>
-                  <td className="fw-bold">{truncateText(t.name, 30)}</td>
-                  <td>{formatDateTime(t.startDate, t.startHour)}</td>
-                  <td>{formatDateTime(t.endDate, t.endHour)}</td>
-                  <td>{getLabelFromEnum(t.mode, MODE_OPTIONS)}</td>
-                  <td>{getLabelFromEnum(t.categoryGender, CATEGORY_OPTIONS)}</td>
+
+                  <td className="fw-bold">{truncateText(t.name,30)}</td>
+
+                  <td>{formatDateTime(t.startDate,t.startHour)}</td>
+
+                  <td>{formatDateTime(t.endDate,t.endHour)}</td>
+
+                  <td>{getLabelFromEnum(t.mode,MODE_OPTIONS)}</td>
+
+                  <td>{getLabelFromEnum(t.categoryGender,CATEGORY_OPTIONS)}</td>
+
                   <td>
                     <span style={getStatusStyle(t.statusLabel)}>
                       {t.statusLabel}
                     </span>
                   </td>
+
                   <td>
-                    <div style={{ display: "flex", gap: 8 }}>
+
+                    <div style={{display:"flex",gap:8}}>
+
                       <button
                         className="btn"
                         style={{
-                          borderRadius: appTheme.radius.pill,
-                          background: "linear-gradient(135deg, #a78bfa, #8b5cf6)",
-                          color: "#fff",
-                          padding: "4px 12px",
+                          borderRadius:appTheme.radius.pill,
+                          background:"linear-gradient(135deg,#a78bfa,#8b5cf6)",
+                          color:"#fff",
+                          padding:"4px 12px"
                         }}
-                        onClick={() => {
-                          setViewingTrial(t);
-                          setOpenDetail(true);
-                        }}
+                        onClick={()=>{setViewingTrial(t);setOpenDetail(true);}}
                       >
-                        <VisibilityIcon sx={{ fontSize: 16 }} />
+                        <VisibilityIcon sx={{fontSize:16}}/>
                       </button>
 
-                      {t.statusLabel === "À venir" && (
+                      {t.statusLabel==="À venir" && (
                         <>
                           <button
                             className="btn"
                             style={{
-                              borderRadius: appTheme.radius.pill,
-                              background: appTheme.gradients.navbar,
-                              color: appTheme.colors.dark,
-                              padding: "4px 12px",
+                              borderRadius:appTheme.radius.pill,
+                              background:appTheme.gradients.navbar,
+                              color:appTheme.colors.dark,
+                              padding:"4px 12px"
                             }}
-                            onClick={() => {
-                              setEditingTrial(t);
-                              setOpenForm(true);
-                            }}
+                            onClick={()=>{setEditingTrial(t);setOpenForm(true);}}
                           >
-                            <EditIcon sx={{ fontSize: 16 }} />
+                            <EditIcon sx={{fontSize:16}}/>
                           </button>
 
                           <button
                             className="btn"
                             style={{
-                              borderRadius: appTheme.radius.pill,
-                              background: "linear-gradient(135deg, #EF4444, #DC2626)",
-                              color: "#fff",
-                              padding: "4px 12px",
+                              borderRadius:appTheme.radius.pill,
+                              background:"linear-gradient(135deg,#EF4444,#DC2626)",
+                              color:"#fff",
+                              padding:"4px 12px"
                             }}
-                            onClick={() => {
-                              setTrialToCancel(t);
-                              setOpenCancelConfirm(true);
-                            }}
+                            onClick={()=>{setTrialToCancel(t);setOpenCancelConfirm(true);}}
                           >
-                            <CancelIcon sx={{ fontSize: 16 }} />
+                            <CancelIcon sx={{fontSize:16}}/>
                           </button>
                         </>
                       )}
+
                     </div>
+
                   </td>
+
                 </tr>
               ))}
+
             </tbody>
+
           </table>
+
         </div>
       </div>
 
       <TrialFormDialog
         open={openForm}
-        onClose={() => {
-          setOpenForm(false);
-          setEditingTrial(null);
-        }}
+        onClose={()=>{setOpenForm(false);setEditingTrial(null);}}
         onSave={handleSave}
         initialData={editingTrial}
         competition={competition}
         existingTrials={trials}
+        showParticipants
       />
 
       <TrialDetailDialog
         open={openDetail}
-        onClose={() => setOpenDetail(false)}
+        onClose={()=>setOpenDetail(false)}
         trial={viewingTrial}
         competition={competition}
       />
 
       <Dialog
         open={openCancelConfirm}
-        onClose={() => {
-          setOpenCancelConfirm(false);
-          setTrialToCancel(null);
-        }}
+        onClose={()=>{setOpenCancelConfirm(false);setTrialToCancel(null);}}
         maxWidth="xs"
         fullWidth
-       >
-       <DialogTitle sx={{ fontWeight: 700 }}>
+      >
+
+        <DialogTitle sx={{fontWeight:700}}>
           Confirmer l'annulation
-       </DialogTitle>
+        </DialogTitle>
 
-       <DialogContent>
-       <Typography>
-          Êtes-vous sûr de vouloir annuler l'épreuve{" "}
-          <strong>{trialToCancel?.name}</strong> ?
-        </Typography>
+        <DialogContent>
 
-        <Typography
-        sx={{
-        mt: 1,
-        color: "error.main",
-        fontSize: "0.9rem",
-        }}
-        >
-        Cette action est irréversible.
-        </Typography>
+          <Typography>
+            Êtes-vous sûr de vouloir annuler l'épreuve{" "}
+            <strong>{trialToCancel?.name}</strong> ?
+          </Typography>
+
+          <Typography
+            sx={{mt:1,color:"error.main",fontSize:"0.9rem"}}
+          >
+            Cette action est irréversible.
+          </Typography>
+
         </DialogContent>
 
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button
-          onClick={() => {
-            setOpenCancelConfirm(false);
-            setTrialToCancel(null);
-          }}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            px: 3,
-            py: 1,
-            minWidth: 120,
-            borderRadius: appTheme.radius.pill,
-            background: "linear-gradient(135deg, #86efac, #4ade80)",
-            color: "#064e3b",
-           }}
-           >
-             Annuler
-        </Button>
+        <DialogActions sx={{p:2,gap:1}}>
 
-        <Button
-          onClick={handleCancelTrial}
-          sx={{
-            textTransform: "none",
-            fontWeight: 700,
-            px: 3,
-            py: 1,
-            minWidth: 120,
-            borderRadius: appTheme.radius.pill,
-            background: "linear-gradient(135deg, #EF4444, #DC2626)",
-            color: "#fff",
-          }}
+          <Button
+            onClick={()=>{setOpenCancelConfirm(false);setTrialToCancel(null);}}
+            sx={{
+              textTransform:"none",
+              fontWeight:700,
+              px:3,
+              py:1,
+              minWidth:120,
+              borderRadius:appTheme.radius.pill,
+              background:"linear-gradient(135deg,#86efac,#4ade80)",
+              color:"#064e3b"
+            }}
           >
-           Confirmer
-        </Button>
-      </DialogActions>
+            Annuler
+          </Button>
+
+          <Button
+            onClick={handleCancelTrial}
+            sx={{
+              textTransform:"none",
+              fontWeight:700,
+              px:3,
+              py:1,
+              minWidth:120,
+              borderRadius:appTheme.radius.pill,
+              background:"linear-gradient(135deg,#EF4444,#DC2626)",
+              color:"#fff"
+            }}
+          >
+            Confirmer
+          </Button>
+
+        </DialogActions>
+
       </Dialog>
 
       <ImportParticipantsDialog
         open={openImport}
-        onClose={() => setOpenImport(false)}
+        onClose={()=>setOpenImport(false)}
         competitionId={competitionId}
         competitionName={competition?.name}
       />
-    </Box>
+
+    </AdminPageLayout>
+
   );
 }

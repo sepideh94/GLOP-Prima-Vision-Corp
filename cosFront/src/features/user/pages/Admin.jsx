@@ -7,6 +7,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
+import { Event, EmojiEvents, People, VolunteerActivism } from "@mui/icons-material";
 import { Event, EmojiEvents, People, Schedule } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
@@ -30,6 +31,13 @@ export default function Admin() {
       icon: <EmojiEvents sx={{ fontSize: 42 }} />,
       color: appTheme.colors.green,
       route: "/admin/competitions",
+    },
+     {
+      title: "Gestion des volontaires",
+      subtitle: "Import et création des volontaires",
+      icon: <VolunteerActivism sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.yellow,
+      route: "/admin/volunteers",
     },
     {
       title: "Gestion des utilisateurs",
