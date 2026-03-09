@@ -48,6 +48,15 @@ const sidebarConfig = {
     },
   ],
 
+  SPECTATOR: [
+    { label: "Accueil", icon: HomeIcon, path: "/spectator" },
+    {
+      label: "Mon profil",
+      icon: PeopleIcon,
+      path: "/spectator/profile",
+    },
+  ],
+
   GUEST: [],
 };
 
