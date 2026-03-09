@@ -2,6 +2,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
+import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 const sidebarConfig = {
@@ -12,6 +13,11 @@ const sidebarConfig = {
       label: "Gestion des compétitions et épreuves",
       icon: EmojiEventsIcon,
       path: "/admin/competitions",
+    },
+    {
+      label: "Gestion des volontaires",
+      icon: VolunteerActivismIcon,
+      path: "/admin/volunteers"
     },
     {
       label: "Gestion des incidents",
@@ -45,6 +51,15 @@ const sidebarConfig = {
       label: "Compétitions",
       icon: EmojiEventsIcon,
       path: "/athlete/competitions",
+    },
+  ],
+
+  SPECTATOR: [
+    { label: "Accueil", icon: HomeIcon, path: "/spectator" },
+    {
+      label: "Mon profil",
+      icon: PeopleIcon,
+      path: "/spectator/profile",
     },
   ],
 

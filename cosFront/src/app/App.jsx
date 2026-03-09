@@ -4,6 +4,7 @@ import PrivateRoute from "../common/components/PrivateRoute.jsx";
 
 import Layout from "../common/components/Layout";
 
+import HomePage from "../features/home/pages/HomePage.jsx";
 import LoginPage from "../features/user/pages/LoginPage.jsx";
 import SignUpPage from "../features/user/pages/SignUpPage.jsx";
 import ForgotPasswordPage from "../features/user/pages/ForgotPasswordPage.jsx";
@@ -19,6 +20,7 @@ import EventsList from "../features/events/pages/EventsList.jsx";
 import CompetitionListPage from "../features/competition/pages/CompetitionListPage.jsx";
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
+import VolunteerSchedulePage from "../features/user/pages/VolunteerSchedulePage.jsx";
 import IncidentsPage from "../features/incident/pages/IncidentsPage.jsx";
 
 import CommissionerCompetitionListPage from
@@ -30,10 +32,17 @@ import CommissionerTrialListPage from
 import CommissionerParticipantsPage from
   "../features/participant/pages/CommissionerParticipantsPage.jsx";
 
+import VolunteersPage from
+  "../features/volunteer/pages/VolunteersPage.jsx";
+
 import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
 
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
+
+import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
+import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
+import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
 
 
 export default function App() {
@@ -41,6 +50,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* PUBLIC ROUTES */}
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -65,12 +76,19 @@ export default function App() {
                 element={<TrialListPage />}
               />
               <Route
+                path="/admin/volunteers"
+                element={<VolunteersPage />}
+              /> 
                 path="/admin/incidents"
                 element={<IncidentsPage />}
               />
               <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
+              />
+              <Route
+                path="/admin/volunteer-schedule"
+                element={<VolunteerSchedulePage />}
               />
 
               <Route
@@ -95,11 +113,25 @@ export default function App() {
                 element={<ProfilePage />}
               />
 
+              {/* SPECTATOR */}
+              <Route
+                path="/spectator/events/:eventId"
+                element={<EventDetailsPage />}
+              />
+              <Route
+                path="/spectator/competitions/:competitionId"
+                element={<CompetitionResultsPage />}
+              />
+              <Route
+                path="/spectator/profile"
+                element={<SpectatorProfilePage />}
+              />
+
             </Route>
           </Route>
 
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* FALLBACK */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

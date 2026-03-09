@@ -6,7 +6,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People, ReportProblem } from "@mui/icons-material";
+import { Event, EmojiEvents, People, VolunteerActivism, Schedule, ReportProblem } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -29,6 +29,13 @@ export default function Admin() {
       color: appTheme.colors.green,
       route: "/admin/competitions",
     },
+     {
+      title: "Gestion des volontaires",
+      subtitle: "Import et création des volontaires",
+      icon: <VolunteerActivism sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.yellow,
+      route: "/admin/volunteers",
+    },
     {
       title: "Gestion des incidents",
       subtitle: "Déclarer et suivre les incidents",
@@ -42,6 +49,13 @@ export default function Admin() {
       icon: <People sx={{ fontSize: 42 }} />,
       color: appTheme.colors.violet,
       route: "/admin/users",
+    },
+    {
+      title: "Planning des volontaires",
+      subtitle: "Gérer les horaires et affectations",
+      icon: <Schedule sx={{ fontSize: 42 }} />,
+      color: "#f97316",
+      route: "/admin/volunteer-schedule",
     },
   ];
 

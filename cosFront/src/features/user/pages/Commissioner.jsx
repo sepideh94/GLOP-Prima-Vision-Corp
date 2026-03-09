@@ -14,21 +14,21 @@ export default function Commissioner() {
   const navigate = useNavigate();
 
   const sections = [
-  {
-    title: "Gestion des compétitions et épreuves",
-    subtitle: "Organisation et suivi",
-    icon: <EmojiEvents sx={{ fontSize: 42 }} />,
-    color: appTheme.colors.green,
-    route: "/commissioner/competitions",
-  },
-  {
-    title: "Gestion des athlètes",
-    subtitle: "Inscriptions et confirmations",
-    icon: <People sx={{ fontSize: 42 }} />,
-    color: appTheme.colors.cyan,
-    route: "/commissioner/participants",
-  },
-];
+    {
+      title: "Gestion des compétitions et épreuves",
+      subtitle: "Organisation et suivi",
+      icon: <EmojiEvents sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.green,
+      route: "/commissioner/competitions",
+    },
+    {
+      title: "Gestion des athlètes",
+      subtitle: "Inscriptions et confirmations",
+      icon: <People sx={{ fontSize: 42 }} />,
+      color: appTheme.colors.cyan,
+      route: "/commissioner/participants",
+    },
+  ];
 
   return (
     <Box>

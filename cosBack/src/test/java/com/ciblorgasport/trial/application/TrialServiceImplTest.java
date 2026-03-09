@@ -128,12 +128,22 @@ class TrialServiceImplTest {
     @DisplayName("Should create trial successfully with competition and round")
     void testCreateTrial_WithCompetitionAndRound_Success() {
         
+        // Mock d'une demi-finale existante terminée avant le début du nouveau trial (10h)
+        Trial demiFinaleTrial = new Trial();
+        demiFinaleTrial.setId(99L);
+        demiFinaleTrial.setName("100m nage libre - Demi-finale");
+        demiFinaleTrial.setEndDate(LocalDate.of(2025, 12, 14));
+        demiFinaleTrial.setEndHour(LocalTime.of(18, 0));
+
         when(siteRepository.findById(1L)).thenReturn(Optional.of(testSite));
         when(competitionRepository.findById(1L)).thenReturn(Optional.of(testCompetition));
         when(roundRepository.findById(1L)).thenReturn(Optional.of(testRound));
+        when(trialRepository.findActiveByCompetitionAndTrialNameAndCategoryGenderAndRoundName(
+                any(), any(), any(), eq(RoundName.DEMI_FINALE)))
+                .thenReturn(List.of(demiFinaleTrial));
         when(trialRepository.save(any(Trial.class))).thenReturn(testTrial);
 
-        
+
         TrialResponse result = trialService.create(createRequest);
 
         
