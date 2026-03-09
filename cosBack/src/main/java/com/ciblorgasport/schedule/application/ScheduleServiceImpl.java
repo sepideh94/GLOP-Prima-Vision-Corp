@@ -16,9 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.access.AccessDeniedException;
 
 @Service
@@ -95,6 +97,8 @@ public class ScheduleServiceImpl implements ScheduleService {
                     .build();
         }
 
+        Status dynamicStatus = calculateStatus(item);
+
         return ScheduleResponse.builder()
                 .id(item.getId())
                 .title(item.getTitle())
@@ -102,13 +106,65 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .startTime(item.getStartTime())
                 .endTime(item.getEndTime())
                 .type(item.getType())
-                .status(item.getStatus())
+                .status(dynamicStatus) 
                 .site(siteDto)
                 .competitionId(item.getCompetition() != null ? item.getCompetition().getId() : null)
                 .competitionName(item.getCompetition() != null ? item.getCompetition().getName() : null)
                 .assignedUserName(item.getAssignedUser() != null ? 
                     item.getAssignedUser().getFirstName() + " " + item.getAssignedUser().getLastName() : "Général")
                 .build();
+    }
+
+    @Scheduled(cron = "0 0/15 * * * *") 
+    @Transactional
+    public void updateAllSchedulesStatus() {
+    	
+        List<ScheduleItem> activeItems = scheduleRepository.findAll().stream()
+                .filter(item -> item.getStatus() != Status.COMPLETED && item.getStatus() != Status.CANCELED)
+                .toList();
+
+        activeItems.forEach(this::updateStatusIfNecessary);
+    }
+
+    /**
+     * Logique de mise à jour si le statut calculé diffère du statut en base.
+     */
+    private void updateStatusIfNecessary(ScheduleItem item) {
+        Status calculatedStatus = calculateStatus(item);
+        if (item.getStatus() != calculatedStatus) {
+            item.setStatus(calculatedStatus);
+            scheduleRepository.save(item);
+        }
+    }
+
+    /**
+     * Calcul du statut basé sur le temps (Complexité cyclomatique O(1)).
+     */
+    private Status calculateStatus(ScheduleItem item) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (item.getStatus() == Status.CANCELED) {
+            return Status.CANCELED;
+        }
+        if (now.isBefore(item.getStartTime())) {
+            return Status.UPCOMING;
+        }
+        if (now.isAfter(item.getEndTime())) {
+            return Status.COMPLETED;
+        }
+        return Status.IN_PROGRESS;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ScheduleResponse> getSchedulesForUser(UserAccount currentUser) {
+        List<ScheduleItem> items = scheduleRepository.findByAssignedUserId(currentUser.getId());
+
+        items.forEach(this::updateStatusIfNecessary);
+
+        return items.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 }
     
