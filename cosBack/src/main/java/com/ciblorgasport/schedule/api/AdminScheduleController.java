@@ -4,6 +4,7 @@ import com.ciblorgasport.schedule.application.ScheduleService;
 import com.ciblorgasport.schedule.domain.VolunteerTask;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
+import com.ciblorgasport.schedule.dto.VolunteerScheduleSummary;
 import com.ciblorgasport.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -41,5 +42,15 @@ public class AdminScheduleController {
     @GetMapping("/volunteer-tasks")
     public ResponseEntity<VolunteerTask[]> getVolunteerTasks() {
         return ResponseEntity.ok(VolunteerTask.values());
+    }
+    
+
+    @GetMapping("/volunteer/{volunteerId}")
+    public ResponseEntity<List<VolunteerScheduleSummary>> getVolunteerSchedule(
+            @PathVariable Long volunteerId) {
+        
+        List<VolunteerScheduleSummary> schedule = scheduleService.getVolunteerSchedule(volunteerId);
+        
+        return ResponseEntity.ok(schedule);
     }
 }
