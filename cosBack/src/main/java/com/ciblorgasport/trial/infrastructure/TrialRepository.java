@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.infrastructure;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,4 +53,22 @@ public interface TrialRepository extends JpaRepository<Trial, Long> {
         @Param("trialName") TrialName trialName,
         @Param("categoryGender") CategoryGender categoryGender,
         @Param("roundName") RoundName roundName);
+    
+    @Query("""
+    	    SELECT t FROM Trial t
+    	    WHERE t.site.id = :siteId
+    	    AND t.cancelled = false
+    	    AND (
+    	        (t.startDate = :startDate AND t.startHour >= :startHour)
+    	        OR (t.startDate > :startDate AND t.startDate < :endDate)
+    	        OR (t.startDate = :endDate AND t.startHour <= :endHour)
+    	    )
+    	    """)
+    	List<Trial> findBySiteAndPeriod(
+    	    @Param("siteId") Long siteId, 
+    	    @Param("startDate") LocalDate startDate,
+    	    @Param("startHour") LocalTime startHour,
+    	    @Param("endDate") LocalDate endDate,
+    	    @Param("endHour") LocalTime endHour
+    	);
 }
