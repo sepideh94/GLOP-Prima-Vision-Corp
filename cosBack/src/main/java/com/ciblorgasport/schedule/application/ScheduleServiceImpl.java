@@ -5,13 +5,25 @@ import com.ciblorgasport.schedule.domain.ScheduleItem;
 import com.ciblorgasport.schedule.domain.ScheduleType;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
+import com.ciblorgasport.schedule.dto.VolunteerScheduleSummary;
 import com.ciblorgasport.user.domain.UserAccount;
+import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.dto.SiteResponse;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
+import com.ciblorgasport.trial.application.TrialService;
+import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.dto.TrialResponse;
+import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
+import com.ciblorgasport.volonteer.domain.Volonteer;
+import com.ciblorgasport.volonteer.domain.VolonteerAssignment;
+import com.ciblorgasport.volonteer.infrastructure.VolonteerAssignmentRepository;
+import com.ciblorgasport.volonteer.infrastructure.VolonteerRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +43,9 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final SiteRepository siteRepository;
     private final CompetitionRepository competitionRepository;
     private final UserAccountRepository userRepository;
+    private final VolonteerAssignmentRepository volonteerAssignmentRepository;
+    private final TrialRepository trialRepository;
+    private final VolonteerRepository volonteerRepository;
     
     @Override
     @Transactional
@@ -62,7 +77,24 @@ public class ScheduleServiceImpl implements ScheduleService {
                             .orElseThrow(() -> new RuntimeException("Utilisateur " + userId + " non trouvé"));
                     
                     ScheduleItem item = createSingleItem(request, assignedUser, comp, currentUser);
-                    return convertToResponse(scheduleRepository.save(item));
+                    ScheduleItem savedItem = scheduleRepository.save(item);
+
+                    VolonteerAssignment assignment = new VolonteerAssignment();
+                    
+                    Volonteer volonteer = volonteerRepository.findById(userId)
+                            .orElseThrow(() -> new RuntimeException("Profil volontaire introuvable"));
+
+                    assignment.setVolonteer(volonteer);
+                    assignment.setTitle(savedItem.getTitle());
+                    assignment.setCompetition(comp);
+                    assignment.setStartTime(request.getStartTime());
+                    assignment.setEndTime(request.getEndTime());
+                    assignment.setSite(savedItem.getSite());
+                    assignment.setStatus(com.ciblorgasport.competition.domain.ParticipationStatus.CONFIRMED);
+                    
+                    volonteerAssignmentRepository.save(assignment);
+
+                    return convertToResponse(savedItem);
                 })
                 .collect(Collectors.toList());
     }
@@ -165,6 +197,49 @@ public class ScheduleServiceImpl implements ScheduleService {
         return items.stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
+    }
+
+    private VolunteerScheduleSummary createEmptySummary(VolonteerAssignment va) {
+        return VolunteerScheduleSummary.builder()
+            .title(va.getTitle() != null ? va.getTitle() : "Sans titre")
+            .competitionName(va.getCompetition() != null ? va.getCompetition().getName() : "Inconnue")
+            .siteAddress("Lieu non défini")
+            .assignmentStatus(va.getStatus() != null ? va.getStatus().name() : "PENDING")
+            .occurringTrialNames(List.of())
+            .build();
+    }
+    
+    @Override
+    public List<VolunteerScheduleSummary> getVolunteerSchedule(Long volunteerId) {
+        List<VolonteerAssignment> assignments = volonteerAssignmentRepository.findByVolonteerId(volunteerId);
+
+        return assignments.stream()
+            .filter(va -> va.getStartTime() != null) 
+            .map(va -> {
+                Site missionSite = va.getSite(); 
+                if (missionSite == null || va.getEndTime() == null) {
+                    return createEmptySummary(va);
+                }
+
+                List<Trial> trials = trialRepository.findBySiteAndPeriod(
+                    missionSite.getId(),
+                    va.getStartTime().toLocalDate(),
+                    va.getStartTime().toLocalTime(),
+                    va.getEndTime().toLocalDate(),
+                    va.getEndTime().toLocalTime()
+                );
+
+                return VolunteerScheduleSummary.builder()
+                    .title(va.getTitle()) 
+                    .competitionName(va.getCompetition().getName())
+                    .missionStart(va.getStartTime())
+                    .missionEnd(va.getEndTime())
+                    .siteAddress(missionSite.getAdress())
+                    .assignmentStatus(va.getStatus().name())
+                    .occurringTrialNames(trials.stream().map(Trial::getName).toList())
+                    .build();
+            })
+            .toList();
     }
 }
     
