@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.IncidentStatus;
+
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,8 +19,10 @@ public class IncidentResponse {
     private ImpactLevel impactLevel;
     private IncidentStatus status;
 
-    private Long competitionId; // nullable
-    private Long createdBy;     // user id
+    private Long competitionId;
+    private Long siteId;
+
+    private Long createdBy;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

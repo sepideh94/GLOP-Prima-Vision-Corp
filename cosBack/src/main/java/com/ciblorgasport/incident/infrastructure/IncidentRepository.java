@@ -13,5 +13,13 @@ public interface IncidentRepository extends JpaRepository<Incident, Long> {
 
     List<Incident> findByCompetition_Id(Long competitionId);
 
+    List<Incident> findBySite_Id(Long siteId);
+
     List<Incident> findByCompetition_IdAndImpactLevel(Long competitionId, ImpactLevel impactLevel);
+
+    List<Incident> findBySite_IdAndImpactLevel(Long siteId, ImpactLevel impactLevel);
+
+    List<Incident> findByCompetition_IdAndSite_Id(Long competitionId, Long siteId);
+
+    List<Incident> findByCompetition_IdAndSite_IdAndImpactLevel(Long competitionId, Long siteId, ImpactLevel impactLevel);
 }

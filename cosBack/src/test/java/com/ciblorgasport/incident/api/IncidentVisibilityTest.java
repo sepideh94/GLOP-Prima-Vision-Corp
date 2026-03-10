@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.Incident;
@@ -40,58 +39,42 @@ class IncidentVisibilityTest {
     @Autowired
     private IncidentRepository incidentRepo;
 
-    private void seedThreeImpacts(UserAccount createdBy) {
+    private void seedImpacts(UserAccount createdBy) {
         incidentRepo.save(Incident.builder()
-                .title("I1")
-                .description("only commissionners")
-                .impactLevel(ImpactLevel.COMMISSIONNERS)
-                .status(IncidentStatus.OUVERT)
-                .createdBy(createdBy)
-                .build());
-
-        incidentRepo.save(Incident.builder()
-                .title("I2")
-                .description("commissionners + athletes")
-                .impactLevel(ImpactLevel.COMMISSIONNERS_ATHLETES)
-                .status(IncidentStatus.OUVERT)
-                .createdBy(createdBy)
-                .build());
-
-        incidentRepo.save(Incident.builder()
-                .title("I3")
+                .title("I_TOUS")
                 .description("tous")
                 .impactLevel(ImpactLevel.TOUS)
-                .status(IncidentStatus.OUVERT)
+                .status(IncidentStatus.EN_COURS)
+                .createdBy(createdBy)
+                .build());
+
+        incidentRepo.save(Incident.builder()
+                .title("I_COMMISSIONNER")
+                .description("commissionner only")
+                .impactLevel(ImpactLevel.COMMISSIONNER)
+                .status(IncidentStatus.EN_COURS)
+                .createdBy(createdBy)
+                .build());
+
+        incidentRepo.save(Incident.builder()
+                .title("I_ATHLETE")
+                .description("athlete only")
+                .impactLevel(ImpactLevel.ATHLETE)
+                .status(IncidentStatus.EN_COURS)
+                .createdBy(createdBy)
+                .build());
+
+        incidentRepo.save(Incident.builder()
+                .title("I_SPECTATOR")
+                .description("spectator only")
+                .impactLevel(ImpactLevel.SPECTATOR)
+                .status(IncidentStatus.EN_COURS)
                 .createdBy(createdBy)
                 .build());
     }
 
     @Test
-    void athlete_sees_only_commissionners_athletes_and_tous() throws Exception {
-        Athlete athlete = Athlete.builder()
-                .firstName("A")
-                .lastName("T")
-                .email("athlete_vis_test@cos.com")
-                .password("x")
-                .build();
-        athlete = (Athlete) userRepo.save(athlete);
-
-        seedThreeImpacts(athlete);
-
-        var auth = new UsernamePasswordAuthenticationToken(athlete, null, athlete.getAuthorities());
-
-        mockMvc.perform(get("/api/incidents")
-                        .with(authentication(auth))
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNERS')]").isEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNERS_ATHLETES')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty());
-    }
-
-    @Test
-    void commissionner_sees_all_impacts() throws Exception {
+    void commissionner_sees_tous_and_commissionner_only() throws Exception {
         Commissionner commissionner = Commissionner.builder()
                 .firstName("C")
                 .lastName("M")
@@ -100,7 +83,7 @@ class IncidentVisibilityTest {
                 .build();
         commissionner = (Commissionner) userRepo.save(commissionner);
 
-        seedThreeImpacts(commissionner);
+        seedImpacts(commissionner);
 
         var auth = new UsernamePasswordAuthenticationToken(commissionner, null, commissionner.getAuthorities());
 
@@ -108,14 +91,15 @@ class IncidentVisibilityTest {
                         .with(authentication(auth))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNERS')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNERS_ATHLETES')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty());
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNER')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='ATHLETE')]").isEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='SPECTATOR')]").isEmpty());
     }
 
     @Test
-    void spectator_sees_only_tous() throws Exception {
+    void spectator_sees_tous_and_spectator_only() throws Exception {
         Spectator spectator = Spectator.builder()
                 .firstName("S")
                 .lastName("P")
@@ -124,7 +108,7 @@ class IncidentVisibilityTest {
                 .build();
         spectator = (Spectator) userRepo.save(spectator);
 
-        seedThreeImpacts(spectator);
+        seedImpacts(spectator);
 
         var auth = new UsernamePasswordAuthenticationToken(spectator, null, spectator.getAuthorities());
 
@@ -132,7 +116,10 @@ class IncidentVisibilityTest {
                         .with(authentication(auth))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].impactLevel").value("TOUS"));
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='SPECTATOR')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='ATHLETE')]").isEmpty())
+                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNER')]").isEmpty());
     }
 }

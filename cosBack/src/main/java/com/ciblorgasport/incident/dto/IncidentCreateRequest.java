@@ -17,6 +17,7 @@ public class IncidentCreateRequest {
     @NotNull
     private ImpactLevel impactLevel;
 
-    // nullable
     private Long competitionId;
+
+    private Long siteId;
 }

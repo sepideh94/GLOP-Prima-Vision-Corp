@@ -45,8 +45,9 @@ public class IncidentController {
     public List<IncidentResponse> list(
             @AuthenticationPrincipal UserAccount user,
             @RequestParam(value = "impact_level", required = false) ImpactLevel impactLevel,
-            @RequestParam(value = "competitionId", required = false) Long competitionId) {
-        return incidentService.list(user, impactLevel, competitionId);
+            @RequestParam(value = "competitionId", required = false) Long competitionId,
+            @RequestParam(value = "siteId", required = false) Long siteId) {
+        return incidentService.list(user, impactLevel, competitionId, siteId);
     }
 
     @GetMapping("/{id}")
