@@ -3,6 +3,7 @@ package com.ciblorgasport.schedule.application;
 import com.ciblorgasport.schedule.ScheduleRepository;
 import com.ciblorgasport.schedule.domain.ScheduleItem;
 import com.ciblorgasport.schedule.domain.ScheduleType;
+import com.ciblorgasport.schedule.dto.AthleteTrialScheduleResponse;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
 import com.ciblorgasport.schedule.dto.VolunteerScheduleSummary;
@@ -12,7 +13,9 @@ import com.ciblorgasport.site.dto.SiteResponse;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.dto.TrialResponse;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.competition.domain.Competition;
@@ -29,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,6 +50,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     private final VolonteerAssignmentRepository volonteerAssignmentRepository;
     private final TrialRepository trialRepository;
     private final VolonteerRepository volonteerRepository;
+    private final TrialParticipantRepository trialParticipantRepository;
     
     @Override
     @Transactional
@@ -239,6 +244,26 @@ public class ScheduleServiceImpl implements ScheduleService {
                     .occurringTrialNames(trials.stream().map(Trial::getName).toList())
                     .build();
             })
+            .toList();
+    }
+
+    @Override
+    public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
+        List<TrialParticipant> participations = trialParticipantRepository.findByAthleteId(athleteId);
+
+        return participations.stream()
+            .map(TrialParticipant::getTrial)
+            .filter(trial -> trial.getCompetition().getId().equals(competitionId))
+            .map(trial -> new AthleteTrialScheduleResponse(
+                trial.getId(),
+                trial.getName(),
+                trial.getRound() != null ? trial.getRound().getName().name() : "N/A", 
+                LocalDateTime.of(trial.getStartDate(), trial.getStartHour()), 
+                LocalDateTime.of(trial.getEndDate(), trial.getEndHour()),     
+                trial.getSite().getAdress(), 
+                trial.getStatus().name() 
+            ))
+            .sorted(Comparator.comparing(AthleteTrialScheduleResponse::startTime))
             .toList();
     }
 }
