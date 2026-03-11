@@ -105,7 +105,7 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
   useEffect(() => {
     if (open && trial?.id) {
       setLoadingParticipants(true);
-      trialService.getTrialAthletes(trial.id)
+      trialService.getParticipants(trial.id)
         .then(setParticipants)
         .catch(() => setParticipants([]))
         .finally(() => setLoadingParticipants(false));

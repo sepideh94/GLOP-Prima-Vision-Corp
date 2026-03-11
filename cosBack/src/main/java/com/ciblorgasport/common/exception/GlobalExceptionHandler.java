@@ -17,6 +17,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
+import com.ciblorgasport.common.exception.TrialNotFoundException;
+import com.ciblorgasport.common.exception.TrialNotCompletedException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,6 +62,32 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TrialNotFoundException.class)
+    public ResponseEntity<ApiError> handleTrialNotFoundException(
+            TrialNotFoundException ex, HttpServletRequest request) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TrialNotCompletedException.class)
+    public ResponseEntity<ApiError> handleTrialNotCompletedException(
+            TrialNotCompletedException ex, HttpServletRequest request) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.CONFLICT.value())
+                .error("Épreuve non terminée")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
     @ExceptionHandler(CompetitionDateIntegrityException.class)
