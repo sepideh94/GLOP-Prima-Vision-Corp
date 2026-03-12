@@ -17,7 +17,12 @@ public class IncidentUpdateRequest {
     @NotNull
     private ImpactLevel impactLevel;
 
+    @NotNull
+    private Long eventId;
+
     private Long competitionId;
 
     private Long siteId;
+
+    private Long trialId;
 }

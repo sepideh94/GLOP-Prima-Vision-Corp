@@ -6,7 +6,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.site.domain.Site;
+import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.persistence.*;
@@ -39,6 +41,11 @@ public class Incident {
     @Builder.Default
     private IncidentStatus status = IncidentStatus.EN_COURS;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Event event;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "competition_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -48,6 +55,11 @@ public class Incident {
     @JoinColumn(name = "site_id")
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Site site;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trial_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Trial trial;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false)

@@ -21,5 +21,12 @@ public interface IncidentService {
 
     IncidentResponse getById(UserAccount actor, Long id);
 
-    List<IncidentResponse> list(UserAccount actor, ImpactLevel impactLevel, Long competitionId, Long siteId);
+    List<IncidentResponse> list(
+            UserAccount actor,
+            Long eventId,
+            ImpactLevel impactLevel,
+            Long competitionId,
+            Long siteId,
+            Long trialId
+    );
 }

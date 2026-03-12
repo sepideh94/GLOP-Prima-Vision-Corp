@@ -19,8 +19,10 @@ public class IncidentResponse {
     private ImpactLevel impactLevel;
     private IncidentStatus status;
 
+    private Long eventId;
     private Long competitionId;
     private Long siteId;
+    private Long trialId;
 
     private Long createdBy;
 
