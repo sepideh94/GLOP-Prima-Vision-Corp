@@ -76,12 +76,15 @@ export default function App() {
                 element={<TrialListPage />}
               />
               <Route
-                path="/admin/volunteers"
-                element={<VolunteersPage />}
-              /> 
-                path="/admin/incidents"
-                element={<IncidentsPage />}
+               path="/admin/volunteers"
+               element={<VolunteersPage />}
               />
+
+              <Route
+               path="/admin/incidents"
+               element={<IncidentsPage />}
+              />
+              
               <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
