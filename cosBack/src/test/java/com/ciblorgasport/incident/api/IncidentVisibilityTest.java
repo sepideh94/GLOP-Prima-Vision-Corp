@@ -1,19 +1,25 @@
 package com.ciblorgasport.incident.api;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.commissionner.Commissionner;
+import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.event.infrastructure.EventRepository;
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.incident.domain.IncidentStatus;
@@ -21,8 +27,6 @@ import com.ciblorgasport.incident.infrastructure.IncidentRepository;
 import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
-
-import jakarta.transaction.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -39,12 +43,25 @@ class IncidentVisibilityTest {
     @Autowired
     private IncidentRepository incidentRepo;
 
-    private void seedImpacts(UserAccount createdBy) {
+    @Autowired
+    private EventRepository eventRepo;
+
+    private Event createEvent() {
+        Event event = new Event();
+        event.setName("Event visibility test");
+        event.setDescription("desc");
+        event.setStartDate(LocalDateTime.now().plusDays(1));
+        event.setEndDate(LocalDateTime.now().plusDays(2));
+        return eventRepo.save(event);
+    }
+
+    private void seedImpacts(UserAccount createdBy, Event event) {
         incidentRepo.save(Incident.builder()
                 .title("I_TOUS")
                 .description("tous")
                 .impactLevel(ImpactLevel.TOUS)
                 .status(IncidentStatus.EN_COURS)
+                .event(event)
                 .createdBy(createdBy)
                 .build());
 
@@ -53,6 +70,7 @@ class IncidentVisibilityTest {
                 .description("commissionner only")
                 .impactLevel(ImpactLevel.COMMISSIONNER)
                 .status(IncidentStatus.EN_COURS)
+                .event(event)
                 .createdBy(createdBy)
                 .build());
 
@@ -61,6 +79,7 @@ class IncidentVisibilityTest {
                 .description("athlete only")
                 .impactLevel(ImpactLevel.ATHLETE)
                 .status(IncidentStatus.EN_COURS)
+                .event(event)
                 .createdBy(createdBy)
                 .build());
 
@@ -69,6 +88,7 @@ class IncidentVisibilityTest {
                 .description("spectator only")
                 .impactLevel(ImpactLevel.SPECTATOR)
                 .status(IncidentStatus.EN_COURS)
+                .event(event)
                 .createdBy(createdBy)
                 .build());
     }
@@ -83,11 +103,13 @@ class IncidentVisibilityTest {
                 .build();
         commissionner = (Commissionner) userRepo.save(commissionner);
 
-        seedImpacts(commissionner);
+        Event event = createEvent();
+        seedImpacts(commissionner, event);
 
         var auth = new UsernamePasswordAuthenticationToken(commissionner, null, commissionner.getAuthorities());
 
         mockMvc.perform(get("/api/incidents")
+                        .queryParam("eventId", String.valueOf(event.getId()))
                         .with(authentication(auth))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -108,11 +130,13 @@ class IncidentVisibilityTest {
                 .build();
         spectator = (Spectator) userRepo.save(spectator);
 
-        seedImpacts(spectator);
+        Event event = createEvent();
+        seedImpacts(spectator, event);
 
         var auth = new UsernamePasswordAuthenticationToken(spectator, null, spectator.getAuthorities());
 
         mockMvc.perform(get("/api/incidents")
+                        .queryParam("eventId", String.valueOf(event.getId()))
                         .with(authentication(auth))
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
