@@ -1,22 +1,36 @@
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
+import SearchIcon from "@mui/icons-material/Search";
+
+import { TextField, InputAdornment, Typography } from "@mui/material";
 import appTheme from "../../../common/theme/appTheme";
 
 const impactLabels = {
-  TOUS: "Tous les utilisateurs",
-  COMMISSIONNERS: "Commissaires uniquement",
-  COMMISSIONNERS_ATHLETES: "Commissaires et athlètes",
+  TOUS: "Tous",
+  COMMISSIONNER: "Commissaires",
+  ATHLETE: "Athlètes",
+  VOLONTEER: "Volontaires",
+  SPECTATOR: "Spectateurs",
+};
+
+const statusLabels = {
+  EN_COURS: "En cours",
+  RESOLU: "Résolu",
+};
+
+const siteLabels = {
+  1: "Piscine principale",
+  2: "Piscine secondaire",
 };
 
 const getStatusColor = (status) => {
   switch (status) {
-    case "OUVERT":
-      return "#ef4444";
     case "EN_COURS":
       return "#facc15";
     case "RESOLU":
-    case "CLOS":
       return "#22c55e";
     default:
       return "#64748b";
@@ -24,59 +38,104 @@ const getStatusColor = (status) => {
 };
 
 export default function IncidentTable({
-  incidents,
-  competitions,
-  getCompetitionName,
+  incidents = [],
+  searchTerm,
+  setSearchTerm,
+  getEventName,
   onSort,
+  onView,
+  onEdit,
+  onChangeStatus,
+  onDelete,
 }) {
+
   return (
-    <div className="card" style={{ borderRadius: 22, overflow: "hidden" }}>
-      <div className="card-header d-flex justify-content-between">
-        <strong>Liste des incidents</strong>
+    <div className="card" style={{ borderRadius: 22, overflow: "hidden", border: "none" }}>
+
+      <div className="card-header d-flex justify-content-between align-items-center">
+
+        <Typography sx={{ fontWeight: 700 }}>
+          Liste des incidents
+        </Typography>
+
+        <TextField
+          size="small"
+          placeholder="Rechercher..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          sx={{ width: 240 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+
       </div>
 
       <div className="card-body">
+
         <table className="table align-middle table-hover">
+
           <thead>
             <tr>
-              <td style={{ cursor: "pointer" }} onClick={() => onSort("title")}>
-                <strong>Titre</strong>{" "}
-                <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle" }} />
-              </td>
 
-              <td
-                style={{ cursor: "pointer" }}
-                onClick={() => onSort("impactLevel")}
-              >
-                <strong>Impact</strong>{" "}
-                <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle" }} />
-              </td>
+              <th onClick={() => onSort("title")} style={{ cursor: "pointer" }}>
+                Titre <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
 
-              <td
-                style={{ cursor: "pointer" }}
-                onClick={() => onSort("status")}
-              >
-                <strong>Statut</strong>{" "}
-                <UnfoldMoreIcon sx={{ fontSize: 16, verticalAlign: "middle" }} />
-              </td>
+              <th onClick={() => onSort("impactLevel")} style={{ cursor: "pointer" }}>
+                Impact <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
 
-              <td>
-                <strong>Compétition</strong>
-              </td>
+              <th>Site concerné</th>
 
-              <td>
-                <strong>Actions</strong>
-              </td>
+              <th>Événement concerné</th>
+
+              <th onClick={() => onSort("status")} style={{ cursor: "pointer" }}>
+                Statut <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
+
+              <th style={{ width: 220 }}>Actions</th>
+
             </tr>
           </thead>
 
           <tbody>
+
+            {incidents.length === 0 && (
+              <tr>
+                <td colSpan={6} style={{ textAlign: "center", padding: 20 }}>
+                  Aucun incident trouvé
+                </td>
+              </tr>
+            )}
+
             {incidents.map((i) => (
+
               <tr key={i.id}>
+
+                {/* TITRE */}
                 <td className="fw-bold">{i.title}</td>
 
-                <td>{impactLabels[i.impactLevel]}</td>
+                {/* IMPACT */}
+                <td>
+                  {impactLabels[i.impactLevel] || i.impactLevel || "-"}
+                </td>
 
+                {/* SITE */}
+                <td>
+                  {i.siteId ? siteLabels[i.siteId] || i.siteId : "-"}
+                </td>
+
+                {/* EVENT */}
+                <td>
+                  {getEventName ? getEventName(i.eventId) : "-"}
+                </td>
+
+                {/* STATUS */}
                 <td>
                   <span
                     style={{
@@ -88,27 +147,21 @@ export default function IncidentTable({
                       fontWeight: 600,
                     }}
                   >
-                    {i.status}
+                    {statusLabels[i.status] || i.status}
                   </span>
                 </td>
 
+                {/* ACTIONS */}
                 <td>
-                  {i.competitionId
-                    ? getCompetitionName(i.competitionId)
-                    : "-"}
-                </td>
 
-                <td>
                   <button
                     className="btn"
+                    onClick={() => onView(i)}
                     style={{
                       borderRadius: appTheme.radius.pill,
-                      background:
-                        "linear-gradient(135deg, #a78bfa, #8b5cf6)",
+                      background: "linear-gradient(135deg,#a78bfa,#8b5cf6)",
                       color: "#fff",
-                      fontWeight: 700,
-                      padding: "4px 12px",
-                      marginRight: 8,
+                      marginRight: 6,
                     }}
                   >
                     <VisibilityIcon sx={{ fontSize: 16 }} />
@@ -116,22 +169,56 @@ export default function IncidentTable({
 
                   <button
                     className="btn"
+                    onClick={() => onEdit(i)}
                     style={{
                       borderRadius: appTheme.radius.pill,
                       background: appTheme.gradients.navbar,
                       color: appTheme.colors.dark,
-                      fontWeight: 700,
-                      padding: "4px 12px",
+                      marginRight: 6,
                     }}
                   >
                     <EditIcon sx={{ fontSize: 16 }} />
                   </button>
+
+                  <button
+                    className="btn"
+                    onClick={() => onChangeStatus(i)}
+                    disabled={i.status === "RESOLU"}
+                    style={{
+                      borderRadius: appTheme.radius.pill,
+                      background: i.status === "RESOLU" ? "#cbd5e1" : "#22c55e",
+                      color: "#fff",
+                      marginRight: 6,
+                      opacity: i.status === "RESOLU" ? 0.6 : 1,
+                    }}
+                  >
+                    <CheckCircleIcon sx={{ fontSize: 16 }} />
+                  </button>
+
+                  <button
+                    className="btn"
+                    onClick={() => onDelete(i)}
+                    style={{
+                      borderRadius: appTheme.radius.pill,
+                      background: "#ef4444",
+                      color: "#fff",
+                    }}
+                  >
+                    <DeleteIcon sx={{ fontSize: 16 }} />
+                  </button>
+
                 </td>
+
               </tr>
+
             ))}
+
           </tbody>
+
         </table>
+
       </div>
+
     </div>
   );
 }

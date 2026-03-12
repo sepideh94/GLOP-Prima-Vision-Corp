@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Box,
-  Typography,
-  Card,
-  Button,
-  TextField,
-} from "@mui/material";
+
+import { Box, Typography, Button } from "@mui/material";
 
 import appTheme from "../../../common/theme/appTheme";
+
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
@@ -17,70 +13,150 @@ import competitionService from "../../competition/services/competitionService";
 
 import IncidentTable from "../components/IncidentTable";
 import IncidentFormDialog from "../components/IncidentFormDialog";
+import IncidentDetailsDialog from "../components/IncidentDetailsDialog";
+import DeleteIncidentDialog from "../components/DeleteIncidentDialog";
 
 export default function IncidentsPage() {
+
   const navigate = useNavigate();
 
   const [incidents, setIncidents] = useState([]);
   const [competitions, setCompetitions] = useState([]);
+  const [events, setEvents] = useState([]);
+
+  const [selectedEventId, setSelectedEventId] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "asc",
+  });
+
   const [openForm, setOpenForm] = useState(false);
+  const [openDetails, setOpenDetails] = useState(false);
+  const [openDelete, setOpenDelete] = useState(false);
+
+  const [selectedIncident, setSelectedIncident] = useState(null);
+  const [incidentToDelete, setIncidentToDelete] = useState(null);
 
   useEffect(() => {
-    loadIncidents();
-    loadCompetitions();
+    loadEvents();
   }, []);
 
-  const loadIncidents = async () => {
-    try {
-      const data = await incidentService.getAll();
-      setIncidents(Array.isArray(data) ? data : []);
-    } catch {
-      setIncidents([]);
+  useEffect(() => {
+    if (selectedEventId) {
+      loadIncidents();
+      loadCompetitions();
     }
-  };
+  }, [selectedEventId]);
 
-  const loadCompetitions = async () => {
+  /* ---------------- LOAD EVENTS ---------------- */
+
+  const loadEvents = async () => {
     try {
-      const events = await competitionService.getEvents();
 
-      let allCompetitions = [];
+      const data = await competitionService.getEvents();
 
-      for (const event of events) {
-        const eventId = event.id || event.idEvent;
-        const comps = await competitionService.getCompetitionsByEvent(eventId);
+      if (Array.isArray(data)) {
 
-        if (Array.isArray(comps)) {
-          allCompetitions = [...allCompetitions, ...comps];
+        setEvents(data);
+
+        /* ⚠️ ne définir l'event que si aucun n'est sélectionné */
+        if (!selectedEventId && data.length > 0) {
+          setSelectedEventId(data[0].id);
         }
+
       }
 
-      setCompetitions(allCompetitions);
     } catch (error) {
-      console.error("Erreur chargement compétitions", error);
-      setCompetitions([]);
+      console.error("Erreur chargement events", error);
     }
   };
 
+  /* ---------------- LOAD INCIDENTS ---------------- */
+
+  const loadIncidents = async () => {
+
+    if (!selectedEventId) return;
+
+    try {
+
+      const data = await incidentService.getAll(selectedEventId);
+
+      /* protection anti doublons */
+      const unique = [...new Map(data.map(i => [i.id, i])).values()];
+
+      setIncidents(Array.isArray(unique) ? unique : []);
+
+    } catch (error) {
+
+      console.error("Erreur chargement incidents", error);
+      setIncidents([]);
+
+    }
+
+  };
+
+  /* ---------------- LOAD COMPETITIONS ---------------- */
+
+  const loadCompetitions = async () => {
+
+    try {
+
+      const comps = await competitionService.getCompetitionsByEvent(selectedEventId);
+
+      setCompetitions(Array.isArray(comps) ? comps : []);
+
+    } catch (error) {
+
+      console.error("Erreur chargement competitions", error);
+      setCompetitions([]);
+
+    }
+
+  };
+
+  /* ---------------- GET NAMES ---------------- */
+
   const getCompetitionName = (id) => {
+
     const comp = competitions.find(
       (c) => c.id === id || c.idCompetition === id
     );
+
     return comp ? comp.name : "-";
+
   };
 
+  const getEventName = (id) => {
+
+    const event = events.find((e) => e.id === id);
+
+    return event ? event.name : "-";
+
+  };
+
+  /* ---------------- SORT ---------------- */
+
   const handleSort = (key) => {
+
     let direction = "asc";
+
     if (sortConfig.key === key && sortConfig.direction === "asc") {
       direction = "desc";
     }
+
     setSortConfig({ key, direction });
+
   };
+
+  /* ---------------- SEARCH ---------------- */
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   const filteredIncidents = incidents.filter((incident) => {
+
     if (!normalizedSearch) return true;
 
     return (
@@ -89,9 +165,11 @@ export default function IncidentsPage() {
       (incident.impactLevel || "").toLowerCase().includes(normalizedSearch) ||
       (incident.status || "").toLowerCase().includes(normalizedSearch)
     );
+
   });
 
   const sortedIncidents = [...filteredIncidents].sort((a, b) => {
+
     if (!sortConfig.key) return 0;
 
     let aValue = a[sortConfig.key];
@@ -104,13 +182,66 @@ export default function IncidentsPage() {
     if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
 
     return 0;
+
   });
 
+  /* ---------------- STATUS ---------------- */
+
+  const handleChangeStatus = async (incident) => {
+
+    await incidentService.changeStatus(incident.id, "RESOLU");
+
+    await loadIncidents();
+
+  };
+
+  /* ---------------- DELETE ---------------- */
+
+  const handleDelete = (incident) => {
+
+    setIncidentToDelete(incident);
+    setOpenDelete(true);
+
+  };
+
+  const confirmDelete = async () => {
+
+    if (!incidentToDelete) return;
+
+    await incidentService.delete(incidentToDelete.id);
+
+    setOpenDelete(false);
+    setIncidentToDelete(null);
+
+    await loadIncidents();
+
+  };
+
+  /* ---------------- CLOSE DIALOGS ---------------- */
+
+  const closeDialogs = () => {
+
+    setOpenForm(false);
+    setOpenDetails(false);
+    setOpenDelete(false);
+
+    setSelectedIncident(null);
+    setIncidentToDelete(null);
+
+  };
+
+  /* ---------------- UI ---------------- */
+
   return (
+
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
+
       <Button
         startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/admin")}
+        onClick={() => {
+          closeDialogs();
+          navigate("/admin");
+        }}
         sx={{
           mb: 2,
           textTransform: "none",
@@ -118,26 +249,37 @@ export default function IncidentsPage() {
           px: 3,
           py: 1.1,
           borderRadius: appTheme.radius.pill,
-          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          background: "linear-gradient(135deg,#22D3EE,#3B82F6)",
           color: appTheme.colors.dark,
         }}
       >
         Retour
       </Button>
 
-      <Box sx={{ mb: 2, display: "flex", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
+      >
+
         <Typography sx={{ fontSize: 32, fontWeight: 900 }}>
           Gestion des incidents
         </Typography>
 
         <Button
           startIcon={<AddIcon />}
-          onClick={() => setOpenForm(true)}
+          onClick={() => {
+            setSelectedIncident(null);
+            setOpenForm(true);
+          }}
           sx={{
             textTransform: "none",
             fontWeight: 700,
             px: 3,
-            py: 1.1,
+            py: 1.2,
             borderRadius: appTheme.radius.pill,
             background: appTheme.gradients.navbar,
             color: appTheme.colors.dark,
@@ -145,43 +287,88 @@ export default function IncidentsPage() {
         >
           Créer un incident
         </Button>
-      </Box>
 
-      <Card
-        sx={{
-          mb: 4,
-          p: 3,
-          borderRadius: appTheme.radius.lg,
-          background: appTheme.gradients.card,
-          boxShadow: appTheme.shadows.card,
-        }}
-      >
-        <TextField
-          size="small"
-          placeholder="Rechercher..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </Card>
+      </Box>
 
       <IncidentTable
         incidents={sortedIncidents}
-        competitions={competitions}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
         getCompetitionName={getCompetitionName}
+        getEventName={getEventName}
         onSort={handleSort}
+        onView={(incident) => {
+          setSelectedIncident(incident);
+          setOpenDetails(true);
+        }}
+        onEdit={(incident) => {
+          setSelectedIncident(incident);
+          setOpenForm(true);
+        }}
+        onChangeStatus={handleChangeStatus}
+        onDelete={handleDelete}
       />
 
       <IncidentFormDialog
         open={openForm}
-        onClose={() => setOpenForm(false)}
-        competitions={competitions}
-        onSave={async (form) => {
-          await incidentService.create(form);
-          const updated = await incidentService.getAll();
-          setIncidents(updated);
+        incident={selectedIncident}
+        onClose={() => {
           setOpenForm(false);
+          setSelectedIncident(null);
+        }}
+        onSave={async (form) => {
+
+          const payload = {
+            title: form.title.trim(),
+            description: form.instructions?.trim() || null,
+            impactLevel: form.impactLevel,
+            eventId: form.eventId || selectedEventId,
+            competitionId: form.competitionId || null,
+            trialId: form.trialId || null,
+            siteId: form.siteId || null,
+          };
+
+          if (selectedIncident) {
+            await incidentService.update(selectedIncident.id, payload);
+          } else {
+            await incidentService.create(payload);
+          }
+
+          if (payload.eventId !== selectedEventId) {
+            setSelectedEventId(payload.eventId);
+          } else {
+            await loadIncidents();
+          }
+
+          setOpenForm(false);
+          setSelectedIncident(null);
+
         }}
       />
+
+      <IncidentDetailsDialog
+        open={openDetails}
+        incident={selectedIncident}
+        getCompetitionName={getCompetitionName}
+        getEventName={getEventName}
+        onClose={() => {
+          setOpenDetails(false);
+          setSelectedIncident(null);
+        }}
+      />
+
+      <DeleteIncidentDialog
+        open={openDelete}
+        incident={incidentToDelete}
+        onClose={() => {
+          setOpenDelete(false);
+          setIncidentToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+      />
+
     </Box>
+
   );
+
 }
