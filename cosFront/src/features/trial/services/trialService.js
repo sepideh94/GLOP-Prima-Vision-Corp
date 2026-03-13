@@ -47,6 +47,11 @@ const trialService = {
     return res.data;
   },
 
+  getParticipants: async (trialId) => {
+    const res = await api.get(`/api/trials/${trialId}/participants`);
+    return res.data;
+  },
+
   assignAthletes: async (trialId, athleteIds) => {
     const res = await api.post(`/api/commissioner/trials/${trialId}/athletes`, { athleteIds });
     return res.data;

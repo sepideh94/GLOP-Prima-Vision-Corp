@@ -11,7 +11,6 @@ import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
 export default function Admin() {
-
   const navigate = useNavigate();
 
   const sections = [
@@ -29,7 +28,7 @@ export default function Admin() {
       color: appTheme.colors.green,
       route: "/admin/competitions",
     },
-     {
+    {
       title: "Gestion des volontaires",
       subtitle: "Import et création des volontaires",
       icon: <VolunteerActivism sx={{ fontSize: 42 }} />,
@@ -62,111 +61,95 @@ export default function Admin() {
   return (
     <Box>
       <Typography
-       sx={{
-       fontSize: 32,
-       fontWeight: 900,
-       mb: 7,
-      }}
+        sx={{
+          fontSize: 32,
+          fontWeight: 900,
+          mb: 7,
+        }}
       >
         Tableau de bord
       </Typography>
 
       <Grid container spacing={4}>
-      {sections.map((s) => (
-      <Grid
-        item
-        xs={12}
-        md={6}
-        key={s.title}
-        sx={{
-        display: "flex",
-        justifyContent: "center",
-      }}
-      >
-
-      <Card
-        sx={{
-          width: 260,
-          height: 170,
-          borderRadius: 4,
-          background: appTheme.gradients.card,
-          boxShadow: appTheme.shadows.card,
-          position: "relative",
-          overflow: "hidden",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <Box
-          sx={{
-            position: "absolute",
-            left: 0,
-            top: 24,
-            bottom: 24,
-            width: 4,
-            borderRadius: 6,
-            background: s.color,
-          }}
-        />
-
-        <CardActionArea
-          onClick={() => navigate(s.route)}
-          sx={{ height: "100%" }}
-        >
-          <CardContent
+        {sections.map((s) => (
+          <Grid
+            item
+            xs={12}
+            md={6}
+            key={s.title}
             sx={{
-              height: "100%",
               display: "flex",
-              flexDirection: "column",
-              justifyContent: "flex-start",
-              pt: 3,
-              pl: 3,
-              pr: 3,
-              color: appTheme.colors.textPrimary,
+              justifyContent: "center",
             }}
           >
-            <Box
+            <Card
               sx={{
-                width: 44,
-                height: 44,
-                borderRadius: "50%",
-                background: s.color,
+                width: 260,
+                height: 170,
+                borderRadius: 4,
+                background: appTheme.gradients.card,
+                boxShadow: appTheme.shadows.card,
+                position: "relative",
+                overflow: "hidden",
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mb: 1.5,
-                color: "#020617",
+                flexDirection: "column",
               }}
             >
-              {s.icon}
-            </Box>
+              {/* Barre colorée */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  left: 0,
+                  top: 24,
+                  bottom: 24,
+                  width: 4,
+                  borderRadius: 6,
+                  background: s.color,
+                }}
+              />
 
-            <Typography
-              sx={{
-                fontWeight: 700,
-                fontSize: 14,
-                lineHeight: 1.3,
-                mb: 0.5,
-              }}
-            >
-              {s.title}
-            </Typography>
+              <CardActionArea
+                onClick={() => navigate(s.route)}
+                sx={{ height: "100%" }}
+              >
+                <CardContent
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    pl: 3,
+                    height: "100%",
+                  }}
+                >
+                  <Box sx={{ color: s.color, mb: 1 }}>{s.icon}</Box>
 
-            <Typography
-              sx={{
-                fontSize: 12.5,
-                color: appTheme.colors.textMuted,
-                lineHeight: 1.3,
-              }}
-            >
-              {s.subtitle}
-            </Typography>
-          </CardContent>
-        </CardActionArea>
-      </Card>
-    </Grid>
-  ))}
-</Grid>
-</Box>
-);
+                  <Typography
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: 14,
+                      lineHeight: 1.3,
+                      mb: 0.5,
+                      color: "#ffffff",
+                    }}
+                  >
+                    {s.title}
+                  </Typography>
+
+                  <Typography
+                    sx={{
+                      fontSize: 12.5,
+                      color: appTheme.colors.textMuted,
+                      lineHeight: 1.3,
+                    }}
+                  >
+                    {s.subtitle}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
 }
