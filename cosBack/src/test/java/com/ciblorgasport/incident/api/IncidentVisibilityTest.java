@@ -1,11 +1,7 @@
 package com.ciblorgasport.incident.api;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,8 +9,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.commissionner.Commissionner;
@@ -59,7 +59,7 @@ class IncidentVisibilityTest {
         incidentRepo.save(Incident.builder()
                 .title("I_TOUS")
                 .description("tous")
-                .impactLevel(ImpactLevel.TOUS)
+                .impactLevels(Set.of(ImpactLevel.TOUS))
                 .status(IncidentStatus.EN_COURS)
                 .event(event)
                 .createdBy(createdBy)
@@ -68,7 +68,7 @@ class IncidentVisibilityTest {
         incidentRepo.save(Incident.builder()
                 .title("I_COMMISSIONNER")
                 .description("commissionner only")
-                .impactLevel(ImpactLevel.COMMISSIONNER)
+                .impactLevels(Set.of(ImpactLevel.COMMISSIONNER))
                 .status(IncidentStatus.EN_COURS)
                 .event(event)
                 .createdBy(createdBy)
@@ -77,7 +77,7 @@ class IncidentVisibilityTest {
         incidentRepo.save(Incident.builder()
                 .title("I_ATHLETE")
                 .description("athlete only")
-                .impactLevel(ImpactLevel.ATHLETE)
+                .impactLevels(Set.of(ImpactLevel.ATHLETE))
                 .status(IncidentStatus.EN_COURS)
                 .event(event)
                 .createdBy(createdBy)
@@ -86,7 +86,7 @@ class IncidentVisibilityTest {
         incidentRepo.save(Incident.builder()
                 .title("I_SPECTATOR")
                 .description("spectator only")
-                .impactLevel(ImpactLevel.SPECTATOR)
+                .impactLevels(Set.of(ImpactLevel.SPECTATOR))
                 .status(IncidentStatus.EN_COURS)
                 .event(event)
                 .createdBy(createdBy)
@@ -106,7 +106,8 @@ class IncidentVisibilityTest {
         Event event = createEvent();
         seedImpacts(commissionner, event);
 
-        var auth = new UsernamePasswordAuthenticationToken(commissionner, null, commissionner.getAuthorities());
+        var auth = new UsernamePasswordAuthenticationToken(
+                commissionner, null, commissionner.getAuthorities());
 
         mockMvc.perform(get("/api/incidents")
                         .queryParam("eventId", String.valueOf(event.getId()))
@@ -114,10 +115,10 @@ class IncidentVisibilityTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNER')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='ATHLETE')]").isEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='SPECTATOR')]").isEmpty());
+                .andExpect(jsonPath("$[?(@.title=='I_TOUS')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_COMMISSIONNER')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_ATHLETE')]").isEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_SPECTATOR')]").isEmpty());
     }
 
     @Test
@@ -133,7 +134,8 @@ class IncidentVisibilityTest {
         Event event = createEvent();
         seedImpacts(spectator, event);
 
-        var auth = new UsernamePasswordAuthenticationToken(spectator, null, spectator.getAuthorities());
+        var auth = new UsernamePasswordAuthenticationToken(
+                spectator, null, spectator.getAuthorities());
 
         mockMvc.perform(get("/api/incidents")
                         .queryParam("eventId", String.valueOf(event.getId()))
@@ -141,9 +143,9 @@ class IncidentVisibilityTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[?(@.impactLevel=='TOUS')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='SPECTATOR')]").isNotEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='ATHLETE')]").isEmpty())
-                .andExpect(jsonPath("$[?(@.impactLevel=='COMMISSIONNER')]").isEmpty());
+                .andExpect(jsonPath("$[?(@.title=='I_TOUS')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_SPECTATOR')]").isNotEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_ATHLETE')]").isEmpty())
+                .andExpect(jsonPath("$[?(@.title=='I_COMMISSIONNER')]").isEmpty());
     }
 }
