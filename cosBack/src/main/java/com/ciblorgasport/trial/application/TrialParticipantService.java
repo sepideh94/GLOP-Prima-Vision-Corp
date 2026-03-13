@@ -30,4 +30,6 @@ public interface TrialParticipantService {
      * - FINALE : athlètes ayant participé à une demi-finale du même type
      */
     List<AthleteResponse> getEligibleAthletes(Long trialId);
+
+    public List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds) ;
 }
