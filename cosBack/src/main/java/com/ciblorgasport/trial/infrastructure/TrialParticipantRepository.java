@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.TrialName;
 import com.ciblorgasport.trial.domain.TrialParticipant;
@@ -60,4 +61,6 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
         @Param("categoryGender") CategoryGender categoryGender,
         @Param("roundName") RoundName roundName
     );
+
+	boolean existsByTrialIdAndCompetitorIdAndCompetitorType(Long trialId, Long athleteId, CompetitorType athlete);
 }
