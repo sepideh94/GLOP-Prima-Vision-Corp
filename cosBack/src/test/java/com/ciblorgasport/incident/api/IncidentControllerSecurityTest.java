@@ -1,22 +1,26 @@
 package com.ciblorgasport.incident.api;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.event.infrastructure.EventRepository;
 import com.ciblorgasport.spectator.Spectator;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
-
-import jakarta.transaction.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,6 +34,18 @@ class IncidentControllerSecurityTest {
     @Autowired
     private UserAccountRepository userRepo;
 
+    @Autowired
+    private EventRepository eventRepo;
+
+    private Event createEvent() {
+        Event event = new Event();
+        event.setName("Event test");
+        event.setDescription("desc");
+        event.setStartDate(LocalDateTime.now().plusDays(1));
+        event.setEndDate(LocalDateTime.now().plusDays(2));
+        return eventRepo.save(event);
+    }
+
     @Test
     void admin_can_create_incident() throws Exception {
         Admin admin = Admin.builder()
@@ -40,6 +56,8 @@ class IncidentControllerSecurityTest {
                 .build();
         admin = (Admin) userRepo.save(admin);
 
+        Event event = createEvent();
+
         var auth = new UsernamePasswordAuthenticationToken(admin, null, admin.getAuthorities());
 
         String body = """
@@ -47,15 +65,18 @@ class IncidentControllerSecurityTest {
                   "title": "Test Incident",
                   "description": "From JUnit",
                   "impactLevel": "TOUS",
-                  "competitionId": null
+                  "eventId": %d,
+                  "competitionId": null,
+                  "siteId": null,
+                  "trialId": null
                 }
-                """;
+                """.formatted(event.getId());
 
         mockMvc.perform(post("/api/incidents")
                         .with(authentication(auth))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
-                .andExpect(status().isOk());
+                .andExpect(status().is2xxSuccessful());
     }
 
     @Test
@@ -68,16 +89,21 @@ class IncidentControllerSecurityTest {
                 .build();
         spectator = (Spectator) userRepo.save(spectator);
 
+        Event event = createEvent();
+
         var auth = new UsernamePasswordAuthenticationToken(spectator, null, spectator.getAuthorities());
 
         String body = """
                 {
                   "title": "Should Fail",
-                  "description": "From JUnit",
+                  "description": "Non admin create",
                   "impactLevel": "TOUS",
-                  "competitionId": null
+                  "eventId": %d,
+                  "competitionId": null,
+                  "siteId": null,
+                  "trialId": null
                 }
-                """;
+                """.formatted(event.getId());
 
         mockMvc.perform(post("/api/incidents")
                         .with(authentication(auth))

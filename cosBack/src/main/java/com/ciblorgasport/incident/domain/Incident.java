@@ -6,6 +6,9 @@ import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.event.domain.Event;
+import com.ciblorgasport.site.domain.Site;
+import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.persistence.*;
@@ -36,15 +39,28 @@ public class Incident {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
-    private IncidentStatus status = IncidentStatus.OUVERT;
+    private IncidentStatus status = IncidentStatus.EN_COURS;
 
-    // FK nullable -> competition.id
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Event event;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "competition_id")
-    @OnDelete(action = OnDeleteAction.CASCADE) // si une competition est supprimée, ses incidents aussi
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Competition competition;
 
-    // FK -> user_account.id (created_by)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "site_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Site site;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "trial_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private Trial trial;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by", nullable = false)
     private UserAccount createdBy;
@@ -59,7 +75,7 @@ public class Incident {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
-            this.status = IncidentStatus.OUVERT;
+            this.status = IncidentStatus.EN_COURS;
         }
     }
 

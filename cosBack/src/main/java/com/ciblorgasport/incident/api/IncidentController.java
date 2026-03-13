@@ -24,6 +24,7 @@ import com.ciblorgasport.incident.dto.IncidentUpdateRequest;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -44,9 +45,12 @@ public class IncidentController {
     @GetMapping
     public List<IncidentResponse> list(
             @AuthenticationPrincipal UserAccount user,
+            @RequestParam(value = "eventId") @NotNull Long eventId,
             @RequestParam(value = "impact_level", required = false) ImpactLevel impactLevel,
-            @RequestParam(value = "competitionId", required = false) Long competitionId) {
-        return incidentService.list(user, impactLevel, competitionId);
+            @RequestParam(value = "competitionId", required = false) Long competitionId,
+            @RequestParam(value = "siteId", required = false) Long siteId,
+            @RequestParam(value = "trialId", required = false) Long trialId) {
+        return incidentService.list(user, eventId, impactLevel, competitionId, siteId, trialId);
     }
 
     @GetMapping("/{id}")
