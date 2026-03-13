@@ -19,6 +19,7 @@ import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
+import com.ciblorgasport.team.application.TeamValidationService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -31,6 +32,7 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
+    private final TeamValidationService teamValidationService; 
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -93,34 +95,33 @@ public class AthleteService {
         if (request.getBirthDate() != null) athlete.setBirthDate(request.getBirthDate());
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
-        if (request.getHasAcceptedCharte() != null) athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
         if (request.getHasAcceptedCharte() != null) {
             if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
-                athlete.setHasAcceptedCharte(true);
                 athlete.setCharterAcceptedAt(LocalDateTime.now()); 
             }
-        } 
-        
+            athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
+        }
         Athlete saved = athleteRepository.save(athlete);
         
-        if (saved.isProfileComplete()) {
-            List<Participation> participations = participationRepository
-                    .findByCompetitorIdAndCompetitorType(saved.getId(), CompetitorType.ATHLETE);
-            
-            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
-            participationRepository.saveAll(participations);
-        }
+        this.checkAndConfirmParticipations(saved);
         
         return AthleteResponse.fromEntity(saved);
     }
     
     private void checkAndConfirmParticipations(Athlete athlete) {
-        if (athlete.isProfileComplete()) {
+        if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
             List<Participation> participations = participationRepository
                     .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
             
-            participations.forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
-            participationRepository.saveAll(participations);
+            for (Participation p : participations) {
+                p.setStatus(ParticipationStatus.CONFIRMED);
+                p.setCharterAccepted(true);
+                p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
+                
+                participationRepository.saveAndFlush(p);
+                
+                teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
+            }
         }
     }
 
