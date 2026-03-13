@@ -1,6 +1,7 @@
 package com.ciblorgasport.incident.application;
 
 import java.util.List;
+import java.util.Set;
 
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.IncidentStatus;
@@ -24,7 +25,7 @@ public interface IncidentService {
     List<IncidentResponse> list(
             UserAccount actor,
             Long eventId,
-            ImpactLevel impactLevel,
+            Set<ImpactLevel> impactLevels,
             Long competitionId,
             Long siteId,
             Long trialId

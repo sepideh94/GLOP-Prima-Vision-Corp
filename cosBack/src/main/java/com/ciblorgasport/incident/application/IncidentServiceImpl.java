@@ -1,7 +1,9 @@
 package com.ciblorgasport.incident.application;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -47,13 +49,14 @@ public class IncidentServiceImpl implements IncidentService {
         Competition competition = loadCompetitionOrNull(req.getCompetitionId());
         Site site = loadSiteOrNull(req.getSiteId());
         Trial trial = loadTrialOrNull(req.getTrialId());
+        Set<ImpactLevel> impacts = normalizeImpactLevels(req.getImpactLevels());
 
         validateLinks(event, competition, trial);
 
         Incident incident = Incident.builder()
                 .title(req.getTitle())
                 .description(req.getDescription())
-                .impactLevel(req.getImpactLevel())
+                .impactLevels(impacts)
                 .status(IncidentStatus.EN_COURS)
                 .event(event)
                 .competition(competition)
@@ -62,7 +65,8 @@ public class IncidentServiceImpl implements IncidentService {
                 .createdBy(actor)
                 .build();
 
-        return toResponse(incidentRepository.save(incident));
+        Incident saved = incidentRepository.saveAndFlush(incident);
+        return toResponse(saved);
     }
 
     @Override
@@ -76,18 +80,20 @@ public class IncidentServiceImpl implements IncidentService {
         Competition competition = loadCompetitionOrNull(req.getCompetitionId());
         Site site = loadSiteOrNull(req.getSiteId());
         Trial trial = loadTrialOrNull(req.getTrialId());
+        Set<ImpactLevel> impacts = normalizeImpactLevels(req.getImpactLevels());
 
         validateLinks(event, competition, trial);
 
         incident.setTitle(req.getTitle());
         incident.setDescription(req.getDescription());
-        incident.setImpactLevel(req.getImpactLevel());
+        incident.setImpactLevels(impacts);
         incident.setEvent(event);
         incident.setCompetition(competition);
         incident.setSite(site);
         incident.setTrial(trial);
 
-        return toResponse(incidentRepository.save(incident));
+        Incident saved = incidentRepository.saveAndFlush(incident);
+        return toResponse(saved);
     }
 
     @Override
@@ -98,7 +104,7 @@ public class IncidentServiceImpl implements IncidentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable."));
 
         incident.setStatus(status);
-        return toResponse(incidentRepository.save(incident));
+        return toResponse(incidentRepository.saveAndFlush(incident));
     }
 
     @Override
@@ -117,7 +123,7 @@ public class IncidentServiceImpl implements IncidentService {
         Incident incident = incidentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable."));
 
-        if (!canView(actor, incident.getImpactLevel())) {
+        if (!canView(actor, incident.getImpactLevels())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Accès refusé.");
         }
 
@@ -129,7 +135,7 @@ public class IncidentServiceImpl implements IncidentService {
     public List<IncidentResponse> list(
             UserAccount actor,
             Long eventId,
-            ImpactLevel impactLevel,
+            Set<ImpactLevel> impactLevels,
             Long competitionId,
             Long siteId,
             Long trialId
@@ -141,11 +147,12 @@ public class IncidentServiceImpl implements IncidentService {
         List<Incident> incidents = incidentRepository.findByEvent_Id(eventId);
 
         return incidents.stream()
-                .filter(i -> impactLevel == null || i.getImpactLevel() == impactLevel)
+                .filter(i -> impactLevels == null || impactLevels.isEmpty()
+                        || (i.getImpactLevels() != null && i.getImpactLevels().stream().anyMatch(impactLevels::contains)))
                 .filter(i -> competitionId == null || (i.getCompetition() != null && Objects.equals(i.getCompetition().getId(), competitionId)))
                 .filter(i -> siteId == null || (i.getSite() != null && Objects.equals(i.getSite().getId(), siteId)))
                 .filter(i -> trialId == null || (i.getTrial() != null && Objects.equals(i.getTrial().getId(), trialId)))
-                .filter(i -> canView(actor, i.getImpactLevel()))
+                .filter(i -> canView(actor, i.getImpactLevels()))
                 .map(this::toResponse)
                 .toList();
     }
@@ -156,18 +163,34 @@ public class IncidentServiceImpl implements IncidentService {
         }
     }
 
-    private boolean canView(UserAccount actor, ImpactLevel impact) {
+    private Set<ImpactLevel> normalizeImpactLevels(Set<ImpactLevel> impactLevels) {
+        if (impactLevels == null || impactLevels.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "impactLevels est obligatoire.");
+        }
+
+        Set<ImpactLevel> normalized = new HashSet<>(impactLevels);
+
+        if (normalized.contains(ImpactLevel.TOUS) && normalized.size() > 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "TOUS ne peut pas être combiné avec d'autres impactLevels."
+            );
+        }
+
+        return normalized;
+    }
+
+    private boolean canView(UserAccount actor, Set<ImpactLevel> impacts) {
         if (actor == null) return false;
         if (actor.isAdmin()) return true;
+        if (impacts == null || impacts.isEmpty()) return false;
 
-        if (impact == ImpactLevel.TOUS) return true;
+        if (impacts.contains(ImpactLevel.TOUS)) return true;
 
-        if (impact == ImpactLevel.COMMISSIONNER) return actor.isCommissionner();
-        if (impact == ImpactLevel.ATHLETE) return actor.isAthlete();
-        if (impact == ImpactLevel.VOLONTEER) return actor.isVolonteer();
-        if (impact == ImpactLevel.SPECTATOR) return actor.isSpectator();
-
-        return false;
+        return (impacts.contains(ImpactLevel.COMMISSIONNER) && actor.isCommissionner())
+                || (impacts.contains(ImpactLevel.ATHLETE) && actor.isAthlete())
+                || (impacts.contains(ImpactLevel.VOLONTEER) && actor.isVolonteer())
+                || (impacts.contains(ImpactLevel.SPECTATOR) && actor.isSpectator());
     }
 
     private Event loadEventRequired(Long eventId) {
@@ -184,10 +207,11 @@ public class IncidentServiceImpl implements IncidentService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Competition inconnue."));
 
-        Status status = competition.getStatus();
-        if (status == Status.COMPLETED) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "Impossible de déclarer un incident sur une compétition terminée.");
+        if (competition.getStatus() == Status.COMPLETED) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Impossible de déclarer un incident sur une compétition terminée."
+            );
         }
 
         return competition;
@@ -208,16 +232,16 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private void validateLinks(Event event, Competition competition, Trial trial) {
-        if (competition != null && competition.getParentEvent() != null) {
-            if (!Objects.equals(competition.getParentEvent().getId(), event.getId())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La compétition ne correspond pas à l'event.");
-            }
+        if (competition != null && competition.getParentEvent() != null
+                && !Objects.equals(competition.getParentEvent().getId(), event.getId())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La compétition ne correspond pas à l'event.");
         }
 
         if (trial != null && trial.getCompetition() != null) {
             Competition trialCompetition = trial.getCompetition();
 
-            if (trialCompetition.getParentEvent() != null && !Objects.equals(trialCompetition.getParentEvent().getId(), event.getId())) {
+            if (trialCompetition.getParentEvent() != null
+                    && !Objects.equals(trialCompetition.getParentEvent().getId(), event.getId())) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "L'épreuve ne correspond pas à l'event.");
             }
 
@@ -228,23 +252,17 @@ public class IncidentServiceImpl implements IncidentService {
     }
 
     private IncidentResponse toResponse(Incident incident) {
-        Long eventId = incident.getEvent() == null ? null : incident.getEvent().getId();
-        Long competitionId = incident.getCompetition() == null ? null : incident.getCompetition().getId();
-        Long siteId = incident.getSite() == null ? null : incident.getSite().getId();
-        Long trialId = incident.getTrial() == null ? null : incident.getTrial().getId();
-        Long createdById = incident.getCreatedBy() == null ? null : incident.getCreatedBy().getId();
-
         return IncidentResponse.builder()
                 .id(incident.getId())
                 .title(incident.getTitle())
                 .description(incident.getDescription())
-                .impactLevel(incident.getImpactLevel())
+                .impactLevels(incident.getImpactLevels() == null ? Set.of() : Set.copyOf(incident.getImpactLevels()))
                 .status(incident.getStatus())
-                .eventId(eventId)
-                .competitionId(competitionId)
-                .siteId(siteId)
-                .trialId(trialId)
-                .createdBy(createdById)
+                .eventId(incident.getEvent() == null ? null : incident.getEvent().getId())
+                .competitionId(incident.getCompetition() == null ? null : incident.getCompetition().getId())
+                .siteId(incident.getSite() == null ? null : incident.getSite().getId())
+                .trialId(incident.getTrial() == null ? null : incident.getTrial().getId())
+                .createdBy(incident.getCreatedBy() == null ? null : incident.getCreatedBy().getId())
                 .createdAt(incident.getCreatedAt())
                 .updatedAt(incident.getUpdatedAt())
                 .build();

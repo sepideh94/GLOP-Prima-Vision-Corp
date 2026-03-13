@@ -1,6 +1,8 @@
 package com.ciblorgasport.incident.domain;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -11,8 +13,25 @@ import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.user.domain.UserAccount;
 
-import jakarta.persistence.*;
-import lombok.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "incident")
@@ -32,9 +51,12 @@ public class Incident {
     @Column(columnDefinition = "text")
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "incident_impact_levels", joinColumns = @JoinColumn(name = "incident_id"))
     @Column(name = "impact_level", nullable = false)
-    private ImpactLevel impactLevel;
+    @Enumerated(EnumType.STRING)
+    @Builder.Default
+    private Set<ImpactLevel> impactLevels = new HashSet<>();
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

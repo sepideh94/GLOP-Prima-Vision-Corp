@@ -1,6 +1,7 @@
 package com.ciblorgasport.incident.api;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
@@ -46,11 +47,11 @@ public class IncidentController {
     public List<IncidentResponse> list(
             @AuthenticationPrincipal UserAccount user,
             @RequestParam(value = "eventId") @NotNull Long eventId,
-            @RequestParam(value = "impact_level", required = false) ImpactLevel impactLevel,
+            @RequestParam(value = "impact_level", required = false) Set<ImpactLevel> impactLevels,
             @RequestParam(value = "competitionId", required = false) Long competitionId,
             @RequestParam(value = "siteId", required = false) Long siteId,
             @RequestParam(value = "trialId", required = false) Long trialId) {
-        return incidentService.list(user, eventId, impactLevel, competitionId, siteId, trialId);
+        return incidentService.list(user, eventId, impactLevels, competitionId, siteId, trialId);
     }
 
     @GetMapping("/{id}")
