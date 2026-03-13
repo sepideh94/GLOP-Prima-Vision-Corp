@@ -112,6 +112,11 @@ export default function IncidentDetailsDialog({
     return trial ? trial.name : id;
   };
 
+  const getImpactLabel = (levels) => {
+    if (!levels || !levels.length) return "-";
+    return levels.map((l) => impactLabels[l]).join(", ");
+  };
+
   if (!incident) return null;
 
   return (
@@ -125,8 +130,6 @@ export default function IncidentDetailsDialog({
       <DialogContent>
 
         <Box sx={{ mt: 1 }}>
-
-          {/* INCIDENT BOX */}
 
           <Box
             sx={{
@@ -151,14 +154,11 @@ export default function IncidentDetailsDialog({
 
           <Divider sx={{ mb: 2 }} />
 
-          <DetailRow
-            label="Instructions"
-            value={incident.description}
-          />
+          <DetailRow label="Instructions" value={incident.description} />
 
           <DetailRow
             label="Impact"
-            value={impactLabels[incident.impactLevel]}
+            value={getImpactLabel(incident.impactLevels)}
           />
 
           <DetailRow
@@ -180,8 +180,6 @@ export default function IncidentDetailsDialog({
               </Box>
             }
           />
-
-          {/* EVENT avant compétition */}
 
           <DetailRow
             label="Événement"

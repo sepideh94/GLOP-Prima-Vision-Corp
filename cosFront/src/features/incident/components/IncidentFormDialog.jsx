@@ -35,7 +35,7 @@ const SITE_OPTIONS = [
 const emptyForm = {
   title: "",
   instructions: "",
-  impactLevel: "",
+  impactLevels: [],
   eventId: "",
   competitionId: "",
   trialId: "",
@@ -58,7 +58,7 @@ export default function IncidentFormDialog({
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
 
-  /* -------- LOAD EVENTS -------- */
+  /* ---------------- LOAD EVENTS ---------------- */
 
   useEffect(() => {
 
@@ -76,7 +76,7 @@ export default function IncidentFormDialog({
 
   }, [open]);
 
-  /* -------- INIT FORM -------- */
+  /* ---------------- INIT FORM ---------------- */
 
   useEffect(() => {
 
@@ -86,11 +86,13 @@ export default function IncidentFormDialog({
       setForm({
         title: incident.title || "",
         instructions: incident.description || "",
-        impactLevel: incident.impactLevel || "",
-        eventId: incident.eventId || "",
-        competitionId: incident.competitionId || "",
-        trialId: incident.trialId || "",
-        siteId: incident.siteId || "",
+        impactLevels: Array.isArray(incident.impactLevels)
+          ? incident.impactLevels
+          : [],
+        eventId: incident.eventId ?? "",
+        competitionId: incident.competitionId ?? "",
+        trialId: incident.trialId ?? "",
+        siteId: incident.siteId ?? "",
       });
     } else {
       setForm(emptyForm);
@@ -102,7 +104,7 @@ export default function IncidentFormDialog({
 
   }, [incident, open]);
 
-  /* -------- LOAD COMPETITIONS -------- */
+  /* ---------------- LOAD COMPETITIONS ---------------- */
 
   useEffect(() => {
 
@@ -114,15 +116,11 @@ export default function IncidentFormDialog({
       }
 
       try {
-
         const data = await competitionService.getCompetitionsByEvent(form.eventId);
         setCompetitions(Array.isArray(data) ? data : []);
-
       } catch (err) {
-
         console.error(err);
         setCompetitions([]);
-
       }
 
     };
@@ -131,7 +129,7 @@ export default function IncidentFormDialog({
 
   }, [form.eventId]);
 
-  /* -------- LOAD TRIALS -------- */
+  /* ---------------- LOAD TRIALS ---------------- */
 
   useEffect(() => {
 
@@ -143,15 +141,11 @@ export default function IncidentFormDialog({
       }
 
       try {
-
         const data = await trialService.getTrialsByCompetition(form.competitionId);
         setTrials(Array.isArray(data) ? data : []);
-
       } catch (err) {
-
         console.error(err);
         setTrials([]);
-
       }
 
     };
@@ -160,7 +154,7 @@ export default function IncidentFormDialog({
 
   }, [form.competitionId]);
 
-  /* -------- HANDLE CHANGE -------- */
+  /* ---------------- HANDLE CHANGE ---------------- */
 
   const handleChange = (e) => {
 
@@ -186,18 +180,35 @@ export default function IncidentFormDialog({
 
   };
 
-  /* -------- IMPACT -------- */
+  /* ---------------- IMPACT ---------------- */
 
   const handleImpactChange = (value) => {
 
-    setForm((prev) => ({
-      ...prev,
-      impactLevel: prev.impactLevel === value ? "" : value,
-    }));
+    setForm((prev) => {
+
+      const alreadySelected = prev.impactLevels.includes(value);
+      let nextValues = [];
+
+      if (alreadySelected) {
+        nextValues = prev.impactLevels.filter((item) => item !== value);
+      } else if (value === "TOUS") {
+        nextValues = ["TOUS"];
+      } else {
+        nextValues = prev.impactLevels
+          .filter((item) => item !== "TOUS")
+          .concat(value);
+      }
+
+      return {
+        ...prev,
+        impactLevels: nextValues,
+      };
+
+    });
 
   };
 
-  /* -------- SUBMIT -------- */
+  /* ---------------- SUBMIT ---------------- */
 
   const handleSubmit = async () => {
 
@@ -211,8 +222,16 @@ export default function IncidentFormDialog({
       return;
     }
 
-    if (!form.impactLevel) {
-      setError("Veuillez sélectionner un impact");
+    if (!form.impactLevels.length) {
+      setError("Veuillez sélectionner au moins un impact");
+      return;
+    }
+
+    if (
+      form.impactLevels.includes("TOUS") &&
+      form.impactLevels.length > 1
+    ) {
+      setError("TOUS ne peut pas être combiné avec un autre impact");
       return;
     }
 
@@ -223,11 +242,17 @@ export default function IncidentFormDialog({
       await onSave({
         title: form.title.trim(),
         instructions: form.instructions?.trim() || null,
-        impactLevel: form.impactLevel,
-        eventId: form.eventId,
-        competitionId: form.competitionId || null,
-        trialId: form.trialId || null,
-        siteId: form.siteId || null,
+        impactLevels: form.impactLevels,
+        eventId: Number(form.eventId),
+        competitionId: form.competitionId
+          ? Number(form.competitionId)
+          : null,
+        trialId: form.trialId
+          ? Number(form.trialId)
+          : null,
+        siteId: form.siteId
+          ? Number(form.siteId)
+          : null,
       });
 
       setForm(emptyForm);
@@ -245,7 +270,7 @@ export default function IncidentFormDialog({
 
   };
 
-  /* -------- UI -------- */
+  /* ---------------- UI ---------------- */
 
   return (
 
@@ -291,7 +316,7 @@ export default function IncidentFormDialog({
                   key={option.value}
                   control={
                     <Checkbox
-                      checked={form.impactLevel === option.value}
+                      checked={form.impactLevels.includes(option.value)}
                       onChange={() => handleImpactChange(option.value)}
                     />
                   }
@@ -300,6 +325,8 @@ export default function IncidentFormDialog({
               ))}
             </FormGroup>
           </Box>
+
+          {/* EVENT (OBLIGATOIRE) */}
 
           <TextField
             select
@@ -317,15 +344,19 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
+          {/* COMPETITION */}
+
           <TextField
             select
             label="Compétition (optionnel)"
             name="competitionId"
-            value={form.competitionId}
+            value={form.competitionId || ""}
             onChange={handleChange}
             fullWidth
             disabled={!form.eventId}
           >
+            <MenuItem value="">—</MenuItem>
+
             {competitions.map((comp) => (
               <MenuItem key={comp.id} value={comp.id}>
                 {comp.name}
@@ -333,15 +364,19 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
+          {/* TRIAL */}
+
           <TextField
             select
             label="Épreuve (optionnel)"
             name="trialId"
-            value={form.trialId}
+            value={form.trialId || ""}
             onChange={handleChange}
             fullWidth
             disabled={!form.competitionId}
           >
+            <MenuItem value="">—</MenuItem>
+
             {trials.map((trial) => (
               <MenuItem key={trial.id} value={trial.id}>
                 {trial.name || trial.trialName || `Épreuve #${trial.id}`}
@@ -349,14 +384,18 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
+          {/* SITE */}
+
           <TextField
             select
             label="Site (optionnel)"
             name="siteId"
-            value={form.siteId}
+            value={form.siteId || ""}
             onChange={handleChange}
             fullWidth
           >
+            <MenuItem value="">—</MenuItem>
+
             {SITE_OPTIONS.map((site) => (
               <MenuItem key={site.value} value={site.value}>
                 {site.label}

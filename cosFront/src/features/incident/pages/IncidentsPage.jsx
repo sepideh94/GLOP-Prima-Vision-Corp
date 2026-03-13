@@ -62,7 +62,6 @@ export default function IncidentsPage() {
 
         setEvents(data);
 
-        /* ⚠️ ne définir l'event que si aucun n'est sélectionné */
         if (!selectedEventId && data.length > 0) {
           setSelectedEventId(data[0].id);
         }
@@ -84,7 +83,6 @@ export default function IncidentsPage() {
 
       const data = await incidentService.getAll(selectedEventId);
 
-      /* protection anti doublons */
       const unique = [...new Map(data.map(i => [i.id, i])).values()];
 
       setIncidents(Array.isArray(unique) ? unique : []);
@@ -159,31 +157,41 @@ export default function IncidentsPage() {
 
     if (!normalizedSearch) return true;
 
+    const impacts = (incident.impactLevels || [])
+      .join(" ")
+      .toLowerCase();
+
     return (
       (incident.title || "").toLowerCase().includes(normalizedSearch) ||
       (incident.description || "").toLowerCase().includes(normalizedSearch) ||
-      (incident.impactLevel || "").toLowerCase().includes(normalizedSearch) ||
+      impacts.includes(normalizedSearch) ||
       (incident.status || "").toLowerCase().includes(normalizedSearch)
     );
 
   });
 
-  const sortedIncidents = [...filteredIncidents].sort((a, b) => {
+  /* ---------------- SORT ONLY IF USER CLICKED ---------------- */
 
-    if (!sortConfig.key) return 0;
+  let sortedIncidents = filteredIncidents;
 
-    let aValue = a[sortConfig.key];
-    let bValue = b[sortConfig.key];
+  if (sortConfig.key) {
 
-    if (typeof aValue === "string") aValue = aValue.toLowerCase();
-    if (typeof bValue === "string") bValue = bValue.toLowerCase();
+    sortedIncidents = [...filteredIncidents].sort((a, b) => {
 
-    if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-    if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
 
-    return 0;
+      if (typeof aValue === "string") aValue = aValue.toLowerCase();
+      if (typeof bValue === "string") bValue = bValue.toLowerCase();
 
-  });
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+
+      return 0;
+
+    });
+
+  }
 
   /* ---------------- STATUS ---------------- */
 
@@ -294,7 +302,6 @@ export default function IncidentsPage() {
         incidents={sortedIncidents}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        getCompetitionName={getCompetitionName}
         getEventName={getEventName}
         onSort={handleSort}
         onView={(incident) => {
@@ -318,14 +325,29 @@ export default function IncidentsPage() {
         }}
         onSave={async (form) => {
 
+          if (!form.impactLevels || form.impactLevels.length === 0) {
+            alert("Veuillez sélectionner un impact");
+            return;
+          }
+
           const payload = {
             title: form.title.trim(),
             description: form.instructions?.trim() || null,
-            impactLevel: form.impactLevel,
-            eventId: form.eventId || selectedEventId,
-            competitionId: form.competitionId || null,
-            trialId: form.trialId || null,
-            siteId: form.siteId || null,
+            impactLevels: form.impactLevels,
+
+            eventId: Number(form.eventId || selectedEventId),
+
+            competitionId: form.competitionId
+              ? Number(form.competitionId)
+              : null,
+
+            trialId: form.trialId
+              ? Number(form.trialId)
+              : null,
+
+            siteId: form.siteId
+              ? Number(form.siteId)
+              : null,
           };
 
           if (selectedIncident) {
@@ -334,11 +356,7 @@ export default function IncidentsPage() {
             await incidentService.create(payload);
           }
 
-          if (payload.eventId !== selectedEventId) {
-            setSelectedEventId(payload.eventId);
-          } else {
-            await loadIncidents();
-          }
+          await loadIncidents();
 
           setOpenForm(false);
           setSelectedIncident(null);

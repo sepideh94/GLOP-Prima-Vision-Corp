@@ -9,7 +9,7 @@ import { TextField, InputAdornment, Typography } from "@mui/material";
 import appTheme from "../../../common/theme/appTheme";
 
 const impactLabels = {
-  TOUS: "Tous",
+  TOUS: "Tous les utilisateurs",
   COMMISSIONNER: "Commissaires",
   ATHLETE: "Athlètes",
   VOLONTEER: "Volontaires",
@@ -49,6 +49,11 @@ export default function IncidentTable({
   onDelete,
 }) {
 
+  const getImpactLabel = (levels) => {
+    if (!levels || !levels.length) return "-";
+    return levels.map((l) => impactLabels[l] || l).join(", ");
+  };
+
   return (
     <div className="card" style={{ borderRadius: 22, overflow: "hidden", border: "none" }}>
 
@@ -86,9 +91,7 @@ export default function IncidentTable({
                 Titre <UnfoldMoreIcon sx={{ fontSize: 16 }} />
               </th>
 
-              <th onClick={() => onSort("impactLevel")} style={{ cursor: "pointer" }}>
-                Impact <UnfoldMoreIcon sx={{ fontSize: 16 }} />
-              </th>
+              <th>Impact</th>
 
               <th>Site concerné</th>
 
@@ -117,25 +120,20 @@ export default function IncidentTable({
 
               <tr key={i.id}>
 
-                {/* TITRE */}
                 <td className="fw-bold">{i.title}</td>
 
-                {/* IMPACT */}
                 <td>
-                  {impactLabels[i.impactLevel] || i.impactLevel || "-"}
+                  {getImpactLabel(i.impactLevels)}
                 </td>
 
-                {/* SITE */}
                 <td>
                   {i.siteId ? siteLabels[i.siteId] || i.siteId : "-"}
                 </td>
 
-                {/* EVENT */}
                 <td>
                   {getEventName ? getEventName(i.eventId) : "-"}
                 </td>
 
-                {/* STATUS */}
                 <td>
                   <span
                     style={{
@@ -151,7 +149,6 @@ export default function IncidentTable({
                   </span>
                 </td>
 
-                {/* ACTIONS */}
                 <td>
 
                   <button
