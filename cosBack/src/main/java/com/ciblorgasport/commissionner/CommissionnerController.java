@@ -30,6 +30,8 @@ import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
+import com.ciblorgasport.team.application.TeamImportService;
+import com.ciblorgasport.team.dto.TeamImportResult;
 import com.ciblorgasport.trial.application.TrialParticipantService;
 import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.dto.AssignAthletesRequest;
@@ -58,7 +60,8 @@ public class CommissionnerController {
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
-		private final TrialParticipantService trialParticipantService;
+	private final TrialParticipantService trialParticipantService;
+	private final TeamImportService teamImportService;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -195,4 +198,18 @@ public class CommissionnerController {
         AthleteResponse profile = athleteService.getAthleteProfile(athleteId);
         return ResponseEntity.ok(profile);
     }
+    
+    // ==================== TEAMS ====================
+    
+    
+    @PostMapping("/competitions/{competitionId}/import-teams")
+    public ResponseEntity<TeamImportResult> importTeams(
+            @PathVariable Long competitionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        
+        TeamImportResult result = teamImportService.importTeamsForCompetition(file, competitionId);
+        return ResponseEntity.ok(result);
+    }
+    
+
 }
