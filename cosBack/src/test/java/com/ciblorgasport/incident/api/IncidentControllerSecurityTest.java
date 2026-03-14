@@ -1,9 +1,5 @@
 package com.ciblorgasport.incident.api;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.Test;
@@ -12,8 +8,11 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.admin.Admin;
@@ -64,7 +63,7 @@ class IncidentControllerSecurityTest {
                 {
                   "title": "Test Incident",
                   "description": "From JUnit",
-                  "impactLevel": "TOUS",
+                  "impactLevels": ["TOUS"],
                   "eventId": %d,
                   "competitionId": null,
                   "siteId": null,
@@ -97,7 +96,7 @@ class IncidentControllerSecurityTest {
                 {
                   "title": "Should Fail",
                   "description": "Non admin create",
-                  "impactLevel": "TOUS",
+                  "impactLevels": ["TOUS"],
                   "eventId": %d,
                   "competitionId": null,
                   "siteId": null,

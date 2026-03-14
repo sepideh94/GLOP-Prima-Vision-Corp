@@ -1,8 +1,11 @@
 package com.ciblorgasport.incident.dto;
 
+import java.util.Set;
+
 import com.ciblorgasport.incident.domain.ImpactLevel;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -14,8 +17,8 @@ public class IncidentUpdateRequest {
 
     private String description;
 
-    @NotNull
-    private ImpactLevel impactLevel;
+    @NotEmpty
+    private Set<ImpactLevel> impactLevels;
 
     @NotNull
     private Long eventId;
