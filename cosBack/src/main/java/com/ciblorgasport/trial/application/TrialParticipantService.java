@@ -3,6 +3,8 @@ package com.ciblorgasport.trial.application;
 import java.util.List;
 
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.team.domain.Team;
+import com.ciblorgasport.team.dto.TeamResponse;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 
 public interface TrialParticipantService {
@@ -32,4 +34,8 @@ public interface TrialParticipantService {
     List<AthleteResponse> getEligibleAthletes(Long trialId);
 
     public List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds) ;
+    public List<TeamResponse> getEligibleTeams(Long trialId);
+    public void removeTeam(Long trialId, Long teamId) ;
+
+
 }
