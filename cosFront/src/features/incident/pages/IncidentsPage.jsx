@@ -21,10 +21,8 @@ export default function IncidentsPage() {
   const navigate = useNavigate();
 
   const [incidents, setIncidents] = useState([]);
-  const [competitions, setCompetitions] = useState([]);
   const [events, setEvents] = useState([]);
-
-  const [selectedEventId, setSelectedEventId] = useState(null);
+  const [competitions, setCompetitions] = useState([]);
 
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -40,58 +38,33 @@ export default function IncidentsPage() {
   const [selectedIncident, setSelectedIncident] = useState(null);
   const [incidentToDelete, setIncidentToDelete] = useState(null);
 
+  /* ---------------- LOAD EVENTS ---------------- */
+
   useEffect(() => {
     loadEvents();
   }, []);
 
-  useEffect(() => {
-    if (selectedEventId) {
-      loadIncidents();
-      loadCompetitions();
-    }
-  }, [selectedEventId]);
+  /* ---------------- LOAD DATA AFTER EVENTS ---------------- */
 
-  /* ---------------- LOAD EVENTS ---------------- */
+  useEffect(() => {
+    if (events.length > 0) {
+      loadCompetitions();
+      loadIncidents();
+    }
+  }, [events]);
 
   const loadEvents = async () => {
+
     try {
 
       const data = await competitionService.getEvents();
 
       if (Array.isArray(data)) {
-
         setEvents(data);
-
-        if (!selectedEventId && data.length > 0) {
-          setSelectedEventId(data[0].id);
-        }
-
       }
 
     } catch (error) {
       console.error("Erreur chargement events", error);
-    }
-  };
-
-  /* ---------------- LOAD INCIDENTS ---------------- */
-
-  const loadIncidents = async () => {
-
-    if (!selectedEventId) return;
-
-    try {
-
-      const data = await incidentService.getAll(selectedEventId);
-
-      const unique = [...new Map(data.map(i => [i.id, i])).values()];
-
-      setIncidents(Array.isArray(unique) ? unique : []);
-
-    } catch (error) {
-
-      console.error("Erreur chargement incidents", error);
-      setIncidents([]);
-
     }
 
   };
@@ -102,9 +75,19 @@ export default function IncidentsPage() {
 
     try {
 
-      const comps = await competitionService.getCompetitionsByEvent(selectedEventId);
+      const allCompetitions = [];
 
-      setCompetitions(Array.isArray(comps) ? comps : []);
+      for (const event of events) {
+
+        const comps = await competitionService.getCompetitionsByEvent(event.id);
+
+        if (Array.isArray(comps)) {
+          allCompetitions.push(...comps);
+        }
+
+      }
+
+      setCompetitions(allCompetitions);
 
     } catch (error) {
 
@@ -115,7 +98,47 @@ export default function IncidentsPage() {
 
   };
 
-  /* ---------------- GET NAMES ---------------- */
+  /* ---------------- LOAD INCIDENTS ---------------- */
+
+  const loadIncidents = async () => {
+
+    try {
+
+      const allIncidents = [];
+
+      for (const event of events) {
+
+        const data = await incidentService.getAll(event.id);
+
+        if (Array.isArray(data)) {
+          allIncidents.push(...data);
+        }
+
+      }
+
+      // ordre stable
+      allIncidents.sort((a, b) => a.id - b.id);
+
+      setIncidents(allIncidents);
+
+    } catch (error) {
+
+      console.error("Erreur chargement incidents", error);
+      setIncidents([]);
+
+    }
+
+  };
+
+  /* ---------------- NAME HELPERS ---------------- */
+
+  const getEventName = (id) => {
+
+    const event = events.find((e) => e.id === id);
+
+    return event ? event.name : "-";
+
+  };
 
   const getCompetitionName = (id) => {
 
@@ -124,14 +147,6 @@ export default function IncidentsPage() {
     );
 
     return comp ? comp.name : "-";
-
-  };
-
-  const getEventName = (id) => {
-
-    const event = events.find((e) => e.id === id);
-
-    return event ? event.name : "-";
 
   };
 
@@ -169,8 +184,6 @@ export default function IncidentsPage() {
     );
 
   });
-
-  /* ---------------- SORT ONLY IF USER CLICKED ---------------- */
 
   let sortedIncidents = filteredIncidents;
 
@@ -225,8 +238,6 @@ export default function IncidentsPage() {
 
   };
 
-  /* ---------------- CLOSE DIALOGS ---------------- */
-
   const closeDialogs = () => {
 
     setOpenForm(false);
@@ -237,8 +248,6 @@ export default function IncidentsPage() {
     setIncidentToDelete(null);
 
   };
-
-  /* ---------------- UI ---------------- */
 
   return (
 
@@ -325,29 +334,14 @@ export default function IncidentsPage() {
         }}
         onSave={async (form) => {
 
-          if (!form.impactLevels || form.impactLevels.length === 0) {
-            alert("Veuillez sélectionner un impact");
-            return;
-          }
-
           const payload = {
             title: form.title.trim(),
             description: form.instructions?.trim() || null,
             impactLevels: form.impactLevels,
-
-            eventId: Number(form.eventId || selectedEventId),
-
-            competitionId: form.competitionId
-              ? Number(form.competitionId)
-              : null,
-
-            trialId: form.trialId
-              ? Number(form.trialId)
-              : null,
-
-            siteId: form.siteId
-              ? Number(form.siteId)
-              : null,
+            eventId: Number(form.eventId),
+            competitionId: form.competitionId ? Number(form.competitionId) : null,
+            trialId: form.trialId ? Number(form.trialId) : null,
+            siteId: form.siteId ? Number(form.siteId) : null,
           };
 
           if (selectedIncident) {
@@ -367,8 +361,8 @@ export default function IncidentsPage() {
       <IncidentDetailsDialog
         open={openDetails}
         incident={selectedIncident}
-        getCompetitionName={getCompetitionName}
         getEventName={getEventName}
+        getCompetitionName={getCompetitionName}
         onClose={() => {
           setOpenDetails(false);
           setSelectedIncident(null);
