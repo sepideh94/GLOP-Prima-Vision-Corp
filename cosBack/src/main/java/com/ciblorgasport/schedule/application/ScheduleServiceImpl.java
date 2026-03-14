@@ -3,6 +3,7 @@ package com.ciblorgasport.schedule.application;
 import com.ciblorgasport.schedule.ScheduleRepository;
 import com.ciblorgasport.schedule.domain.ScheduleItem;
 import com.ciblorgasport.schedule.domain.ScheduleType;
+import com.ciblorgasport.schedule.domain.VolunteerTask;
 import com.ciblorgasport.schedule.dto.AthleteTrialScheduleResponse;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -56,6 +58,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Transactional
     public List<ScheduleResponse> createSchedules(ScheduleCreateRequest request, UserAccount currentUser) {
         
+    	
        
         if (currentUser.isCommissionner() && request.getType() != ScheduleType.ATHLETE) {
             throw new AccessDeniedException("Un commissaire ne peut créer que des plannings pour athlètes."); 

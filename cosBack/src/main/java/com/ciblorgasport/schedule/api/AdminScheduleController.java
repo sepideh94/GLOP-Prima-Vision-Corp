@@ -1,6 +1,7 @@
 package com.ciblorgasport.schedule.api;
 
 import com.ciblorgasport.schedule.application.ScheduleService;
+import com.ciblorgasport.schedule.domain.ScheduleType;
 import com.ciblorgasport.schedule.domain.VolunteerTask;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
@@ -27,12 +28,10 @@ public class AdminScheduleController {
      */
     @PostMapping("/create-schedule")
     public ResponseEntity<List<ScheduleResponse>> createSchedules( @RequestBody ScheduleCreateRequest request,@AuthenticationPrincipal UserAccount currentUser) {
-        if (!currentUser.isAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-        List<ScheduleResponse> responses = scheduleService.createSchedules(request, currentUser);
+    	request.setType(ScheduleType.VOLONTEER); 
         
-        return new ResponseEntity<>(responses, HttpStatus.CREATED);
+        List<ScheduleResponse> responses = scheduleService.createSchedules(request, currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responses);
     }
     
     /**
