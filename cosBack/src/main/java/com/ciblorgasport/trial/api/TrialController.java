@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ciblorgasport.trial.application.TrialParticipantService;
 import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.dto.TrialCreateRequest;
+import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
 
@@ -27,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 public class TrialController {
 
     private final TrialService trialService;
+    private final TrialParticipantService trialParticipantService;
 
     @PostMapping
     public ResponseEntity<TrialResponse> createTrial(@Valid @RequestBody TrialCreateRequest request) {
@@ -58,5 +61,10 @@ public class TrialController {
                                                       @Valid @RequestBody TrialUpdateRequest request) {
         TrialResponse updatedTrial = trialService.update(id, request);
         return ResponseEntity.ok(updatedTrial);
+    }
+
+    @GetMapping("/{id}/participants")
+    public ResponseEntity<List<TrialParticipantResponse>> getParticipants(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(trialParticipantService.getByTrialId(id));
     }
 }

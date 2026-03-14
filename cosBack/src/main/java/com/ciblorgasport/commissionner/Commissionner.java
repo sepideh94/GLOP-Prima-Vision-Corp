@@ -18,10 +18,10 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @DiscriminatorValue("COMMISSIONNER")
 public class Commissionner extends UserAccount {
-	
+
 	@Override
 	public String getRoleName() {
-		
+
 		return "ROLE_COMMISSIONNER";
 	}
 
