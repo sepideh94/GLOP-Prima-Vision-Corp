@@ -167,14 +167,16 @@ export default function IncidentTable({
                   <button
                     className="btn"
                     onClick={() => onEdit(i)}
+                    disabled={i.status === "RESOLU"}
                     style={{
                       borderRadius: appTheme.radius.pill,
-                      background: appTheme.gradients.navbar,
+                      background: i.status === "RESOLU" ? "#cbd5e1" : appTheme.gradients.navbar,
                       color: appTheme.colors.dark,
                       marginRight: 6,
+                      opacity: i.status === "RESOLU" ? 0.6 : 1,
                     }}
-                  >
-                    <EditIcon sx={{ fontSize: 16 }} />
+                    >
+                     <EditIcon sx={{ fontSize: 16 }} />
                   </button>
 
                   <button

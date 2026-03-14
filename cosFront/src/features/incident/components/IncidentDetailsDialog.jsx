@@ -17,7 +17,7 @@ import appTheme from "../../../common/theme/appTheme";
 import trialService from "../../trial/services/trialService";
 
 const impactLabels = {
-  TOUS: "Tous",
+  TOUS: "Tous les utilisateurs",
   COMMISSIONNER: "Commissaires",
   ATHLETE: "Athlètes",
   VOLONTEER: "Volontaires",
@@ -87,7 +87,10 @@ export default function IncidentDetailsDialog({
 
     const loadTrials = async () => {
 
-      if (!incident?.competitionId) return;
+      if (!incident?.competitionId) {
+        setTrials([]);
+        return;
+      }
 
       try {
 
@@ -95,26 +98,39 @@ export default function IncidentDetailsDialog({
           incident.competitionId
         );
 
-        setTrials(data || []);
+        setTrials(Array.isArray(data) ? data : []);
 
       } catch (err) {
         console.error(err);
+        setTrials([]);
       }
 
     };
 
     loadTrials();
 
-  }, [incident]);
+  }, [incident?.competitionId]);
 
   const getTrialName = (id) => {
+
+    if (!id) return "-";
+
+    if (!Array.isArray(trials) || trials.length === 0) return id;
+
     const trial = trials.find((t) => t.id === id);
-    return trial ? trial.name : id;
+
+    return trial?.name || trial?.trialName || id;
+
   };
 
   const getImpactLabel = (levels) => {
-    if (!levels || !levels.length) return "-";
-    return levels.map((l) => impactLabels[l]).join(", ");
+
+    if (!Array.isArray(levels) || levels.length === 0) return "-";
+
+    return levels
+      .map((l) => impactLabels[l] || l)
+      .join(", ");
+
   };
 
   if (!incident) return null;
@@ -176,7 +192,7 @@ export default function IncidentDetailsDialog({
                   fontWeight: 600,
                 }}
               >
-                {statusLabels[incident.status]}
+                {statusLabels[incident.status] || incident.status}
               </Box>
             }
           />
@@ -190,7 +206,7 @@ export default function IncidentDetailsDialog({
             label="Compétition"
             value={
               incident.competitionId
-                ? getCompetitionName(incident.competitionId)
+                ? getCompetitionName?.(incident.competitionId)
                 : "-"
             }
           />

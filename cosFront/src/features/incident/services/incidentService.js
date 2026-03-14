@@ -4,8 +4,6 @@ const incidentService = {
 
   async getAll(eventId) {
 
-    if (!eventId) return [];
-
     const res = await api.get("/api/incidents", {
       params: { eventId }
     });

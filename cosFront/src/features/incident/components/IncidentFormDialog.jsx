@@ -55,7 +55,7 @@ export default function IncidentFormDialog({
   const [competitions, setCompetitions] = useState([]);
   const [trials, setTrials] = useState([]);
 
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({ ...emptyForm });
   const [error, setError] = useState("");
 
   /* ---------------- LOAD EVENTS ---------------- */
@@ -83,6 +83,7 @@ export default function IncidentFormDialog({
     if (!open) return;
 
     if (incident) {
+
       setForm({
         title: incident.title || "",
         instructions: incident.description || "",
@@ -94,10 +95,13 @@ export default function IncidentFormDialog({
         trialId: incident.trialId ?? "",
         siteId: incident.siteId ?? "",
       });
+
     } else {
-      setForm(emptyForm);
+
+      setForm({ ...emptyForm });
       setCompetitions([]);
       setTrials([]);
+
     }
 
     setError("");
@@ -116,11 +120,18 @@ export default function IncidentFormDialog({
       }
 
       try {
-        const data = await competitionService.getCompetitionsByEvent(form.eventId);
+
+        const data = await competitionService.getCompetitionsByEvent(
+          Number(form.eventId)
+        );
+
         setCompetitions(Array.isArray(data) ? data : []);
+
       } catch (err) {
+
         console.error(err);
         setCompetitions([]);
+
       }
 
     };
@@ -141,11 +152,18 @@ export default function IncidentFormDialog({
       }
 
       try {
-        const data = await trialService.getTrialsByCompetition(form.competitionId);
+
+        const data = await trialService.getTrialsByCompetition(
+          Number(form.competitionId)
+        );
+
         setTrials(Array.isArray(data) ? data : []);
+
       } catch (err) {
+
         console.error(err);
         setTrials([]);
+
       }
 
     };
@@ -162,7 +180,10 @@ export default function IncidentFormDialog({
 
     setForm((prev) => {
 
-      const updated = { ...prev, [name]: value };
+      const updated = {
+        ...prev,
+        [name]: value === "" ? "" : Number(value),
+      };
 
       if (name === "eventId") {
         updated.competitionId = "";
@@ -190,13 +211,19 @@ export default function IncidentFormDialog({
       let nextValues = [];
 
       if (alreadySelected) {
+
         nextValues = prev.impactLevels.filter((item) => item !== value);
+
       } else if (value === "TOUS") {
+
         nextValues = ["TOUS"];
+
       } else {
+
         nextValues = prev.impactLevels
           .filter((item) => item !== "TOUS")
           .concat(value);
+
       }
 
       return {
@@ -255,7 +282,7 @@ export default function IncidentFormDialog({
           : null,
       });
 
-      setForm(emptyForm);
+      setForm({ ...emptyForm });
 
     } catch (err) {
 
@@ -273,7 +300,6 @@ export default function IncidentFormDialog({
   /* ---------------- UI ---------------- */
 
   return (
-
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
 
       <DialogTitle>
@@ -290,7 +316,7 @@ export default function IncidentFormDialog({
             label="Titre"
             name="title"
             value={form.title}
-            onChange={handleChange}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
             fullWidth
             required
           />
@@ -299,7 +325,7 @@ export default function IncidentFormDialog({
             label="Instructions"
             name="instructions"
             value={form.instructions}
-            onChange={handleChange}
+            onChange={(e) => setForm({ ...form, instructions: e.target.value })}
             multiline
             rows={3}
             fullWidth
@@ -326,13 +352,11 @@ export default function IncidentFormDialog({
             </FormGroup>
           </Box>
 
-          {/* EVENT (OBLIGATOIRE) */}
-
           <TextField
             select
             label="Événement"
             name="eventId"
-            value={form.eventId}
+            value={form.eventId ?? ""}
             onChange={handleChange}
             fullWidth
             required
@@ -344,19 +368,16 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
-          {/* COMPETITION */}
-
           <TextField
             select
             label="Compétition (optionnel)"
             name="competitionId"
-            value={form.competitionId || ""}
+            value={form.competitionId ?? ""}
             onChange={handleChange}
             fullWidth
             disabled={!form.eventId}
           >
             <MenuItem value="">—</MenuItem>
-
             {competitions.map((comp) => (
               <MenuItem key={comp.id} value={comp.id}>
                 {comp.name}
@@ -364,19 +385,16 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
-          {/* TRIAL */}
-
           <TextField
             select
             label="Épreuve (optionnel)"
             name="trialId"
-            value={form.trialId || ""}
+            value={form.trialId ?? ""}
             onChange={handleChange}
             fullWidth
             disabled={!form.competitionId}
           >
             <MenuItem value="">—</MenuItem>
-
             {trials.map((trial) => (
               <MenuItem key={trial.id} value={trial.id}>
                 {trial.name || trial.trialName || `Épreuve #${trial.id}`}
@@ -384,18 +402,15 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
-          {/* SITE */}
-
           <TextField
             select
             label="Site (optionnel)"
             name="siteId"
-            value={form.siteId || ""}
+            value={form.siteId ?? ""}
             onChange={handleChange}
             fullWidth
           >
             <MenuItem value="">—</MenuItem>
-
             {SITE_OPTIONS.map((site) => (
               <MenuItem key={site.value} value={site.value}>
                 {site.label}
@@ -438,7 +453,6 @@ export default function IncidentFormDialog({
       </DialogActions>
 
     </Dialog>
-
   );
 
 }

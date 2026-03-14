@@ -44,13 +44,6 @@ public class AthleteImportService {
     private final AthleteInviteTokenService athleteInviteTokenService;
     private final AthleteInviteBatchService athleteInviteBatchService;
 
-    /**
-     * Importe des athlètes depuis un fichier CSV et les invite à une compétition.
-     *
-     * @param file          Le fichier CSV contenant les données des athlètes
-     * @param competitionId L'ID de la compétition à laquelle inviter les athlètes
-     * @return Le nombre d'athlètes importés et invités
-     */
     @Transactional
     public ImportResult importAthletesForCompetition(MultipartFile file, Long competitionId) throws Exception {
         Competition competition = competitionRepository.findById(competitionId)
@@ -102,9 +95,6 @@ public class AthleteImportService {
         return new ImportResult(created, invited, skipped);
     }
 
-    /**
-     * Récupère un athlète existant ou en crée un nouveau.
-     */
     private Athlete getOrCreateAthlete(CSVRecord record) {
         String email = normalizeEmail(record.get("email"));
 
@@ -165,8 +155,5 @@ public class AthleteImportService {
         return true;
     }
 
-    /**
-     * Résultat de l'import d'athlètes.
-     */
     public record ImportResult(int processed, int invited, int skipped) {}
 }
