@@ -188,7 +188,7 @@ export default function AthleteSchedulePage() {
                       sx={{
                         fontSize: 20,
                         fontWeight: 900,
-                        color: appTheme.colors.dark,
+                        color: appTheme.colors.cyan,
                         flex: 1,
                       }}
                     >
@@ -220,12 +220,12 @@ export default function AthleteSchedulePage() {
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <AccessTimeIcon
-                        sx={{ fontSize: 18, color: appTheme.colors.textMuted }}
+                        sx={{ fontSize: 18, color: "#000000" }}
                       />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: appTheme.colors.textMuted,
+                          color: "#000000",
                         }}
                       >
                         <strong>Début:</strong> {formatDateTime(trial.startTime)}
@@ -234,12 +234,12 @@ export default function AthleteSchedulePage() {
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <AccessTimeIcon
-                        sx={{ fontSize: 18, color: appTheme.colors.textMuted }}
+                        sx={{ fontSize: 18, color: "#000000" }}
                       />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: appTheme.colors.textMuted,
+                          color: "#000000",
                         }}
                       >
                         <strong>Fin:</strong> {formatDateTime(trial.endTime)}
@@ -248,12 +248,12 @@ export default function AthleteSchedulePage() {
 
                     <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
                       <LocationOnIcon
-                        sx={{ fontSize: 18, color: appTheme.colors.textMuted, mt: 0.5 }}
+                        sx={{ fontSize: 18, color: "#000000", mt: 0.5 }}
                       />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: appTheme.colors.textMuted,
+                          color: "#000000",
                         }}
                       >
                         <strong>Lieu:</strong> {trial.siteAddress}
