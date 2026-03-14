@@ -44,16 +44,8 @@ public class AthleteImportService {
     private final AthleteInviteTokenService athleteInviteTokenService;
     private final AthleteInviteBatchService athleteInviteBatchService;
 
-    /**
-     * Importe des athlètes depuis un fichier CSV et les invite à une compétition.
-     *
-     * @param file          Le fichier CSV contenant les données des athlètes
-     * @param competitionId L'ID de la compétition à laquelle inviter les athlètes
-     * @return Le nombre d'athlètes importés et invités
-     */
     @Transactional
     public ImportResult importAthletesForCompetition(MultipartFile file, Long competitionId) throws Exception {
-        // Vérifier que la compétition existe
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new EntityNotFoundException("Compétition non trouvée avec l'ID: " + competitionId));
 
@@ -75,14 +67,18 @@ public class AthleteImportService {
 
                     if (!athlete.isActive()) {
                         String token = athleteInviteTokenService.createInviteToken(athlete);
-                        invitesToSend.add(new AthleteInviteEmail(athlete.getEmail(), athlete.getFirstName(), token));
+                        invitesToSend.add(new AthleteInviteEmail(
+                                athlete.getEmail(),
+                                athlete.getFirstName(),
+                                token));
                     }
                 } else {
-                    skipped++; // Déjà invité
+                    skipped++;
                 }
+
                 created++;
             } catch (Exception e) {
-                log.error("Erreur lors du traitement de la ligne CSV: {}", e.getMessage());
+                log.error("Erreur lors du traitement de la ligne CSV: {}", e.getMessage(), e);
                 skipped++;
             }
         }
@@ -99,16 +95,11 @@ public class AthleteImportService {
         return new ImportResult(created, invited, skipped);
     }
 
-    /**
-     * Récupère un athlète existant ou en crée un nouveau.
-     */
     private Athlete getOrCreateAthlete(CSVRecord record) {
         String email = normalizeEmail(record.get("email"));
 
-        // Vérifier si l'athlète existe déjà
         return athleteRepository.findByEmail(email)
                 .orElseGet(() -> {
-                    // Créer un nouveau athlète
                     String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 
                     CreateUserRequest request = CreateUserRequest.builder()
@@ -127,17 +118,14 @@ public class AthleteImportService {
     }
 
     /**
-     * Invite un athlète à une compétition s'il n'est pas déjà invité.
-     *
-     * @return true si une nouvelle invitation a été créée, false si déjà invité
+     * Si l'athlète a déjà un profil complet, la participation est créée directement
+     * en CONFIRMED. Sinon elle reste en INVITED.
      */
     private boolean inviteAthleteToCompetition(Athlete athlete, Competition competition) {
-        // Vérifier si l'athlète est déjà invité à cette compétition
         boolean alreadyExists = participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorType(
                 competition.getId(),
                 athlete.getId(),
-                CompetitorType.ATHLETE
-        );
+                CompetitorType.ATHLETE);
 
         if (alreadyExists) {
             log.info("L'athlète {} est déjà invité à la compétition {}",
@@ -145,24 +133,25 @@ public class AthleteImportService {
             return false;
         }
 
-        // Créer la participation avec le statut INVITED
+        ParticipationStatus initialStatus =
+                athlete.isProfileComplete()
+                        ? ParticipationStatus.CONFIRMED
+                        : ParticipationStatus.INVITED;
+
         Participation participation = Participation.builder()
                 .competition(competition)
                 .competitorId(athlete.getId())
                 .competitorType(CompetitorType.ATHLETE)
-                .status(ParticipationStatus.INVITED)
+                .status(initialStatus)
                 .build();
 
         participationRepository.save(participation);
 
-        log.info("Athlète {} invité à la compétition {}",
-                athlete.getEmail(), competition.getName());
+        log.info("Athlète {} ajouté à la compétition {} avec le statut {}",
+                athlete.getEmail(), competition.getName(), initialStatus);
 
         return true;
     }
 
-    /**
-     * Résultat de l'import d'athlètes.
-     */
     public record ImportResult(int processed, int invited, int skipped) {}
 }
