@@ -151,10 +151,16 @@ export default function TrialFormDialog({
         trialService.getTrialAthletes(initialData.id),
       ])
         .then(([athletes, participants]) => {
-          setCompetitionAthletes(athletes);
-          setAssignedParticipants(participants);
+          setCompetitionAthletes(athletes || []);
+          setAssignedParticipants(participants || []);
         })
-        .catch(() => setParticipantsError("Erreur lors du chargement des participants"))
+        .catch((err) => {
+          console.error("Erreur lors du chargement des participants:", err);
+          setParticipantsError(
+            err.response?.data?.message || 
+            "Erreur lors du chargement des participants. Vérifiez que des athlètes ont été invités à cette compétition."
+          );
+        })
         .finally(() => setParticipantsLoading(false));
     }
   }, [open, showParticipantsTab, competition?.id, initialData?.id]);
@@ -225,7 +231,14 @@ export default function TrialFormDialog({
         const added = await trialService.assignAthletes(initialData.id, [athlete.id]);
         setAssignedParticipants((prev) => [...prev, ...added]);
       } catch (e) {
-        setParticipantsError(e.response?.data?.message || "Erreur lors de l'assignation de l'athlète");
+        const errorMessage = e.response?.data?.message || "Erreur lors de l'assignation de l'athlète";
+        setParticipantsError(errorMessage);
+        // Si l'erreur indique que la participation n'est pas confirmée, donner plus de détails
+        if (errorMessage.includes("participation confirmée") || errorMessage.includes("participation valide")) {
+          setParticipantsError(
+            errorMessage + " L'athlète doit avoir une participation confirmée (statut INVITED ou CONFIRMED) à cette compétition."
+          );
+        }
       }
     }
   };
@@ -533,11 +546,29 @@ export default function TrialFormDialog({
                   borderRadius: 2,
                 }}
               >
-                {filteredAthletes.length === 0 ? (
+                {participantsError ? (
+                  <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Alert severity="warning" sx={{ mb: 1 }}>
+                      {participantsError}
+                    </Alert>
+                    <Typography variant="body2" sx={{ color: "#888", mt: 1 }}>
+                      Les athlètes doivent avoir une participation confirmée à cette compétition pour être assignés à une épreuve.
+                    </Typography>
+                  </Box>
+                ) : filteredAthletes.length === 0 ? (
                   <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
-                    {competitionAthletes.length === 0
-                      ? "Aucun athlète importé pour cette compétition."
-                      : "Aucun athlète ne correspond à la recherche."}
+                    {competitionAthletes.length === 0 ? (
+                      <>
+                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                          Aucun athlète éligible pour cette compétition.
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: "0.875rem" }}>
+                          Les athlètes doivent avoir une participation confirmée (statut INVITED ou CONFIRMED) pour être assignés à une épreuve.
+                        </Typography>
+                      </>
+                    ) : (
+                      "Aucun athlète ne correspond à la recherche."
+                    )}
                   </Box>
                 ) : (
                   filteredAthletes.map((athlete) => {
@@ -585,12 +616,6 @@ export default function TrialFormDialog({
                   })
                 )}
               </Box>
-            )}
-
-            {participantsError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {participantsError}
-              </Alert>
             )}
           </Box>
         )}

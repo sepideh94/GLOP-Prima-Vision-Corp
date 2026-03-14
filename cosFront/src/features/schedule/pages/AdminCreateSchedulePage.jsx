@@ -340,7 +340,7 @@ export default function AdminCreateSchedulePage() {
               color: appTheme.colors.dark,
             }}
           >
-            + Créer un planning
+Créer un planning
           </Button>
         )}
       </Box>
@@ -442,10 +442,10 @@ export default function AdminCreateSchedulePage() {
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 2 }}>
             <FormControl fullWidth required>
-              <InputLabel>Tâche *</InputLabel>
+              <InputLabel>Tâche</InputLabel>
               <Select
                 value={form.task?.name || form.task || ""}
-                label="Tâche *"
+                label="Tâche"
                 onChange={(e) => {
                   const selectedTask = tasks.find((t) => t.name === e.target.value);
                   setForm({ ...form, task: selectedTask || e.target.value });
@@ -471,7 +471,7 @@ export default function AdminCreateSchedulePage() {
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Date et heure de début *"
+                  label="Date et heure de début"
                   type="datetime-local"
                   value={form.startTime}
                   onChange={(e) => setForm({ ...form, startTime: e.target.value })}
@@ -484,7 +484,7 @@ export default function AdminCreateSchedulePage() {
               </Grid>
               <Grid item xs={12} md={6}>
                 <TextField
-                  label="Date et heure de fin *"
+                  label="Date et heure de fin"
                   type="datetime-local"
                   value={form.endTime}
                   onChange={(e) => setForm({ ...form, endTime: e.target.value })}

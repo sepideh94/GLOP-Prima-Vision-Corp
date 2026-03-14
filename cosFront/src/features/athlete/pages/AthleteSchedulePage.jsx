@@ -9,7 +9,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Grid,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -161,21 +160,31 @@ export default function AthleteSchedulePage() {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 3,
+          }}
+        >
           {schedule.map((trial) => (
-            <Grid item xs={12} md={6} key={trial.trialId}>
-              <Card
-                sx={{
-                  borderRadius: appTheme.radius.lg,
-                  boxShadow: appTheme.shadows.card,
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: appTheme.shadows.cardHover,
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
+            <Card
+              key={trial.trialId}
+              sx={{
+                width: 400,
+                minWidth: 400,
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: appTheme.radius.lg,
+                boxShadow: appTheme.shadows.card,
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: appTheme.shadows.cardHover,
+                },
+              }}
+            >
+                <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", flex: 1 }}>
                   <Box
                     sx={{
                       display: "flex",
@@ -262,9 +271,8 @@ export default function AthleteSchedulePage() {
                   </Box>
                 </CardContent>
               </Card>
-            </Grid>
           ))}
-        </Grid>
+        </Box>
       )}
     </Box>
   );
