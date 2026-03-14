@@ -1,5 +1,7 @@
 import { Card, Box, Typography, Button, Chip } from "@mui/material";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import { useNavigate } from "react-router-dom";
 
 const HEADER_COLORS = {
   INVITED: "linear-gradient(90deg, #2563eb, #1d4ed8)",   
@@ -12,6 +14,7 @@ const formatDate = (dateString) => {
 };
 
 export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
+  const navigate = useNavigate();
   const isConfirmed = competition.status === "CONFIRMED";
   // Si le profil est complet, considérer comme confirmé visuellement
   const showAsConfirmed = isConfirmed || isProfileComplete;
@@ -116,7 +119,32 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
         )}
 
         {showAsConfirmed && (
-          <Chip label="Confirmée" color="success" size="small" />
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Chip label="Confirmée" color="success" size="small" />
+            <Button
+              onClick={() => {
+                const compId = competition.competitionId || competition.id;
+                if (compId) {
+                  navigate(`/athlete/schedule/${compId}`);
+                } else {
+                  console.error("competitionId manquant dans l'objet competition:", competition);
+                }
+              }}
+              startIcon={<CalendarMonthIcon />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 700,
+                backgroundColor: "#16a34a",
+                color: "#fff",
+                px: 2,
+                "&:hover": {
+                  backgroundColor: "#15803d",
+                },
+              }}
+            >
+              Mon planning
+            </Button>
+          </Box>
         )}
       </Box>
     </Card>

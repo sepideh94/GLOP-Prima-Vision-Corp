@@ -50,7 +50,7 @@ export default function Admin() {
       subtitle: "Gérer les horaires et affectations",
       icon: <Schedule sx={{ fontSize: 42 }} />,
       color: "#f97316",
-      route: "/admin/volunteer-schedule",
+      route: "/admin/schedules/create",
     },
   ];
 
