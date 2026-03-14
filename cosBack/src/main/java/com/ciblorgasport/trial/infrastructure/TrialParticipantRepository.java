@@ -60,4 +60,6 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
         @Param("categoryGender") CategoryGender categoryGender,
         @Param("roundName") RoundName roundName
     );
+    
+    List<TrialParticipant> findByAthleteId(Long athleteId);
 }
