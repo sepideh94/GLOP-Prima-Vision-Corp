@@ -14,17 +14,19 @@ import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.team.domain.Team;
+import com.ciblorgasport.team.dto.TeamResponse;
 import com.ciblorgasport.team.infrastructure.TeamRepository;
 import com.ciblorgasport.trial.domain.Participant;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialModeStrategy;
 import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.dto.AthleteSummary;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.RoundName;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -129,17 +131,31 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
      * Helper pour transformer l'entité TrialParticipant en Response avec le bon nom d'affichage.
      */
     private TrialParticipantResponse mapToResponse(TrialParticipant tp) {
-        String displayName = "Inconnu";
-        if (tp.getCompetitorType() == CompetitorType.ATHLETE) {
-            displayName = athleteRepository.findById(tp.getCompetitorId())
+        if (tp.getCompetitorType() == CompetitorType.TEAM) {
+            return teamRepository.findById(tp.getCompetitorId())
+                .map(team -> {
+                    // Mapper les membres de l'équipe
+                    List<AthleteSummary> members = team.getMembers().stream()
+                        .map(athlete -> AthleteSummary.builder()
+                            .id(athlete.getId())
+                            .firstName(athlete.getFirstName())
+                            .lastName(athlete.getLastName())
+                            .build())
+                        .collect(Collectors.toList());
+                    
+                    // Utiliser la méthode avec les membres
+                    return TrialParticipantResponse.fromEntity(tp, team.getName(), members);
+                })
+                .orElse(TrialParticipantResponse.fromEntity(tp, "Équipe inconnue"));
+        } else {
+            // Logique existante pour les athlètes individuels
+            String displayName = athleteRepository.findById(tp.getCompetitorId())
                     .map(a -> a.getFirstName() + " " + a.getLastName())
                     .orElse("Athlète inconnu");
-        } else if (tp.getCompetitorType() == CompetitorType.TEAM) {
-            displayName = teamRepository.findById(tp.getCompetitorId())
-                    .map(Team::getName)
-                    .orElse("Équipe inconnue");
+                    
+            // Utiliser la surcharge sans membres
+            return TrialParticipantResponse.fromEntity(tp, displayName);
         }
-        return TrialParticipantResponse.fromEntity(tp, displayName);
     }
 
     private void validateTrialStateForAssignment(Trial trial) {
@@ -212,6 +228,69 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         List<TrialParticipant> saved = trialParticipantRepository.saveAll(newParticipants);
         return saved.stream().map(this::mapToResponse).collect(Collectors.toList());
+    }
+    
+    @Transactional
+    @Override
+    public void removeTeam(Long trialId, Long teamId) {
+        Trial trial = trialRepository.findById(trialId)
+                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+
+        if (trial.hasStarted()) {
+            throw new IllegalStateException("Série déjà commencée.");
+        }
+
+        TrialParticipant tp = trialParticipantRepository.findByTrialId(trialId).stream()
+                .filter(p -> p.getCompetitorId().equals(teamId) && p.getCompetitorType() == CompetitorType.TEAM)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("Équipe non trouvée dans cette épreuve."));
+
+        trialParticipantRepository.delete(tp);
+    }
+    
+
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<TeamResponse> getEligibleTeams(Long trialId) {
+        Trial trial = trialRepository.findById(trialId)
+                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+        
+        List<Long> confirmedTeamIds = participationRepository
+                .findByCompetition_Id(trial.getCompetition().getId())
+                .stream()
+                .filter(p -> p.getCompetitorType() == CompetitorType.TEAM && p.getStatus() == ParticipationStatus.CONFIRMED)
+                .map(p -> p.getCompetitorId())
+                .collect(Collectors.toList());
+
+        List<Long> alreadyAssignedIds = trialParticipantRepository
+                .findByTrialId(trialId)
+                .stream()
+                .filter(tp -> tp.getCompetitorType() == CompetitorType.TEAM)
+                .map(TrialParticipant::getCompetitorId)
+                .collect(Collectors.toList());
+                
+        confirmedTeamIds.removeAll(alreadyAssignedIds);
+        
+        if (confirmedTeamIds.isEmpty()) return new ArrayList<>();
+        
+        List<Team> eligibleTeams = teamRepository.findAllById(confirmedTeamIds);
+        
+        return eligibleTeams.stream().map(team -> {
+            List<AthleteSummary> members = team.getMembers().stream()
+                .map(athlete -> AthleteSummary.builder()
+                    .id(athlete.getId())
+                    .firstName(athlete.getFirstName())
+                    .lastName(athlete.getLastName())
+                    .build())
+                .collect(Collectors.toList());
+                
+            return TeamResponse.builder()
+                    .id(team.getId())
+                    .name(team.getName())
+                    .members(members)
+                    .build();
+        }).collect(Collectors.toList());
     }
     
     private Participant toParticipant(Team team) {
