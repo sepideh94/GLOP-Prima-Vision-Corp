@@ -1,12 +1,10 @@
 import { Card, Box, Typography, Button, Chip } from "@mui/material";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import EventIcon from "@mui/icons-material/Event";
 import { useNavigate } from "react-router-dom";
-
-const HEADER_COLORS = {
-  INVITED: "linear-gradient(90deg, #2563eb, #1d4ed8)",   
-  CONFIRMED: "linear-gradient(90deg, #16a34a, #15803d)", 
-};
+import appTheme from "../../../common/theme/appTheme";
 
 const formatDate = (dateString) => {
   if (!dateString) return "";
@@ -16,135 +14,185 @@ const formatDate = (dateString) => {
 export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
   const navigate = useNavigate();
   const isConfirmed = competition.status === "CONFIRMED";
-  // Si le profil est complet, considérer comme confirmé visuellement
   const showAsConfirmed = isConfirmed || isProfileComplete;
 
   return (
     <Card
-      elevation={6}
+      elevation={0}
       sx={{
         width: 380,
-        height: 300,
-        borderRadius: 3,
+        borderRadius: appTheme.radius.lg,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        background: appTheme.gradients.card,
+        boxShadow: appTheme.shadows.card,
+        border: `1px solid rgba(34, 211, 238, 0.12)`,
+        transition: "transform 0.3s ease, box-shadow 0.3s ease",
+        "&:hover": {
+          transform: "translateY(-6px)",
+          boxShadow: "0 25px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(34,211,238,0.2)",
+        },
       }}
     >
       {/* ===== HEADER ===== */}
       <Box
         sx={{
-          height: 80,
-          background:
-            showAsConfirmed ? HEADER_COLORS.CONFIRMED : HEADER_COLORS.INVITED,
-          px: 2.5,
-          py: 2,
-          display: "flex",
-          alignItems: "flex-start",
+          px: 3,
+          pt: 2.5,
+          pb: 2,
+          background: "linear-gradient(135deg, rgba(34,211,238,0.15), rgba(163,230,53,0.08))",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
         }}
       >
         <Chip
+          icon={<EventIcon sx={{ fontSize: 16, color: appTheme.colors.cyan + " !important" }} />}
           label={competition.eventName}
           size="small"
           sx={{
-            backgroundColor: "rgba(0,0,0,0.35)",
-            color: "#fff",
+            backgroundColor: "rgba(34, 211, 238, 0.12)",
+            color: appTheme.colors.cyan,
             fontWeight: 700,
+            fontSize: 12,
+            border: "1px solid rgba(34, 211, 238, 0.2)",
           }}
         />
       </Box>
 
       {/* ===== CONTENT ===== */}
-      <Box sx={{ flex: 1, px: 3, py: 2 }}>
-        <Typography sx={{ fontSize: 13, color: "#2563eb" }}>
-          Début : {formatDate(competition.startDate)} &nbsp;|&nbsp; Fin :{" "}
-          {formatDate(competition.endDate)}
-        </Typography>
+      <Box sx={{ flex: 1, px: 3, py: 2.5 }}>
         <Typography
           sx={{
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: 900,
-            mt: 2.2, 
+            color: appTheme.colors.textPrimary,
+            mb: 1.5,
+            letterSpacing: "-0.3px",
           }}
         >
           {competition.competitionName}
         </Typography>
+
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: appTheme.radius.pill,
+              background: "rgba(34, 211, 238, 0.08)",
+            }}
+          >
+            <Typography sx={{ fontSize: 12, color: appTheme.colors.cyan, fontWeight: 600 }}>
+              {formatDate(competition.startDate)}
+            </Typography>
+          </Box>
+          <Typography sx={{ fontSize: 12, color: appTheme.colors.textMuted }}>→</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              px: 1.5,
+              py: 0.5,
+              borderRadius: appTheme.radius.pill,
+              background: "rgba(163, 230, 53, 0.08)",
+            }}
+          >
+            <Typography sx={{ fontSize: 12, color: appTheme.colors.green, fontWeight: 600 }}>
+              {formatDate(competition.endDate)}
+            </Typography>
+          </Box>
+        </Box>
       </Box>
 
       {/* ===== FOOTER ===== */}
       <Box
         sx={{
-          height: 64,
           px: 3,
-          borderTop: "1px solid #e5e7eb",
+          py: 2,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <HourglassBottomIcon
-            sx={{
-              fontSize: 18,
-              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
-            }}
-          />
+        {/* Statut */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
+          {showAsConfirmed ? (
+            <CheckCircleIcon sx={{ fontSize: 18, color: appTheme.colors.green }} />
+          ) : (
+            <HourglassBottomIcon sx={{ fontSize: 18, color: appTheme.colors.yellow }} />
+          )}
           <Typography
             sx={{
               fontSize: 13,
-              color: showAsConfirmed ? "#16a34a" : "#f59e0b",
-              fontWeight: 600,
+              color: showAsConfirmed ? appTheme.colors.green : appTheme.colors.yellow,
+              fontWeight: 700,
             }}
           >
-            {showAsConfirmed ? "Participation confirmée" : "En attente"}
+            {showAsConfirmed ? "Confirmée" : "En attente"}
           </Typography>
         </Box>
 
+        {/* Actions */}
         {!isConfirmed && !isProfileComplete && (
           <Button
             onClick={() => onConfirm(competition)}
             sx={{
               textTransform: "none",
               fontWeight: 700,
-              backgroundColor: "#2563eb",
-              color: "#fff",
-              px: 2,
+              fontSize: 13,
+              px: 2.5,
+              py: 0.8,
+              borderRadius: appTheme.radius.pill,
+              background: appTheme.gradients.navbar,
+              color: appTheme.colors.dark,
+              transition: "all 0.3s ease",
               "&:hover": {
-                backgroundColor: "#1d4ed8",
+                background: appTheme.gradients.navbar,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 15px rgba(34, 211, 238, 0.3)",
               },
             }}
           >
-            Confirmer ma participation
+            Confirmer
           </Button>
         )}
 
         {showAsConfirmed && (
-          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-            <Chip label="Confirmée" color="success" size="small" />
-            <Button
-              onClick={() => {
-                const compId = competition.competitionId || competition.id;
-                if (compId) {
-                  navigate(`/athlete/schedule/${compId}`);
-                } else {
-                  console.error("competitionId manquant dans l'objet competition:", competition);
-                }
-              }}
-              startIcon={<CalendarMonthIcon />}
-              sx={{
-                textTransform: "none",
-                fontWeight: 700,
-                backgroundColor: "#16a34a",
-                color: "#fff",
-                px: 2,
-                "&:hover": {
-                  backgroundColor: "#15803d",
-                },
-              }}
-            >
-              Mon planning
-            </Button>
-          </Box>
+          <Button
+            onClick={() => {
+              const compId = competition.competitionId || competition.id;
+              if (compId) {
+                navigate(`/athlete/schedule/${compId}`);
+              } else {
+                console.error("competitionId manquant dans l'objet competition:", competition);
+              }
+            }}
+            startIcon={<CalendarMonthIcon sx={{ fontSize: 18 }} />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: 13,
+              px: 2.5,
+              py: 0.8,
+              borderRadius: appTheme.radius.pill,
+              whiteSpace: "nowrap",
+              background: appTheme.gradients.navbar,
+              color: appTheme.colors.dark,
+              transition: "all 0.3s ease",
+              "&:hover": {
+                background: appTheme.gradients.navbar,
+                transform: "translateY(-1px)",
+                boxShadow: "0 4px 15px rgba(34, 211, 238, 0.3)",
+              },
+            }}
+          >
+            Mon planning
+          </Button>
         )}
       </Box>
     </Card>
