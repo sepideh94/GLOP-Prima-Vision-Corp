@@ -153,7 +153,7 @@ public void sendIncidentNotificationEmail(String to, String displayName, String 
 
             %s
 
-            Pour plus d'informations, veuillez vous connecter à votre profil :
+            Pour consulter les détails, veuillez vous connecter à votre espace :
             %s
 
             Cordialement,
