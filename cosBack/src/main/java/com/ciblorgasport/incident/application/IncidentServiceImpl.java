@@ -22,6 +22,7 @@ import com.ciblorgasport.incident.dto.IncidentCreateRequest;
 import com.ciblorgasport.incident.dto.IncidentResponse;
 import com.ciblorgasport.incident.dto.IncidentUpdateRequest;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
+import com.ciblorgasport.notification.application.IncidentNotificationService;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.domain.Trial;
@@ -40,6 +41,7 @@ public class IncidentServiceImpl implements IncidentService {
     private final CompetitionRepository competitionRepository;
     private final SiteRepository siteRepository;
     private final TrialRepository trialRepository;
+    private final IncidentNotificationService incidentNotificationService;
 
     @Override
     public IncidentResponse create(UserAccount actor, IncidentCreateRequest req) {
@@ -66,6 +68,7 @@ public class IncidentServiceImpl implements IncidentService {
                 .build();
 
         Incident saved = incidentRepository.saveAndFlush(incident);
+        incidentNotificationService.notifyIncidentCreated(saved);
         return toResponse(saved);
     }
 
