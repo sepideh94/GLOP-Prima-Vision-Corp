@@ -76,7 +76,7 @@ export default function UsersManagementPage() {
     try {
       setLoading(true);
       const response = await userService.getUsers();
-      
+
       // L'endpoint retourne une liste simple d'utilisateurs (List<UserResponse>)
       if (Array.isArray(response)) {
         setUsers(response);
@@ -89,7 +89,7 @@ export default function UsersManagementPage() {
       console.error("Erreur lors du chargement des utilisateurs:", err);
       setError(
         err.response?.data?.message ||
-          "Erreur lors du chargement des utilisateurs"
+          "Erreur lors du chargement des utilisateurs",
       );
       setOpenSnackbar(true);
       setUsers([]);
@@ -126,47 +126,55 @@ export default function UsersManagementPage() {
       }
 
       console.log("Payload envoyé:", payload);
-      
+
       const result = await userService.createCommissioner(payload);
       console.log("Commissaire créé avec succès:", result);
-      
+
       // Afficher un message de succès indiquant qu'un email a été envoyé
       setSuccessMessage(
-        `Commissaire créé avec succès. Un email d'invitation a été envoyé à ${result.email || payload.email}.`
+        `Commissaire créé avec succès. Un email d'invitation a été envoyé à ${result.email || payload.email}.`,
       );
       setOpenSnackbar(true);
       setOpenForm(false);
-      
+
       // Recharger la liste des utilisateurs
       loadUsers();
     } catch (err) {
       console.error("Erreur complète:", err);
       console.error("Response status:", err.response?.status);
-      console.error("Response data:", JSON.stringify(err.response?.data, null, 2));
-      
+      console.error(
+        "Response data:",
+        JSON.stringify(err.response?.data, null, 2),
+      );
+
       // Extraire le message d'erreur du backend (format ApiError)
       let errorMsg = "Erreur lors de la création du commissaire";
-      
+
       if (err.response?.data) {
         const data = err.response.data;
-        
+
         // Format ApiError du backend
         if (data.message) {
           errorMsg = data.message;
-          
+
           // Si il y a des erreurs de validation, les ajouter
-          if (data.validationErrors && Object.keys(data.validationErrors).length > 0) {
-            const validationMsgs = Object.values(data.validationErrors).join(', ');
+          if (
+            data.validationErrors &&
+            Object.keys(data.validationErrors).length > 0
+          ) {
+            const validationMsgs = Object.values(data.validationErrors).join(
+              ", ",
+            );
             errorMsg += ` : ${validationMsgs}`;
           }
         }
         // Si c'est une string
-        else if (typeof data === 'string') {
+        else if (typeof data === "string") {
           errorMsg = data;
         }
         // Si c'est un tableau d'erreurs
         else if (Array.isArray(data)) {
-          errorMsg = data.map(e => e.message || e).join(', ');
+          errorMsg = data.map((e) => e.message || e).join(", ");
         }
         // Si c'est un objet avec une erreur
         else if (data.error) {
@@ -175,7 +183,7 @@ export default function UsersManagementPage() {
       } else if (err.message) {
         errorMsg = err.message;
       }
-      
+
       throw new Error(errorMsg);
     }
   };
@@ -187,8 +195,7 @@ export default function UsersManagementPage() {
       setOpenDetailsDialog(true);
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "Erreur lors du chargement des détails"
+        err.response?.data?.message || "Erreur lors du chargement des détails",
       );
       setOpenSnackbar(true);
     }
@@ -205,19 +212,19 @@ export default function UsersManagementPage() {
     setConfirmActionType("toggle");
     setConfirmAction(() => async () => {
       try {
-        const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+        const isActive = user.isAccountActive;
         await userService.toggleUserStatus(user.id, !isActive);
         setSuccessMessage(
           isActive
             ? "Utilisateur désactivé avec succès"
-            : "Utilisateur activé avec succès"
+            : "Utilisateur activé avec succès",
         );
         setOpenSnackbar(true);
         loadUsers();
       } catch (err) {
         setError(
           err.response?.data?.message ||
-            "Erreur lors de la modification du statut"
+            "Erreur lors de la modification du statut",
         );
         setOpenSnackbar(true);
       }
@@ -236,7 +243,7 @@ export default function UsersManagementPage() {
       } catch (err) {
         setError(
           err.response?.data?.message ||
-            "Erreur lors de la réinitialisation du mot de passe"
+            "Erreur lors de la réinitialisation du mot de passe",
         );
         setOpenSnackbar(true);
       }
@@ -270,8 +277,8 @@ export default function UsersManagementPage() {
       ROLE_COMMISSIONNER: "Commissaire",
       ATHLETE: "Athlète",
       ROLE_ATHLETE: "Athlète",
-      VOLUNTEER: "Bénévole",
-      ROLE_VOLUNTEER: "Bénévole",
+      VOLUNTEER: "Volontaire",
+      ROLE_VOLUNTEER: "Volontaire",
       SPECTATOR: "Spectateur",
       ROLE_SPECTATOR: "Spectateur",
     };
@@ -308,13 +315,14 @@ export default function UsersManagementPage() {
     // Filtre par recherche
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      const name = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
+      const name =
+        `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
       const email = (user.email || "").toLowerCase();
       if (!name.includes(search) && !email.includes(search)) {
         return false;
       }
     }
-    
+
     // Filtre par rôle
     if (roleFilter !== "ALL") {
       const userRole = (user.role || "").toUpperCase();
@@ -323,10 +331,10 @@ export default function UsersManagementPage() {
         return false;
       }
     }
-    
+
     // Filtre par statut (isAccountActive dans develop)
     if (statusFilter !== "ALL") {
-      const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+      const isActive = user.isAccountActive;
       if (statusFilter === "ACTIVE" && !isActive) {
         return false;
       }
@@ -334,17 +342,19 @@ export default function UsersManagementPage() {
         return false;
       }
     }
-    
+
     return true;
   });
 
   // Pagination côté client
   const filteredUsers = allFilteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
-  
-  const totalFilteredPages = Math.ceil(allFilteredUsers.length / ITEMS_PER_PAGE);
+
+  const totalFilteredPages = Math.ceil(
+    allFilteredUsers.length / ITEMS_PER_PAGE,
+  );
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
@@ -439,7 +449,7 @@ export default function UsersManagementPage() {
             <MenuItem value="ADMIN">Administrateur</MenuItem>
             <MenuItem value="COMMISSIONNER">Commissaire</MenuItem>
             <MenuItem value="ATHLETE">Athlète</MenuItem>
-            <MenuItem value="VOLUNTEER">Bénévole</MenuItem>
+            <MenuItem value="VOLONTEER">Volontaire</MenuItem>
             <MenuItem value="SPECTATOR">Spectateur</MenuItem>
           </Select>
         </FormControl>
@@ -479,19 +489,29 @@ export default function UsersManagementPage() {
             <Table>
               <TableHead>
                 <TableRow sx={{ background: appTheme.gradients.card }}>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Nom
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Email
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Rôle
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Statut
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Actions
                   </TableCell>
                 </TableRow>
@@ -525,7 +545,9 @@ export default function UsersManagementPage() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{getStatusChip(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)}</TableCell>
+                      <TableCell>
+                        {getStatusChip(user.isAccountActive)}
+                      </TableCell>
                       <TableCell>
                         <Box sx={{ display: "flex", gap: 1 }}>
                           <Tooltip title="Voir les détails (bientôt disponible)">
@@ -533,7 +555,10 @@ export default function UsersManagementPage() {
                               <IconButton
                                 size="small"
                                 disabled
-                                sx={{ color: appTheme.colors.cyan, opacity: 0.5 }}
+                                sx={{
+                                  color: appTheme.colors.cyan,
+                                  opacity: 0.5,
+                                }}
                               >
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
@@ -541,7 +566,7 @@ export default function UsersManagementPage() {
                           </Tooltip>
                           <Tooltip
                             title={
-                              (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
+                              user.isAccountActive
                                 ? "Désactiver (bientôt disponible)"
                                 : "Activer (bientôt disponible)"
                             }
@@ -551,13 +576,13 @@ export default function UsersManagementPage() {
                                 size="small"
                                 disabled
                                 sx={{
-                                  color: (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
+                                  color: user.isAccountActive
                                     ? "#ef4444"
                                     : "#22c55e",
                                   opacity: 0.5,
                                 }}
                               >
-                                {(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? (
+                                {user.isAccountActive ? (
                                   <BlockIcon fontSize="small" />
                                 ) : (
                                   <CheckCircleIcon fontSize="small" />
@@ -570,7 +595,10 @@ export default function UsersManagementPage() {
                               <IconButton
                                 size="small"
                                 disabled
-                                sx={{ color: appTheme.colors.violet, opacity: 0.5 }}
+                                sx={{
+                                  color: appTheme.colors.violet,
+                                  opacity: 0.5,
+                                }}
                               >
                                 <LockResetIcon fontSize="small" />
                               </IconButton>
@@ -614,7 +642,9 @@ export default function UsersManagementPage() {
         <DialogTitle>Détails de l'utilisateur</DialogTitle>
         <DialogContent>
           {selectedUser && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+            >
               <Typography>
                 <strong>Nom:</strong> {selectedUser.firstName}{" "}
                 {selectedUser.lastName}
@@ -627,7 +657,7 @@ export default function UsersManagementPage() {
               </Typography>
               <Typography>
                 <strong>Statut:</strong>{" "}
-                {selectedUser.enabled ? "Actif" : "Inactif"}
+                {selectedUser.isAccountActive ? "Actif" : "Inactif"}
               </Typography>
               {selectedUser.createdAt && (
                 <Typography>
@@ -654,9 +684,7 @@ export default function UsersManagementPage() {
             {selectedUser &&
               (confirmActionType === "toggle"
                 ? `Êtes-vous sûr de vouloir ${
-                    selectedUser.enabled
-                      ? "désactiver"
-                      : "activer"
+                    selectedUser.isAccountActive ? "désactiver" : "activer"
                   } cet utilisateur ?`
                 : "Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ?")}
           </Typography>
@@ -679,7 +707,6 @@ export default function UsersManagementPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
 
       {/* FORMULAIRE CRÉATION COMMISSAIRE */}
       <CommissionerFormDialog
