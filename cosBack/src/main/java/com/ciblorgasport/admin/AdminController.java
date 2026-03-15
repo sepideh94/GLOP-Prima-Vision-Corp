@@ -1,5 +1,6 @@
 package com.ciblorgasport.admin;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -169,12 +170,16 @@ public class AdminController {
        
     	String summary = analyticsService.generateWeeklyReportSummary();
         
-        List<byte[]> imageBytesList = request.getChartImagesBase64().stream()
-        	    .<byte[]>map((String base64) -> { 
-        	        String cleanBase64 = base64.contains(",") ? base64.split(",")[1] : base64;
-        	        return Base64.getDecoder().decode(cleanBase64);
-        	    })
-        	    .collect(Collectors.toList());
+    	List<byte[]> imageBytesList = new ArrayList<>();
+
+        if (request != null && request.getChartImagesBase64() != null) {
+            imageBytesList = request.getChartImagesBase64().stream()
+                    .<byte[]>map((String base64) -> { 
+                        String cleanBase64 = base64.contains(",") ? base64.split(",")[1] : base64;
+                        return Base64.getDecoder().decode(cleanBase64);
+                    })
+                    .collect(Collectors.toList());
+        }
 
         byte[] pdfBytes = pdfGeneratorService.generatePdfReport(summary, imageBytesList);
 
