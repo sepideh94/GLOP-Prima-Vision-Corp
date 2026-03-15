@@ -1,5 +1,6 @@
 package com.ciblorgasport.security.services;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
@@ -43,7 +44,10 @@ class AuthenticationServiceTest {
     private EmailService emailService;
     @Mock
     private ActivationTokenRepository activationTokenRepository;
-
+    
+    @Mock
+    private AnalyticsService analyticsService;
+    
     @InjectMocks
     private AuthenticationService authenticationService;
 
