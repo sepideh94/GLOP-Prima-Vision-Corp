@@ -12,4 +12,6 @@ public interface AthleteRepository extends JpaRepository<Athlete, Long> {
     Optional<Athlete> findByEmail(String email);
 
     List<Athlete> findAllByOrderByLastNameAsc();
+
+	boolean existsByEmail(String email);
 }

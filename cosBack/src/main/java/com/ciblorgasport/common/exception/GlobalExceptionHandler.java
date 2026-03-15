@@ -17,8 +17,8 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
-import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
-import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
+import com.ciblorgasport.common.exception.TrialNotFoundException;
+import com.ciblorgasport.common.exception.TrialNotCompletedException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -66,6 +66,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotFoundException.class)
     public ResponseEntity<ApiError> handleTrialNotFoundException(
+            TrialNotFoundException ex, HttpServletRequest request) {
             TrialNotFoundException ex,
             HttpServletRequest request
     ) {
@@ -82,6 +83,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotCompletedException.class)
     public ResponseEntity<ApiError> handleTrialNotCompletedException(
+            TrialNotCompletedException ex, HttpServletRequest request) {
             TrialNotCompletedException ex,
             HttpServletRequest request
     ) {

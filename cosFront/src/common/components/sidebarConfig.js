@@ -3,6 +3,7 @@ import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 const sidebarConfig = {
   ADMIN: [
@@ -16,7 +17,12 @@ const sidebarConfig = {
     {
       label: "Gestion des volontaires",
       icon: VolunteerActivismIcon,
-      path: "/admin/volunteers",
+      path: "/admin/volunteers"
+    },
+    {
+      label: "Gestion des incidents",
+      icon: ReportProblemIcon,
+      path: "/admin/incidents",
     },
     {
       label: "Gestion des utilisateurs",

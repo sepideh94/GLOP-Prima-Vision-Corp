@@ -145,12 +145,17 @@ public class AthleteImportService {
             return false;
         }
 
-        // Créer la participation avec le statut INVITED
+        // Si le profil de l'athlète est déjà complet (ex : athlète existant ré-invité),
+        // confirmer directement la participation sans attendre une action manuelle.
+        ParticipationStatus initialStatus = athlete.isProfileComplete()
+                ? ParticipationStatus.CONFIRMED
+                : ParticipationStatus.INVITED;
+
         Participation participation = Participation.builder()
                 .competition(competition)
                 .competitorId(athlete.getId())
                 .competitorType(CompetitorType.ATHLETE)
-                .status(ParticipationStatus.INVITED)
+                .status(initialStatus)
                 .build();
 
         participationRepository.save(participation);

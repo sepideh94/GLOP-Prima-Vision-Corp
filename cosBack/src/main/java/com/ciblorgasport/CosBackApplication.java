@@ -1,5 +1,7 @@
 package com.ciblorgasport;
 
+import java.util.TimeZone;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -11,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class CosBackApplication {
 
     public static void main(String[] args) {
+        TimeZone.setDefault(TimeZone.getTimeZone("Europe/Paris"));
         SpringApplication.run(CosBackApplication.class, args);
     }
     
