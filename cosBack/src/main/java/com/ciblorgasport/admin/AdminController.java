@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.analytics.application.PdfGeneratorService;
 import com.ciblorgasport.commissionner.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -49,6 +52,9 @@ public class AdminController {
     
     @Autowired
     private final AnalyticsService analyticsService;
+    
+    @Autowired
+    private final PdfGeneratorService pdfGeneratorService;
     
     @PostMapping("/create-commissaire")
     public ResponseEntity<?> createCommissaire(@RequestBody CreateCommissionnerRequest request) {
@@ -147,12 +153,29 @@ public class AdminController {
     }
     
 
-
     @GetMapping("/report-summary")
     public ResponseEntity<String> getWeeklyReportSummary() {
         String summary = analyticsService.generateWeeklyReportSummary();
         
         return ResponseEntity.ok(summary);
     }
+    
+    @GetMapping("/report/download")
+    public ResponseEntity<byte[]> downloadReport() {
+
+    	String summary = analyticsService.generateWeeklyReportSummary();
+        
+        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(summary);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+
+        headers.setContentDispositionFormData("attachment", "rapport_hebdomadaire.pdf");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+    }
+    
 
 }
