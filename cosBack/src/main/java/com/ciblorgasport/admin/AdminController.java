@@ -1,7 +1,10 @@
 package com.ciblorgasport.admin;
 
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -149,6 +152,7 @@ public class AdminController {
                 .totalLoginsWeek(analyticsService.getWeeklyCount("LOGIN"))
                 .totalIncidentsWeek(analyticsService.getWeeklyCount("INCIDENT_CREATED"))
                 .totalVolonteers(analyticsService.getTotalVolonteers())
+                .loginHistory(analyticsService.getWeeklyLoginHistory())
                 .build());
     }
     
@@ -160,17 +164,24 @@ public class AdminController {
         return ResponseEntity.ok(summary);
     }
     
-    @GetMapping("/report/download")
-    public ResponseEntity<byte[]> downloadReport() {
-
+    @PostMapping("/report-download")
+    public ResponseEntity<byte[]> downloadReport(@RequestBody(required = false) ExportReportRequest request) {        
+       
     	String summary = analyticsService.generateWeeklyReportSummary();
         
-        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(summary);
+        List<byte[]> imageBytesList = request.getChartImagesBase64().stream()
+        	    .<byte[]>map((String base64) -> { 
+        	        String cleanBase64 = base64.contains(",") ? base64.split(",")[1] : base64;
+        	        return Base64.getDecoder().decode(cleanBase64);
+        	    })
+        	    .collect(Collectors.toList());
+
+        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(summary, imageBytesList);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
-
-        headers.setContentDispositionFormData("attachment", "rapport_hebdomadaire.pdf");
+        headers.setContentDispositionFormData("attachment", "rapport_activite_marius.pdf");
+        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
 
         return ResponseEntity.ok()
                 .headers(headers)
