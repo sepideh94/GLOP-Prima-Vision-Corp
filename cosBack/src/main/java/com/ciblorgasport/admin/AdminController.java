@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.commissionner.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -46,6 +47,8 @@ public class AdminController {
     @Autowired
     private final VolonteerCreationService volonteerCreationService;
     
+    @Autowired
+    private final AnalyticsService analyticsService;
     
     @PostMapping("/create-commissaire")
     public ResponseEntity<?> createCommissaire(@RequestBody CreateCommissionnerRequest request) {
@@ -131,4 +134,25 @@ public class AdminController {
                 "temporaryPassword", tempPassword
         ));
     }
+    
+    // ==================== Analytics ====================
+    
+    @GetMapping("/stats")
+    public ResponseEntity<AdminStatsResponse> getDashboardStats() {
+        return ResponseEntity.ok(AdminStatsResponse.builder()
+                .totalLoginsWeek(analyticsService.getWeeklyCount("LOGIN"))
+                .totalIncidentsWeek(analyticsService.getWeeklyCount("INCIDENT_CREATED"))
+                .totalVolonteers(analyticsService.getTotalVolonteers())
+                .build());
+    }
+    
+
+
+    @GetMapping("/report-summary")
+    public ResponseEntity<String> getWeeklyReportSummary() {
+        String summary = analyticsService.generateWeeklyReportSummary();
+        
+        return ResponseEntity.ok(summary);
+    }
+
 }
