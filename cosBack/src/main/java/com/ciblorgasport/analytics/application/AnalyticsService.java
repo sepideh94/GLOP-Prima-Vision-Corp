@@ -1,5 +1,6 @@
 package com.ciblorgasport.analytics.application;
 
+import com.ciblorgasport.admin.ChartPointResponse;
 import com.ciblorgasport.analytics.domain.SystemLog;
 import com.ciblorgasport.analytics.infrastructure.SystemLogRepository;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
@@ -8,7 +9,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -92,5 +97,21 @@ public class AnalyticsService {
             usageStatus, logins, usageComment, securityAlert, volunteerStatus, volunteers,
             (incidents > 5 || volunteers < 50) ? "Action prioritaire requise" : "Poursuivre l'exploitation normale"
         );
+    }
+    
+    public List<ChartPointResponse> getWeeklyLoginHistory() {
+        List<ChartPointResponse> history = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM");
+
+        for (int i = 6; i >= 0; i--) {
+            LocalDateTime startOfDay = LocalDate.now().minusDays(i).atStartOfDay();
+            LocalDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+            
+            long count = logRepository.countActionsInRange("LOGIN", startOfDay, endOfDay);
+            String label = startOfDay.format(formatter);
+            
+            history.add(new ChartPointResponse(label, count));
+        }
+        return history;
     }
 }
