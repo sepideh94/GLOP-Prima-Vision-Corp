@@ -66,7 +66,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotFoundException.class)
     public ResponseEntity<ApiError> handleTrialNotFoundException(
-            TrialNotFoundException ex, HttpServletRequest request) {
             TrialNotFoundException ex,
             HttpServletRequest request
     ) {
@@ -83,7 +82,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotCompletedException.class)
     public ResponseEntity<ApiError> handleTrialNotCompletedException(
-            TrialNotCompletedException ex, HttpServletRequest request) {
             TrialNotCompletedException ex,
             HttpServletRequest request
     ) {
