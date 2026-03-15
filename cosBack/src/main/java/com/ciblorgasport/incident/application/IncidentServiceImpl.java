@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
@@ -40,6 +41,7 @@ public class IncidentServiceImpl implements IncidentService {
     private final CompetitionRepository competitionRepository;
     private final SiteRepository siteRepository;
     private final TrialRepository trialRepository;
+    private final AnalyticsService analyticsService;
 
     @Override
     public IncidentResponse create(UserAccount actor, IncidentCreateRequest req) {
@@ -66,6 +68,8 @@ public class IncidentServiceImpl implements IncidentService {
                 .build();
 
         Incident saved = incidentRepository.saveAndFlush(incident);
+        System.out.println("=== TRACKING INCIDENT ===");
+        analyticsService.logAction(actor.getEmail(), "INCIDENT_CREATED", "Titre: " + req.getTitle());
         return toResponse(saved);
     }
 
