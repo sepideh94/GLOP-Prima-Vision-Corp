@@ -14,6 +14,7 @@ public class NotificationResponse {
     NotificationType type;
     String title;
     String message;
+    String incidentStatus;
     String link;
     Boolean isRead;
     LocalDateTime sentAt;

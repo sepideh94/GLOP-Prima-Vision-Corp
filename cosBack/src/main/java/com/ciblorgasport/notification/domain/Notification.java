@@ -2,6 +2,7 @@ package com.ciblorgasport.notification.domain;
 
 import java.time.LocalDateTime;
 
+import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.persistence.Column;
@@ -43,6 +44,9 @@ public class Notification {
     @Column(nullable = false, length = 2000)
     private String message;
 
+    @Column(name = "incident_status", length = 50)
+    private String incidentStatus;
+
     @Column(length = 500)
     private String link;
 
@@ -55,6 +59,10 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "recipient_id", nullable = false)
     private UserAccount recipient;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "incident_id")
+    private Incident incident;
 
     public void markAsRead() {
         this.isRead = true;

@@ -96,6 +96,7 @@ public class IncidentServiceImpl implements IncidentService {
         incident.setTrial(trial);
 
         Incident saved = incidentRepository.saveAndFlush(incident);
+        incidentNotificationService.notifyIncidentUpdated(saved);
         return toResponse(saved);
     }
 
@@ -107,7 +108,13 @@ public class IncidentServiceImpl implements IncidentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable."));
 
         incident.setStatus(status);
-        return toResponse(incidentRepository.saveAndFlush(incident));
+        Incident saved = incidentRepository.saveAndFlush(incident);
+
+        if (status == IncidentStatus.RESOLU) {
+            incidentNotificationService.notifyIncidentResolved(saved);
+        }
+
+        return toResponse(saved);
     }
 
     @Override
