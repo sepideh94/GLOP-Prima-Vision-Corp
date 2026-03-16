@@ -252,7 +252,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
-        List<TrialParticipant> participations = trialParticipantRepository.findByAthleteId(athleteId);
+        List<TrialParticipant> participations = trialParticipantRepository.findByCompetitorId(athleteId);
 
         return participations.stream()
             .map(TrialParticipant::getTrial)
