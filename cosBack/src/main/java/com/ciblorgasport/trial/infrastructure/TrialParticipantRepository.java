@@ -1,13 +1,13 @@
 package com.ciblorgasport.trial.infrastructure;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.trial.domain.CategoryGender;
@@ -56,21 +56,6 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("trialName") TrialName trialName,
             @Param("categoryGender") CategoryGender categoryGender,
             @Param("roundName") RoundName roundName);
-}
-    @Query("""
-        SELECT DISTINCT tp.athlete FROM TrialParticipant tp
-        WHERE tp.trial.competition = :competition
-        AND tp.trial.trialName = :trialName
-        AND tp.trial.categoryGender = :categoryGender
-        AND tp.trial.round.name = :roundName
-        AND tp.trial.cancelled = false
-        """)
-    List<Athlete> findAthletesByPreviousRound(
-        @Param("competition") Competition competition,
-        @Param("trialName") TrialName trialName,
-        @Param("categoryGender") CategoryGender categoryGender,
-        @Param("roundName") RoundName roundName
-    );
+
     
-    List<TrialParticipant> findByAthleteId(Long athleteId);
-}
+    List<TrialParticipant> findByCompetitorId(Long competitorId);}

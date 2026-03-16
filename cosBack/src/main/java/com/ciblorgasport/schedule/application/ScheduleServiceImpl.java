@@ -20,6 +20,7 @@ import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
@@ -252,9 +253,11 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
-        List<TrialParticipant> participations = trialParticipantRepository.findByAthleteId(athleteId);
+        // CORRECTION : On utilise findByCompetitorId
+        List<TrialParticipant> participations = trialParticipantRepository.findByCompetitorId(athleteId);
 
         return participations.stream()
+            .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
             .map(TrialParticipant::getTrial)
             .filter(trial -> trial.getCompetition().getId().equals(competitionId))
             .map(trial -> new AthleteTrialScheduleResponse(
