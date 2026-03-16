@@ -22,6 +22,7 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
 
     private final AthleteIncidentRecipientResolver athleteIncidentRecipientResolver;
     private final CommissionnerIncidentRecipientResolver commissionnerIncidentRecipientResolver;
+    private final VolonteerIncidentRecipientResolver volonteerIncidentRecipientResolver;
     private final NotificationService notificationService;
     private final EmailService emailService;
 
@@ -83,6 +84,12 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
                 || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
             List<NotificationRecipient> commissionnerRecipients = commissionnerIncidentRecipientResolver.resolve();
             sendToRecipients(incident, commissionnerRecipients, title, message, link);
+        }
+
+        if (incident.getImpactLevels().contains(ImpactLevel.VOLONTEER)
+                || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
+            List<NotificationRecipient> volonteerRecipients = volonteerIncidentRecipientResolver.resolve(incident);
+            sendToRecipients(incident, volonteerRecipients, title, message, link);
         }
     }
 
