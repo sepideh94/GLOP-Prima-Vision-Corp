@@ -30,9 +30,17 @@ import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
+import com.ciblorgasport.team.application.TeamImportService;
+import com.ciblorgasport.team.domain.Team;
+import com.ciblorgasport.team.dto.TeamImportResult;
+import com.ciblorgasport.team.dto.TeamResponse;
+import com.ciblorgasport.trial.application.RecordTrialResultsUseCase;
 import com.ciblorgasport.trial.application.TrialParticipantService;
 import com.ciblorgasport.trial.application.TrialService;
+import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.dto.AssignAthletesRequest;
+import com.ciblorgasport.trial.dto.AssignTeamsRequest;
+import com.ciblorgasport.trial.dto.RecordResultsRequest;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
@@ -58,7 +66,9 @@ public class CommissionnerController {
 	private final CompetitionService competitionService;
 	private final ParticipationService participationService;
 	private final TrialService trialService;
-		private final TrialParticipantService trialParticipantService;
+	private final TrialParticipantService trialParticipantService;
+	private final TeamImportService teamImportService;
+    private final RecordTrialResultsUseCase recordTrialResultsUseCase;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -194,5 +204,56 @@ public class CommissionnerController {
     public ResponseEntity<AthleteResponse> getAthleteProfile(@PathVariable("athleteId") Long athleteId) {
         AthleteResponse profile = athleteService.getAthleteProfile(athleteId);
         return ResponseEntity.ok(profile);
+    }
+    
+    // ==================== TEAMS ====================
+    
+    
+    @PostMapping("/competitions/{competitionId}/import-teams")
+    public ResponseEntity<TeamImportResult> importTeams(
+            @PathVariable Long competitionId,
+            @RequestParam("file") MultipartFile file) throws Exception {
+        
+        TeamImportResult result = teamImportService.importTeamsForCompetition(file, competitionId);
+        return ResponseEntity.ok(result);
+    }
+    
+    @PostMapping("/trials/{id}/assign-teams")
+    public ResponseEntity<List<TrialParticipantResponse>> assignTeams(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody AssignTeamsRequest request) {
+        List<TrialParticipantResponse> result =
+            trialParticipantService.assignTeams(id, request.getTeamIds());
+        return new ResponseEntity<>(result, HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/trials/{id}/teams/{teamId}")
+    public ResponseEntity<Void> removeTeam(
+            @PathVariable("id") Long id,
+            @PathVariable("teamId") Long teamId) {
+        trialParticipantService.removeTeam(id, teamId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/trials/{id}/eligible-teams")
+    public ResponseEntity<List<TeamResponse>> getEligibleTeams(
+            @PathVariable("id") Long id) {
+        return ResponseEntity.ok(trialParticipantService.getEligibleTeams(id));
+    }
+    
+
+
+    /**
+     * Saisie manuelle des résultats d'une épreuve terminée.
+     * Accessible uniquement aux commissaires (sécurisé par /api/commissioner/**).
+     * Retourne 409 si l'épreuve n'est pas encore terminée.
+     */
+    @PostMapping("/trials/{trialId}/results")
+    public ResponseEntity<List<Result>> recordResults(
+            @PathVariable Long trialId,
+            @Valid @RequestBody RecordResultsRequest request) {
+        List<Result> results = recordTrialResultsUseCase.recordManual(
+                trialId, request.results(), request.performanceType());
+        return ResponseEntity.status(HttpStatus.CREATED).body(results);
     }
 }

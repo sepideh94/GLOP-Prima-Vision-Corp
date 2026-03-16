@@ -17,6 +17,7 @@ import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
+import com.ciblorgasport.team.application.TeamValidationService;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -29,6 +30,7 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
+    private final TeamValidationService teamValidationService; 
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
