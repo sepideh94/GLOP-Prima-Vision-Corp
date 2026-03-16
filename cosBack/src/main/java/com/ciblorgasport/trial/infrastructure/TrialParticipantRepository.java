@@ -57,3 +57,20 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("categoryGender") CategoryGender categoryGender,
             @Param("roundName") RoundName roundName);
 }
+    @Query("""
+        SELECT DISTINCT tp.athlete FROM TrialParticipant tp
+        WHERE tp.trial.competition = :competition
+        AND tp.trial.trialName = :trialName
+        AND tp.trial.categoryGender = :categoryGender
+        AND tp.trial.round.name = :roundName
+        AND tp.trial.cancelled = false
+        """)
+    List<Athlete> findAthletesByPreviousRound(
+        @Param("competition") Competition competition,
+        @Param("trialName") TrialName trialName,
+        @Param("categoryGender") CategoryGender categoryGender,
+        @Param("roundName") RoundName roundName
+    );
+    
+    List<TrialParticipant> findByAthleteId(Long athleteId);
+}

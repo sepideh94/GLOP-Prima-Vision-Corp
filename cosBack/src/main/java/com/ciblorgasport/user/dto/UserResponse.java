@@ -1,5 +1,6 @@
 package com.ciblorgasport.user.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Data;
 
@@ -12,5 +13,6 @@ public class UserResponse {
     private String lastName;
     private String email;
     private String role;
+    @JsonProperty("isAccountActive")
     private boolean isAccountActive;
 }

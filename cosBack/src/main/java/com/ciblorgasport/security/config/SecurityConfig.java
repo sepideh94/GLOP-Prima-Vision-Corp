@@ -113,6 +113,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/athlete/**").hasRole("ATHLETE")
                 .requestMatchers("/api/volontaire/**").hasRole("VOLONTEER")
                 .requestMatchers("/api/spectateur/**").hasRole("SPECTATOR")
+                // PLanning pour volontaire et athlète
+                .requestMatchers("/api/schedule/volunteer/**").hasRole("VOLONTEER")
+                .requestMatchers("/api/schedule/athlete/**").hasRole("ATHLETE")
+                
                 .requestMatchers("/api/public/participation").permitAll()
                 .anyRequest().authenticated()
             )

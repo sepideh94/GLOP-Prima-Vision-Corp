@@ -126,29 +126,23 @@ public class AuthenticationService {
 
     public String forgotPassword(String email) {
 	    String normalized = normalizeEmail(email);
-	
+
 	    userRepository.findByEmail(normalized).ifPresent(user -> {
-	        String token = UUID.randomUUID().toString();
-	
+
+	        // Compte inactif : envoyer le mail de réinitialisation seulement si
+	        // tous ses tokens sont expirés (l'utilisateur n'a pas pu activer à temps)
 	        if (!user.isActive()) {
-	            ActivationToken activationToken = ActivationToken.builder()
-	                    .token(token)
-	                    .type(TokenType.ACTIVATION)
-	                    .user(user)
-	                    .expiresAt(LocalDateTime.now().plusHours(24))
-	                    .used(false)
-	                    .build();
-	
-	            activationTokenRepository.save(activationToken);
-	
-	            try {
-	                emailService.sendActivationEmail(user.getEmail(), user.getFirstName(), token);
-	            } catch (Exception e) {
-	                e.printStackTrace();
+	            boolean hasValidToken = activationTokenRepository
+	                    .existsByUserAndUsedFalseAndExpiresAtAfter(user, LocalDateTime.now());
+	            if (hasValidToken) {
+	                // Le token d'invitation/activation est encore valide : l'utilisateur
+	                // doit utiliser le lien déjà envoyé
+	                return;
 	            }
-	            return;
 	        }
-	
+
+	        String token = UUID.randomUUID().toString();
+
 	        ActivationToken resetToken = ActivationToken.builder()
 	                .token(token)
 	                .type(TokenType.PASSWORD_RESET)
@@ -156,18 +150,16 @@ public class AuthenticationService {
 	                .expiresAt(LocalDateTime.now().plusMinutes(30))
 	                .used(false)
 	                .build();
-	
+
 	        activationTokenRepository.save(resetToken);
-	
+
 	        try {
-	        	
 	            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), token);
-	        } 
-	        catch (Exception e) {
+	        } catch (Exception e) {
 	            e.printStackTrace();
 	        }
 	    });
-	
+
 	    return "Si un compte existe pour cet email, un lien de réinitialisation a été envoyé.";
 	}
 
@@ -203,9 +195,12 @@ public class AuthenticationService {
     UserAccount user = at.getUser();
     user.setPassword(passwordEncoder.encode(newPassword));
 
-    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE|| at.getType() == TokenType.INVITE_VOLONTEER) {
+    if (at.getType() == TokenType.INVITE_COMMISSIONNER || at.getType() == TokenType.INVITE_ATHLETE || at.getType() == TokenType.INVITE_VOLONTEER) {
         user.setActive(true);
         volonteerImportService.updateVolonteerAssignmentsToAccepted(user.getId());
+    } else if (at.getType() == TokenType.PASSWORD_RESET && !user.isActive()) {
+        // Token expiré puis réinitialisation : activer le compte après définition du mot de passe
+        user.setActive(true);
     }
 
     userRepository.save(user);

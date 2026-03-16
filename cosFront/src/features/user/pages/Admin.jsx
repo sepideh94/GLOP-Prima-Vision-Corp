@@ -39,7 +39,7 @@ export default function Admin() {
       title: "Gestion des incidents",
       subtitle: "Déclarer et suivre les incidents",
       icon: <ReportProblem sx={{ fontSize: 42 }} />,
-      color: "#f59e0b",
+      color: "#ef4444",
       route: "/admin/incidents",
     },
     {
@@ -54,7 +54,7 @@ export default function Admin() {
       subtitle: "Gérer les horaires et affectations",
       icon: <Schedule sx={{ fontSize: 42 }} />,
       color: "#f97316",
-      route: "/admin/volunteer-schedule",
+      route: "/admin/schedules/create",
     },
   ];
 

@@ -305,9 +305,14 @@ useEffect(() => {
         const added = await trialService.assignAthletes(initialData.id, [athlete.id]);
         setAssignedParticipants((prev) => [...prev, ...added]);
       } catch (e) {
-        setParticipantsError(
-          e.response?.data?.message || "Erreur lors de l'assignation de l'athlète"
-        );
+        const errorMessage = e.response?.data?.message || "Erreur lors de l'assignation de l'athlète";
+        setParticipantsError(errorMessage);
+        // Si l'erreur indique que la participation n'est pas confirmée, donner plus de détails
+        if (errorMessage.includes("participation confirmée") || errorMessage.includes("participation valide")) {
+          setParticipantsError(
+            errorMessage + " L'athlète doit avoir une participation confirmée (statut INVITED ou CONFIRMED) à cette compétition."
+          );
+        }
       }
     }
   };
@@ -937,12 +942,6 @@ useEffect(() => {
                   </Box>
                 )}
               </>
-            )}
-
-            {participantsError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {participantsError}
-              </Alert>
             )}
           </Box>
         )}

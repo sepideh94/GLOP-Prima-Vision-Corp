@@ -1,5 +1,6 @@
 package com.ciblorgasport.trial.application;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.ciblorgasport.trial.dto.TrialCreateRequest;
@@ -23,5 +24,7 @@ public interface TrialService {
     TrialResponse cancelTrial(Long id, String userEmail);
     
     public List<TrialResponse> getTrialsForAthlete(Long competitionId, Long athleteId);
+    
+    public List<TrialResponse> getTrialsBySiteAndPeriod(Long siteId, LocalDateTime start, LocalDateTime end);
 
 }
