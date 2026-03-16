@@ -7,7 +7,6 @@ import {
   Chip,
   CircularProgress,
   Alert,
-  Grid,
 } from "@mui/material";
 import {
   AccessTime as AccessTimeIcon,
@@ -77,11 +76,19 @@ export default function VolunteerSchedulePage() {
   };
 
   return (
-    <Box sx={{ width: "100%" }}>
+    <Box
+      sx={{
+        p: 4,
+        background: appTheme.gradients.page,
+        minHeight: "100vh",
+      }}
+    >
       <Typography
         sx={{
-          fontSize: 36,
+          fontSize: 32,
           fontWeight: 900,
+          color: appTheme.colors.dark,
+          letterSpacing: "-0.5px",
           mb: 1,
         }}
       >
@@ -91,7 +98,7 @@ export default function VolunteerSchedulePage() {
       <Typography
         sx={{
           fontSize: 15,
-          color: "#374151",
+          color: appTheme.colors.textMuted,
           mb: 4,
         }}
       >
@@ -120,129 +127,139 @@ export default function VolunteerSchedulePage() {
           </Typography>
         </Box>
       ) : (
-        <Grid container spacing={3}>
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 3,
+          }}
+        >
           {schedule.map((mission) => (
-            <Grid item xs={12} md={6} key={mission.id}>
-              <Card
-                sx={{
-                  borderRadius: appTheme.radius.lg,
-                  boxShadow: appTheme.shadows.card,
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-4px)",
-                    boxShadow: appTheme.shadows.cardHover,
-                  },
-                }}
-              >
-                <CardContent sx={{ p: 3 }}>
-                  <Box
+            <Card
+              key={mission.id}
+              sx={{
+                width: 400,
+                minWidth: 400,
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: appTheme.radius.lg,
+                boxShadow: appTheme.shadows.card,
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: appTheme.shadows.cardHover,
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", flex: 1 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    mb: 2,
+                  }}
+                >
+                  <Typography
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
+                      fontSize: 20,
+                      fontWeight: 900,
+                      color: appTheme.colors.cyan,
+                      flex: 1,
+                    }}
+                  >
+                    {mission.title}
+                  </Typography>
+                  <Chip
+                    label={STATUS_LABELS[mission.status] || mission.status}
+                    size="small"
+                    sx={{
+                      backgroundColor: `${STATUS_COLORS[mission.status] || "#6b7280"}20`,
+                      color: STATUS_COLORS[mission.status] || "#6b7280",
+                      fontWeight: 700,
+                      ml: 1,
+                    }}
+                  />
+                </Box>
+
+                {mission.description && (
+                  <Typography
+                    sx={{
+                      fontSize: 14,
+                      color: "#000000",
                       mb: 2,
                     }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}>
-                      <AssignmentIcon
-                        sx={{ fontSize: 24, color: appTheme.colors.primary }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: 20,
-                          fontWeight: 900,
-                          color: appTheme.colors.dark,
-                        }}
-                      >
-                        {mission.title}
-                      </Typography>
-                    </Box>
-                    <Chip
-                      label={STATUS_LABELS[mission.status] || mission.status}
-                      size="small"
-                      sx={{
-                        backgroundColor: `${STATUS_COLORS[mission.status] || "#6b7280"}20`,
-                        color: STATUS_COLORS[mission.status] || "#6b7280",
-                        fontWeight: 700,
-                        ml: 1,
-                      }}
-                    />
-                  </Box>
+                    {mission.description}
+                  </Typography>
+                )}
 
-                  {mission.description && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <AccessTimeIcon
+                      sx={{ fontSize: 18, color: "#000000" }}
+                    />
                     <Typography
                       sx={{
                         fontSize: 14,
-                        color: appTheme.colors.textMuted,
-                        mb: 2,
+                        color: "#000000",
                       }}
                     >
-                      {mission.description}
+                      <strong>Début:</strong> {formatDateTime(mission.startTime)}
                     </Typography>
+                  </Box>
+
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <AccessTimeIcon
+                      sx={{ fontSize: 18, color: "#000000" }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: 14,
+                        color: "#000000",
+                      }}
+                    >
+                      <strong>Fin:</strong> {formatDateTime(mission.endTime)}
+                    </Typography>
+                  </Box>
+
+                  {mission.site && (
+                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                      <LocationOnIcon
+                        sx={{ fontSize: 18, color: "#000000", mt: 0.5 }}
+                      />
+                      <Typography
+                        sx={{
+                          fontSize: 14,
+                          color: "#000000",
+                        }}
+                      >
+                        <strong>Lieu:</strong> {mission.site.adress}
+                      </Typography>
+                    </Box>
                   )}
 
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  {mission.competitionName && (
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon
-                        sx={{ fontSize: 18, color: appTheme.colors.textMuted }}
+                      <AssignmentIcon
+                        sx={{ fontSize: 18, color: "#000000" }}
                       />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: appTheme.colors.textMuted,
-                        }}
-                      >
-                        <strong>Début:</strong> {formatDateTime(mission.startTime)}
-                      </Typography>
-                    </Box>
-
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon
-                        sx={{ fontSize: 18, color: appTheme.colors.textMuted }}
-                      />
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          color: appTheme.colors.textMuted,
-                        }}
-                      >
-                        <strong>Fin:</strong> {formatDateTime(mission.endTime)}
-                      </Typography>
-                    </Box>
-
-                    {mission.site && (
-                      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
-                        <LocationOnIcon
-                          sx={{ fontSize: 18, color: appTheme.colors.textMuted, mt: 0.5 }}
-                        />
-                        <Typography
-                          sx={{
-                            fontSize: 14,
-                            color: appTheme.colors.textMuted,
-                          }}
-                        >
-                          <strong>Lieu:</strong> {mission.site.adress}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {mission.competitionName && (
-                      <Typography
-                        sx={{
-                          fontSize: 14,
-                          color: appTheme.colors.textMuted,
+                          color: "#000000",
                           fontStyle: "italic",
                         }}
                       >
                         <strong>Compétition:</strong> {mission.competitionName}
                       </Typography>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
+                    </Box>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
           ))}
-        </Grid>
+        </Box>
       )}
     </Box>
   );
