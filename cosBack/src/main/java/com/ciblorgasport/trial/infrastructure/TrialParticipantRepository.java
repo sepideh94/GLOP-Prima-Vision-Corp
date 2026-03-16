@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.trial.domain.CategoryGender;
