@@ -201,7 +201,7 @@ export default function CompetitionResultsPage() {
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: appTheme.colors.dark,
+                color: appTheme.colors.textPrimary,
               }}
             >
               {competition.name}
@@ -262,14 +262,14 @@ export default function CompetitionResultsPage() {
           onChange={(e, newValue) => setTabValue(newValue)}
           sx={{
             "& .MuiTab-root": {
-              color: appTheme.colors.textSecondary,
+              color: appTheme.colors.darkSoft,
               fontWeight: 600,
               "&.Mui-selected": {
-                color: appTheme.colors.cyan,
+                color: appTheme.colors.dark,
               },
             },
             "& .MuiTabs-indicator": {
-              background: appTheme.colors.cyan,
+              background: appTheme.colors.dark,
             },
           }}
         >

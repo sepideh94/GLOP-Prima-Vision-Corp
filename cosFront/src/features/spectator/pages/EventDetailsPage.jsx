@@ -153,7 +153,7 @@ export default function EventDetailsPage() {
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: appTheme.colors.dark,
+                color: appTheme.colors.textPrimary,
               }}
             >
               {event.name}
@@ -161,7 +161,7 @@ export default function EventDetailsPage() {
             {event.description && (
               <Typography
                 sx={{
-                  color: appTheme.colors.darkSoft,
+                  color: appTheme.colors.textSecondary,
                   fontSize: "1.1rem",
                   mb: 2,
                 }}
@@ -185,7 +185,7 @@ export default function EventDetailsPage() {
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CalendarTodayIcon sx={{ color: appTheme.colors.cyan }} />
-              <Typography sx={{ color: appTheme.colors.darkSoft }}>
+              <Typography sx={{ color: appTheme.colors.textSecondary }}>
                 <strong>Début:</strong>{" "}
                 {format(new Date(event.startDate), "d MMMM yyyy", { locale: fr })}
               </Typography>
@@ -193,7 +193,7 @@ export default function EventDetailsPage() {
             {event.endDate && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarTodayIcon sx={{ color: appTheme.colors.violet }} />
-                <Typography sx={{ color: appTheme.colors.darkSoft }}>
+                <Typography sx={{ color: appTheme.colors.textSecondary }}>
                   <strong>Fin:</strong>{" "}
                   {format(new Date(event.endDate), "d MMMM yyyy", { locale: fr })}
                 </Typography>

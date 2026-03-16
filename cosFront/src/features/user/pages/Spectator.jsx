@@ -13,7 +13,6 @@ import {
   Container,
   TextField,
   InputAdornment,
-  IconButton,
   Tabs,
   Tab,
   Button,
@@ -23,8 +22,6 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SearchIcon from "@mui/icons-material/Search";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import PeopleIcon from "@mui/icons-material/People";
 import { format } from "date-fns";
@@ -531,24 +528,39 @@ export default function Spectator() {
                           sx={{ fontSize: 32, color: appTheme.colors.cyan, mb: 1 }}
                         />
                         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                          <IconButton
+                          <Button
                             size="small"
+                            variant={spectatorProfileService.isFavorite(event.id) ? "contained" : "outlined"}
                             onClick={(e) => toggleFavorite(event.id, e)}
                             sx={{
-                              color: spectatorProfileService.isFavorite(event.id)
-                                ? appTheme.colors.violet
-                                : appTheme.colors.textMuted,
-                              "&:hover": {
-                                color: appTheme.colors.violet,
-                              },
+                              textTransform: "none",
+                              fontWeight: 600,
+                              fontSize: "0.75rem",
+                              borderRadius: appTheme.radius.md,
+                              px: 2,
+                              py: 0.5,
+                              minWidth: "auto",
+                              ...(spectatorProfileService.isFavorite(event.id)
+                                ? {
+                                    background: appTheme.colors.violet,
+                                    color: "#fff",
+                                    "&:hover": {
+                                      background: appTheme.colors.violet,
+                                      opacity: 0.9,
+                                    },
+                                  }
+                                : {
+                                    borderColor: appTheme.colors.violet,
+                                    color: appTheme.colors.violet,
+                                    "&:hover": {
+                                      borderColor: appTheme.colors.violet,
+                                      background: `${appTheme.colors.violet}10`,
+                                    },
+                                  }),
                             }}
                           >
-                            {spectatorProfileService.isFavorite(event.id) ? (
-                              <FavoriteIcon />
-                            ) : (
-                              <FavoriteBorderIcon />
-                            )}
-                          </IconButton>
+                            {spectatorProfileService.isFavorite(event.id) ? "Suivi" : "Suivre"}
+                          </Button>
                           <Chip
                             label={getStatusLabel(event.status)}
                             size="small"
