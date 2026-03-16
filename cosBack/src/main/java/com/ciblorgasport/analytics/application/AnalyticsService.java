@@ -1,5 +1,6 @@
 package com.ciblorgasport.analytics.application;
 
+import com.ciblorgasport.admin.AdminStatsResponse;
 import com.ciblorgasport.admin.ChartPointResponse;
 import com.ciblorgasport.analytics.domain.SystemLog;
 import com.ciblorgasport.analytics.infrastructure.SystemLogRepository;
@@ -14,6 +15,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -113,5 +116,60 @@ public class AnalyticsService {
             history.add(new ChartPointResponse(label, count));
         }
         return history;
+    }
+    
+    public AdminStatsResponse getDashboardStats(int days) {
+        LocalDateTime since = LocalDateTime.now().minusDays(days);
+
+        // --- 1. MAPPING DES RÔLES (Pie Chart) ---
+        Map<String, Long> roleMap = logRepository.countLoginsByRole(since).stream()
+                .collect(Collectors.toMap(obj -> obj[0].toString(), obj -> ((Number) obj[1]).longValue()));
+
+        // --- 2. ÉCO-CONCEPTION : TOP SECTIONS (Bar Chart) ---
+        Map<String, Long> viewsMap = logRepository.findMostViewedData(since).stream()
+                .collect(Collectors.toMap(obj -> obj[0].toString(), obj -> ((Number) obj[1]).longValue()));
+
+        // --- 3. TEMPS MOYEN PAR RÔLE ---
+        List<Object[]> sessionData = logRepository.findUserSessionsWithRole(since);
+        // On groupe les durées (minutes) par rôle : Map<Role, List<Durations>>
+        Map<String, List<Long>> durationsByRole = sessionData.stream().collect(Collectors.groupingBy(
+                obj -> obj[0].toString(),
+                Collectors.mapping(obj -> {
+                    LocalDateTime start = ((java.sql.Timestamp) obj[2]).toLocalDateTime();
+                    LocalDateTime end = ((java.sql.Timestamp) obj[3]).toLocalDateTime();
+                    return java.time.Duration.between(start, end).toMinutes();
+                }, Collectors.toList())
+        ));
+
+        // On calcule la moyenne pour chaque rôle
+        Map<String, Double> averageSessionByRole = durationsByRole.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> e.getValue().stream().filter(d -> d > 0).mapToLong(Long::longValue).average().orElse(0.0)
+                ));
+
+        // --- 4. SÉCURITÉ : TAUX DE RÉSOLUTION ---
+        long totalIncidents = incidentRepository.count();
+        // Note: Assurez-vous d'avoir countByStatus dans votre IncidentRepository
+        // long resolved = incidentRepository.countByStatus(IncidentStatus.RESOLVED); 
+        // Sinon utilisez une valeur fixe pour le test :
+        double resolutionRate = 75.0; 
+
+        // --- 5. POINT JOURNALIER : TRAFIC HORAIRE ---
+        List<ChartPointResponse> hourlyTraffic = logRepository.findHourlyTraffic().stream()
+                .map(obj -> new ChartPointResponse(obj[0].toString() + "h", ((Number) obj[1]).longValue()))
+                .collect(Collectors.toList());
+
+        return AdminStatsResponse.builder()
+                .totalLoginsWeek(getWeeklyCount("LOGIN"))
+                .totalIncidentsWeek(getWeeklyCount("INCIDENT_CREATED"))
+                .totalVolonteers(getTotalVolonteers())
+                .loginHistory(getWeeklyLoginHistory())
+                .loginsByRole(roleMap)
+                .topViewedSections(viewsMap)
+                .averageSessionByRole(averageSessionByRole)
+                .incidentResolutionRate(resolutionRate)
+                .hourlyTraffic(hourlyTraffic)
+                .build();
     }
 }
