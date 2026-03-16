@@ -16,26 +16,25 @@ const importTeams = (file, competitionId) => {
   );
 };
 
-const getEligibleTeams = (trialId) => {
-
-  return api.get(
+const getEligibleTeams = async (trialId) => {
+  const res = await api.get(
     `/api/commissioner/trials/${trialId}/eligible-teams`
   );
+  return res.data;
 };
 
-const assignTeamsToTrial = (trialId, teamIds) => {
-
-  return api.post(
-    `/api/commissioner/trials/${trialId}/teams`,
+const assignTeamsToTrial = async (trialId, teamIds) => {
+  const res = await api.post(
+    `/api/commissioner/trials/${trialId}/assign-teams`,
     {
       teamIds,
     }
   );
+  return res.data;
 };
 
-const removeTeamFromTrial = (trialId, teamId) => {
-
-  return api.delete(
+const removeTeamFromTrial = async (trialId, teamId) => {
+  await api.delete(
     `/api/commissioner/trials/${trialId}/teams/${teamId}`
   );
 };
