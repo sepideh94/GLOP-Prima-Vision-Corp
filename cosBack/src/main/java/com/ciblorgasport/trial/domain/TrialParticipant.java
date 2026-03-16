@@ -2,10 +2,12 @@ package com.ciblorgasport.trial.domain;
 
 import java.time.LocalDateTime;
 
-import com.ciblorgasport.athlete.domain.Athlete;
+import com.ciblorgasport.competition.domain.CompetitorType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,7 +23,8 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "trial_participant", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"trial_id", "athlete_id"})
+    // La contrainte unique s'applique désormais sur le couple id/type pour un trial donné
+    @UniqueConstraint(columnNames = {"trial_id", "competitor_id", "competitor_type"})
 })
 @Data
 @NoArgsConstructor
@@ -37,9 +40,12 @@ public class TrialParticipant {
     @JoinColumn(name = "trial_id", nullable = false)
     private Trial trial;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "athlete_id", nullable = false)
-    private Athlete athlete;
+    @Column(name = "competitor_id", nullable = false)
+    private Long competitorId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "competitor_type", nullable = false)
+    private CompetitorType competitorType;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

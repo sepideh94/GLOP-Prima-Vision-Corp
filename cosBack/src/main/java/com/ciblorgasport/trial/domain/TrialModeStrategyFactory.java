@@ -1,6 +1,12 @@
 package com.ciblorgasport.trial.domain;
 
+import java.util.EnumMap;
 import java.util.Map;
+
+import org.springframework.stereotype.Component;
+
+import jakarta.annotation.PostConstruct;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Factory du Strategy Pattern pour les modes d'épreuve.
@@ -17,14 +23,20 @@ import java.util.Map;
  * </ol>
  * Aucun service métier n'a besoin d'être modifié.
  */
+@Component
+@RequiredArgsConstructor
 public final class TrialModeStrategyFactory {
 
-    private static final Map<TrialMode, TrialModeStrategy> STRATEGIES = Map.of(
-        TrialMode.INDIVIDUAL, new IndividualTrialModeStrategy(),
-        TrialMode.TEAM,       new TeamTrialModeStrategy()
-    );
+	private final IndividualTrialModeStrategy individualStrategy;
+    private final TeamTrialModeStrategy teamStrategy; 
 
-    private TrialModeStrategyFactory() {}
+    private static final Map<TrialMode, TrialModeStrategy> STRATEGIES = new EnumMap<>(TrialMode.class);
+
+    @PostConstruct
+    public void init() {
+        STRATEGIES.put(TrialMode.INDIVIDUAL, individualStrategy);
+        STRATEGIES.put(TrialMode.TEAM, teamStrategy); 
+    }
 
     /**
      * Retourne la stratégie associée au mode donné.
