@@ -148,13 +148,10 @@ public class AdminController {
     // ==================== Analytics ====================
     
     @GetMapping("/stats")
-    public ResponseEntity<AdminStatsResponse> getDashboardStats() {
-        return ResponseEntity.ok(AdminStatsResponse.builder()
-                .totalLoginsWeek(analyticsService.getWeeklyCount("LOGIN"))
-                .totalIncidentsWeek(analyticsService.getWeeklyCount("INCIDENT_CREATED"))
-                .totalVolonteers(analyticsService.getTotalVolonteers())
-                .loginHistory(analyticsService.getWeeklyLoginHistory())
-                .build());
+    public ResponseEntity<AdminStatsResponse> getDashboardStats(
+            @RequestParam(defaultValue = "7") int days) {
+        
+        return ResponseEntity.ok(analyticsService.getDashboardStats(days));
     }
     
 
@@ -166,12 +163,13 @@ public class AdminController {
     }
     
     @PostMapping("/report-download")
-    public ResponseEntity<byte[]> downloadReport(@RequestBody(required = false) ExportReportRequest request) {        
-       
-    	String summary = analyticsService.generateWeeklyReportSummary();
+    public ResponseEntity<byte[]> downloadReport(@RequestBody(required = false) ExportReportRequest request) {
         
-    	List<byte[]> imageBytesList = new ArrayList<>();
-
+        // 1. Récupérer toutes les stats calculées
+        AdminStatsResponse stats = analyticsService.getDashboardStats(7);
+        
+        // 2. Traiter les images si présentes
+        List<byte[]> imageBytesList = new ArrayList<>();
         if (request != null && request.getChartImagesBase64() != null) {
             imageBytesList = request.getChartImagesBase64().stream()
                     .<byte[]>map((String base64) -> { 
@@ -181,16 +179,14 @@ public class AdminController {
                     .collect(Collectors.toList());
         }
 
-        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(summary, imageBytesList);
+        // 3. Générer le PDF avec l'objet stats complet
+        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(stats, imageBytesList);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("attachment", "rapport_activite_marius.pdf");
-        headers.setCacheControl("must-revalidate, post-check=0, pre-check=0");
+        headers.setContentDispositionFormData("attachment", "rapport_expert_ciblorgasport.pdf");
 
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(pdfBytes);
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
     }
     
 
