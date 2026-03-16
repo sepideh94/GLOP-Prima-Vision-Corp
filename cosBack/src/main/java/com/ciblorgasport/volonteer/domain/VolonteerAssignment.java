@@ -1,7 +1,11 @@
 package com.ciblorgasport.volonteer.domain;
 
+import java.time.LocalDateTime;
+
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
+import com.ciblorgasport.site.domain.Site;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -27,4 +31,13 @@ public class VolonteerAssignment {
 
     @Enumerated(EnumType.STRING)
     private ParticipationStatus status;
+    
+    private LocalDateTime startTime; 
+    private LocalDateTime endTime;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_site")
+    private Site site;
+    
+    private String title;
 }

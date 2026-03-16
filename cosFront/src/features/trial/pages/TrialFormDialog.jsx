@@ -938,12 +938,6 @@ useEffect(() => {
                 )}
               </>
             )}
-
-            {participantsError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {participantsError}
-              </Alert>
-            )}
           </Box>
         )}
       </DialogContent>

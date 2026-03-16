@@ -13,6 +13,8 @@ import EventsList from '../features/events/pages/EventsList';
 import CompetitionListPage from '../features/competition/pages/CompetitionListPage';
 import UsersManagementPage from '../features/user/pages/UsersManagementPage';
 import ProfilePage from '../features/athlete/pages/ProfilePage';
+import AthleteSchedulePage from '../features/athlete/pages/AthleteSchedulePage';
+import AdminCreateSchedulePage from '../features/schedule/pages/AdminCreateSchedulePage';
 import NotFound from '../features/home/pages/NotFound';
 
 export default function AppRoutes() {
@@ -28,9 +30,11 @@ export default function AppRoutes() {
         <Route path="/admin" element={<Admin />} />
         <Route path="/admin/competitions" element={<CompetitionListPage />} />
         <Route path="/admin/users" element={<UsersManagementPage />} />
+        <Route path="/admin/schedules/create" element={<AdminCreateSchedulePage />} />
         <Route path="/events" element={<EventsList />} />
         <Route path="/spectator" element={<Spectator />} />
         <Route path="/athlete" element={<Athlete />} />
+        <Route path="/athlete/schedule/:competitionId" element={<AthleteSchedulePage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/commissioner" element={<Commissioner />} />
         <Route path="/volunteer" element={<Volunteer />} />

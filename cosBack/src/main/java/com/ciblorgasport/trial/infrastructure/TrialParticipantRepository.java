@@ -1,7 +1,6 @@
 package com.ciblorgasport.trial.infrastructure;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -45,15 +44,20 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
     /**
      * Récupère les IDs des compétiteurs qualifiés depuis le tour précédent.
      */
-    @Query("SELECT DISTINCT tp.competitorId FROM TrialParticipant tp " +
-           "WHERE tp.trial.competition = :competition " +
-           "AND tp.trial.trialName = :trialName " +
-           "AND tp.trial.categoryGender = :categoryGender " +
-           "AND tp.trial.round.name = :roundName " +
-           "AND tp.trial.cancelled = false")
-    List<Long> findQualifiedCompetitorIds(
-            @Param("competition") Competition competition,
-            @Param("trialName") TrialName trialName,
-            @Param("categoryGender") CategoryGender categoryGender,
-            @Param("roundName") RoundName roundName);
+    @Query("""
+        SELECT DISTINCT tp.competitorId FROM TrialParticipant tp
+        WHERE tp.trial.competition = :competition
+        AND tp.trial.trialName = :trialName
+        AND tp.trial.categoryGender = :categoryGender
+        AND tp.trial.round.name = :roundName
+        AND tp.trial.cancelled = false
+        """)
+    List<Long> findAthletesByPreviousRound(
+        @Param("competition") Competition competition,
+        @Param("trialName") TrialName trialName,
+        @Param("categoryGender") CategoryGender categoryGender,
+        @Param("roundName") RoundName roundName
+    );
+    
+    List<TrialParticipant> findByCompetitorId(Long competitorId);
 }

@@ -26,6 +26,7 @@ import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.RoundName;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
@@ -44,7 +45,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TrialParticipantResponse> assignAthletes(Long trialId, List<Long> athleteIds) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable avec l'ID: " + trialId));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable avec l'ID: " + trialId));
 
         validateTrialStateForAssignment(trial);
 
@@ -63,7 +64,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         for (Long athleteId : uniqueAthleteIds) {
             Athlete athlete = athleteRepository.findById(athleteId)
-                    .orElseThrow(() -> new RuntimeException("Athlète introuvable: " + athleteId));
+                    .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable: " + athleteId));
 
             strategy.validateParticipant(toParticipant(athlete));
 
@@ -93,6 +94,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<TrialParticipantResponse> getByTrialId(Long trialId) {
         return trialParticipantRepository.findByTrialId(trialId).stream()
@@ -104,7 +106,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public void removeAthlete(Long trialId, Long athleteId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable"));
 
         if (trial.hasStarted()) {
             throw new IllegalStateException("Série déjà commencée.");
@@ -113,7 +115,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         TrialParticipant tp = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(p -> p.getCompetitorId().equals(athleteId) && p.getCompetitorType() == CompetitorType.ATHLETE)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Participant non trouvé."));
+                .orElseThrow(() -> new EntityNotFoundException("Participant non trouvé."));
 
         trialParticipantRepository.delete(tp);
     }
@@ -121,7 +123,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<AthleteResponse> getEligibleAthletes(Long trialId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable"));
 
         // Note: Cette méthode reste focalisée sur les Athlètes car l'interface l'exige
         return athleteService.getAthletesByCompetition(trial.getCompetition().getId());
@@ -162,7 +164,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         if (trial.isCancelled() || trial.hasStarted()) {
             throw new IllegalStateException("État de l'épreuve invalide pour l'assignation.");
         }
-        if (trial.getRound().getName() != RoundName.QUALIFICATION_HEAT) {
+        if (trial.getRound() == null || trial.getRound().getName() != RoundName.QUALIFICATION_HEAT) {
             throw new IllegalStateException("Assignation manuelle autorisée uniquement en qualification.");
         }
     }
@@ -179,7 +181,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable"));
 
         validateTrialStateForAssignment(trial); // Utilise la méthode de validation créée à l'étape précédente
 
@@ -198,7 +200,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         for (Long teamId : uniqueTeamIds) {
             Team team = teamRepository.findById(teamId)
-                    .orElseThrow(() -> new RuntimeException("Équipe introuvable avec l'ID: " + teamId));
+                    .orElseThrow(() -> new EntityNotFoundException("Équipe introuvable avec l'ID: " + teamId));
 
             // Validation par la stratégie (vérifie que l'épreuve accepte bien des équipes)
             strategy.validateParticipant(toParticipant(team));
@@ -234,7 +236,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public void removeTeam(Long trialId, Long teamId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable"));
 
         if (trial.hasStarted()) {
             throw new IllegalStateException("Série déjà commencée.");
@@ -243,7 +245,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         TrialParticipant tp = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(p -> p.getCompetitorId().equals(teamId) && p.getCompetitorType() == CompetitorType.TEAM)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Équipe non trouvée dans cette épreuve."));
+                .orElseThrow(() -> new EntityNotFoundException("Équipe non trouvée dans cette épreuve."));
 
         trialParticipantRepository.delete(tp);
     }
@@ -254,7 +256,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TeamResponse> getEligibleTeams(Long trialId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new EntityNotFoundException("Épreuve introuvable"));
         
         List<Long> confirmedTeamIds = participationRepository
                 .findByCompetition_Id(trial.getCompetition().getId())

@@ -1,15 +1,10 @@
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
+import VolunteerSchedulePage from "../../volunteer/pages/VolunteerSchedulePage";
 
 export default function Volunteer() {
   return (
     <Box sx={{ p: 4 }}>
-      <Typography variant="h5" fontWeight="bold" mb={3}>
-        Tableau de bord Volontaire
-      </Typography>
-
-      <Typography>
-        Bienvenue dans l’espace des volontaires. Les fonctionnalités arrivent bientôt.
-      </Typography>
+      <VolunteerSchedulePage />
     </Box>
   );
 }

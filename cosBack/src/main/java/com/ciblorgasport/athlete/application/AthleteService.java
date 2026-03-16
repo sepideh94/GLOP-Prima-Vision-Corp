@@ -10,12 +10,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
-import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
-import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
@@ -45,36 +43,37 @@ public class AthleteService {
     public List<AthleteResponse> getAthletesByCompetition(Long competitionId) {
         List<Long> athleteIds;
         try {
-            List<com.ciblorgasport.competition.domain.Participation> participations = participationRepository.findByCompetition_Id(competitionId);
-            // #region agent log (stdout for docker logs)
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:afterFindByCompetitionId\",\"message\":\"participations size\",\"data\":{\"size\":\"" + participations.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            // #endregion
+            List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
+
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:afterFindByCompetitionId\",\"message\":\"participations size\",\"data\":{\"size\":\""
+                    + participations.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+
             athleteIds = participations.stream()
                     .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                    .map(p -> p.getCompetitorId())
+                    .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
+                    .map(Participation::getCompetitorId)
                     .distinct()
                     .toList();
+
         } catch (Throwable t) {
-            // #region agent log (stdout for docker logs)
             String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:findByCompetitionId\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            // #endregion
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:findByCompetitionId\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\""
+                    + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
             throw t;
         }
-        // #region agent log (stdout for docker logs)
-        System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:athleteIds\",\"message\":\"athleteIds size\",\"data\":{\"size\":\"" + athleteIds.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-        // #endregion
+
+        System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:athleteIds\",\"message\":\"confirmed athleteIds size\",\"data\":{\"size\":\""
+                + athleteIds.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+
         try {
-            List<AthleteResponse> result = athleteRepository.findAllById(athleteIds).stream()
+            return athleteRepository.findAllById(athleteIds).stream()
                     .map(AthleteResponse::fromEntity)
                     .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
                     .collect(Collectors.toList());
-            return result;
         } catch (Throwable t) {
-            // #region agent log (stdout for docker logs)
             String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:stream\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\"" + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            // #endregion
+            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:stream\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\""
+                    + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
             throw t;
         }
     }
@@ -91,38 +90,41 @@ public class AthleteService {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
 
+        boolean wasCharterAcceptedBefore = athlete.isHasAcceptedCharte();
+
         if (request.getNationality() != null) athlete.setNationality(request.getNationality());
         if (request.getBirthDate() != null) athlete.setBirthDate(request.getBirthDate());
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
+
         if (request.getHasAcceptedCharte() != null) {
-            if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
-                athlete.setCharterAcceptedAt(LocalDateTime.now()); 
-            }
             athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
+
+            if (request.getHasAcceptedCharte() && !wasCharterAcceptedBefore) {
+                athlete.setCharterAcceptedAt(LocalDateTime.now());
+            }
         }
+
         Athlete saved = athleteRepository.save(athlete);
-        
-        this.checkAndConfirmParticipations(saved);
-        
+        checkAndConfirmParticipations(saved);
+
         return AthleteResponse.fromEntity(saved);
     }
-    
+
     private void checkAndConfirmParticipations(Athlete athlete) {
-        if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
-            List<Participation> participations = participationRepository
-                    .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
-            
-            for (Participation p : participations) {
-                p.setStatus(ParticipationStatus.CONFIRMED);
-                p.setCharterAccepted(true);
-                p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
-                
-                participationRepository.saveAndFlush(p);
-                
-                teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
-            }
+        if (!athlete.isProfileComplete()) {
+            return;
         }
+
+        List<Participation> participations = participationRepository
+                .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
+
+        participations.stream()
+                .filter(p -> p.getStatus() == ParticipationStatus.INVITED
+                        || p.getStatus() == ParticipationStatus.PENDING)
+                .forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+
+        participationRepository.saveAll(participations);
     }
 
     @Transactional
@@ -138,9 +140,9 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setMedicalCertificate(document);
-        Athlete savedAthlete= athleteRepository.save(athlete);
-        
-        this.checkAndConfirmParticipations(savedAthlete);
+        Athlete savedAthlete = athleteRepository.save(athlete);
+
+        checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadMedicalCertificate(Long athleteId) {
@@ -192,8 +194,9 @@ public class AthleteService {
         Document document = storageService.uploadFile(keyPrefix, file);
 
         athlete.setPassportDocument(document);
-        Athlete savedAthlete=athleteRepository.save(athlete);
-        this.checkAndConfirmParticipations(savedAthlete);
+        Athlete savedAthlete = athleteRepository.save(athlete);
+
+        checkAndConfirmParticipations(savedAthlete);
     }
 
     public byte[] downloadPassport(Long athleteId) {
