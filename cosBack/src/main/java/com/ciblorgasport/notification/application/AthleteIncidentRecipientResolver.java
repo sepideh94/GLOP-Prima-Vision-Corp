@@ -18,6 +18,8 @@ import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.notification.dto.NotificationRecipient;
+import com.ciblorgasport.team.domain.Team;
+import com.ciblorgasport.team.infrastructure.TeamRepository;
 import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 
@@ -32,9 +34,14 @@ public class AthleteIncidentRecipientResolver {
     private final TrialParticipantRepository trialParticipantRepository;
     private final AthleteRepository athleteRepository;
     private final CompetitionRepository competitionRepository;
+    private final TeamRepository teamRepository;
 
     public List<NotificationRecipient> resolve(Incident incident) {
         Map<Long, NotificationRecipient> recipientsByUserId = new LinkedHashMap<>();
+
+        if (incident == null) {
+            return new ArrayList<>();
+        }
 
         if (incident.getTrial() != null) {
             addTrialAthletes(recipientsByUserId, incident.getTrial().getId());
@@ -49,7 +56,9 @@ public class AthleteIncidentRecipientResolver {
         if (incident.getEvent() != null) {
             List<Competition> competitions = competitionRepository.findByParentEventId(incident.getEvent().getId());
             for (Competition competition : competitions) {
-                addCompetitionAthletes(recipientsByUserId, competition.getId());
+                if (competition != null && competition.getId() != null) {
+                    addCompetitionAthletes(recipientsByUserId, competition.getId());
+                }
             }
         }
 
@@ -59,28 +68,43 @@ public class AthleteIncidentRecipientResolver {
     private void addTrialAthletes(Map<Long, NotificationRecipient> recipientsByUserId, Long trialId) {
         List<TrialParticipant> trialParticipants = trialParticipantRepository.findByTrialId(trialId);
 
-        trialParticipants.stream()
-                .filter(tp -> tp.getCompetitorType() == CompetitorType.ATHLETE)
-                .map(TrialParticipant::getCompetitorId)
-                .distinct()
-                .map(athleteRepository::findById)
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
-                .forEach(athlete -> addAthlete(recipientsByUserId, athlete));
+        for (TrialParticipant tp : trialParticipants) {
+            if (tp.getCompetitorType() == CompetitorType.ATHLETE) {
+                athleteRepository.findById(tp.getCompetitorId())
+                        .ifPresent(athlete -> addAthlete(recipientsByUserId, athlete));
+            } else if (tp.getCompetitorType() == CompetitorType.TEAM) {
+                teamRepository.findById(tp.getCompetitorId())
+                        .ifPresent(team -> addTeamMembers(recipientsByUserId, team));
+            }
+        }
     }
 
     private void addCompetitionAthletes(Map<Long, NotificationRecipient> recipientsByUserId, Long competitionId) {
         List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
 
-        participations.stream()
-                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
-                .map(Participation::getCompetitorId)
-                .distinct()
-                .map(athleteRepository::findById)
-                .filter(java.util.Optional::isPresent)
-                .map(java.util.Optional::get)
-                .forEach(athlete -> addAthlete(recipientsByUserId, athlete));
+        for (Participation participation : participations) {
+            if (participation.getStatus() != ParticipationStatus.CONFIRMED) {
+                continue;
+            }
+
+            if (participation.getCompetitorType() == CompetitorType.ATHLETE) {
+                athleteRepository.findById(participation.getCompetitorId())
+                        .ifPresent(athlete -> addAthlete(recipientsByUserId, athlete));
+            } else if (participation.getCompetitorType() == CompetitorType.TEAM) {
+                teamRepository.findById(participation.getCompetitorId())
+                        .ifPresent(team -> addTeamMembers(recipientsByUserId, team));
+            }
+        }
+    }
+
+    private void addTeamMembers(Map<Long, NotificationRecipient> recipientsByUserId, Team team) {
+        if (team == null || team.getMembers() == null) {
+            return;
+        }
+
+        for (Athlete athlete : team.getMembers()) {
+            addAthlete(recipientsByUserId, athlete);
+        }
     }
 
     private void addAthlete(Map<Long, NotificationRecipient> recipientsByUserId, Athlete athlete) {
@@ -95,12 +119,18 @@ public class AthleteIncidentRecipientResolver {
 
         recipientsByUserId.putIfAbsent(
                 athlete.getId(),
-               new NotificationRecipient(
-                    athlete,
-                    email,
-                    (athlete.getFirstName() == null ? "" : athlete.getFirstName()) +
-                    ((athlete.getLastName() == null || athlete.getLastName().isBlank()) ? "" : " " + athlete.getLastName())
-                    )
+                new NotificationRecipient(
+                        athlete,
+                        email,
+                        buildDisplayName(athlete.getFirstName(), athlete.getLastName())
+                )
         );
+    }
+
+    private String buildDisplayName(String firstName, String lastName) {
+        String first = firstName == null ? "" : firstName.trim();
+        String last = lastName == null ? "" : lastName.trim();
+        String full = (first + " " + last).trim();
+        return full.isBlank() ? "athlète" : full;
     }
 }
