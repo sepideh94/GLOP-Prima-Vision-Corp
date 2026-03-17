@@ -19,6 +19,8 @@ public interface TrialRepository extends JpaRepository<Trial, Long> {
 
     List<Trial> findByCompetition(Competition competition);
 
+    List<Trial> findByCompetitionId(Long competitionId);
+
     /**
      * Récupère le roundNumber maximum pour les séries d'un même type.
      * Retourne null si aucune série n'existe encore.
