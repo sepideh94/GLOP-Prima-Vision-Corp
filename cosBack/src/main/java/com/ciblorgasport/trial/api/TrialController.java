@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ciblorgasport.trial.application.TrialParticipantService;
+import com.ciblorgasport.trial.application.TrialResultService;
 import com.ciblorgasport.trial.application.TrialService;
+import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.dto.TrialCreateRequest;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.dto.TrialResponse;
@@ -30,6 +32,7 @@ public class TrialController {
 
     private final TrialService trialService;
     private final TrialParticipantService trialParticipantService;
+    private final TrialResultService trialResultService;
 
     @PostMapping
     public ResponseEntity<TrialResponse> createTrial(@Valid @RequestBody TrialCreateRequest request) {
@@ -66,5 +69,10 @@ public class TrialController {
     @GetMapping("/{id}/participants")
     public ResponseEntity<List<TrialParticipantResponse>> getParticipants(@PathVariable("id") Long id) {
         return ResponseEntity.ok(trialParticipantService.getByTrialId(id));
+    }
+
+    @GetMapping("/{id}/results")
+    public ResponseEntity<List<ResultResponse>> getResults(@PathVariable("id") Long id) {
+        return ResponseEntity.ok(trialResultService.getResultsByTrialId(id));
     }
 }

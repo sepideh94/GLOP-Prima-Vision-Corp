@@ -181,6 +181,7 @@
   <version>${maven.compiler.plugin.version}</version>
   <configuration>
     <release>${java.version}</release>
+    <encoding>UTF-8</encoding>
     <compilerArgs>
       <arg>-parameters</arg>
     </compilerArgs>

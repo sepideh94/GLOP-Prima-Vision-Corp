@@ -66,7 +66,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotFoundException.class)
     public ResponseEntity<ApiError> handleTrialNotFoundException(
-            TrialNotFoundException ex, HttpServletRequest request) {
+            TrialNotFoundException ex,
+            HttpServletRequest request
+    ) {
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
@@ -74,12 +76,15 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(TrialNotCompletedException.class)
     public ResponseEntity<ApiError> handleTrialNotCompletedException(
-            TrialNotCompletedException ex, HttpServletRequest request) {
+            TrialNotCompletedException ex,
+            HttpServletRequest request
+    ) {
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
@@ -87,6 +92,7 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
+
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
