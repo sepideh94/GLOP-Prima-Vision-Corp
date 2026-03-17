@@ -13,6 +13,8 @@ public interface ResultRepository extends JpaRepository<Result, Long> {
 
     List<Result> findByTrialIdOrderByRankAsc(Long trialId);
 
+    List<Result> findByTrialParticipantIdIn(List<Long> participantIds);
+
     @Modifying
     @Query("DELETE FROM Result r WHERE r.trial.id = :trialId")
     void deleteAllByTrialId(@Param("trialId") Long trialId);

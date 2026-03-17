@@ -22,8 +22,6 @@ public class ResultResponse {
     private boolean tie;
     private String performanceType;
     private String performance;
-    private String updatedBy;
-    private LocalDateTime updatedAt;
 
     /** Informations du participant (athlète ou équipe avec ses membres). */
     private TrialParticipantResponse participant;
@@ -35,10 +33,6 @@ public class ResultResponse {
     private LocalDateTime updatedAt;
 
     public static ResultResponse from(Result result, TrialParticipantResponse participantResponse) {
-        String updatedByName = result.getUpdatedBy() != null
-                ? result.getUpdatedBy().getFirstName() + " " + result.getUpdatedBy().getLastName()
-                : null;
-
         return ResultResponse.builder()
                 .id(result.getId())
                 .trialId(result.getTrial() != null ? result.getTrial().getId() : null)
@@ -49,8 +43,6 @@ public class ResultResponse {
                 .updatedBy(result.getUpdatedBy())
                 .updatedAt(result.getUpdatedAt())
                 .participant(participantResponse)
-                .updatedBy(updatedByName)
-                .updatedAt(result.getUpdatedAt())
                 .build();
     }
 }

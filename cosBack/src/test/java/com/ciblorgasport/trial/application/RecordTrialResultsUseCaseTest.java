@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
-import static org.mockito.Mockito.mock;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,10 +21,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
-import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
 import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
-import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.trial.domain.ranking.RankingService;
 import com.ciblorgasport.trial.domain.result.PerformanceType;
 import com.ciblorgasport.trial.domain.result.Result;
@@ -227,17 +225,6 @@ class RecordTrialResultsUseCaseTest {
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
-
-    /** Épreuve terminée aujourd'hui : endDate == LocalDate.now(). */
-    private static Trial buildCompletedTrialToday(Long id) {
-        Trial t = new Trial();
-        t.setId(id);
-        t.setStartDate(LocalDate.now());
-        t.setStartHour(LocalTime.of(8, 0));
-        t.setEndDate(LocalDate.now());
-        t.setEndHour(LocalTime.of(1, 0)); // heure passée → COMPLETED
-        return t;
-    }
 
     /** Épreuve terminée : dates dans le passé. */
     private static Trial buildCompletedTrial(Long id) {
