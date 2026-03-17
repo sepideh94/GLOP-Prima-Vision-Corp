@@ -19,6 +19,8 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import FactCheckIcon from "@mui/icons-material/FactCheck";
+import EmojiEventsOutlinedIcon from "@mui/icons-material/EmojiEventsOutlined";
 
 import appTheme from "../../../common/theme/appTheme";
 import AdminPageLayout from "../../../common/components/AdminPageLayout";
@@ -29,6 +31,8 @@ import competitionService from "../../competition/services/competitionService";
 import ImportParticipantsDialog from "../../participant/pages/ImportParticipantsDialog";
 import TrialFormDialog from "./TrialFormDialog";
 import TrialDetailDialog from "./TrialDetailDialog";
+import TrialResultsDialog from "./TrialResultsDialog";
+import TrialResultsViewDialog from "./TrialResultsViewDialog";
 
 const getLabelFromEnum = (value, options) => {
   const found = options.find((opt) => opt.value === value);
@@ -103,6 +107,10 @@ export default function CommissionerTrialListPage() {
   const [trialToCancel, setTrialToCancel] = useState(null);
 
   const [openImport, setOpenImport] = useState(false);
+
+  const [openResults, setOpenResults] = useState(false);
+  const [selectedTrial, setSelectedTrial] = useState(null);
+  const [openResultsView, setOpenResultsView] = useState(false);
 
   useEffect(() => {
     competitionService
@@ -354,6 +362,44 @@ export default function CommissionerTrialListPage() {
                         </>
                       )}
 
+                     {t.statusLabel === "Terminée" && (
+  <>
+    {/* saisir */}
+    <button
+      className="btn"
+      style={{
+        borderRadius: appTheme.radius.pill,
+        background: "linear-gradient(135deg,#22c55e,#16a34a)",
+        color: "#fff",
+        padding: "4px 12px"
+      }}
+      onClick={() => {
+        setSelectedTrial(t);
+        setOpenResults(true);
+      }}
+    >
+      <FactCheckIcon sx={{ fontSize: 18 }} />
+    </button>
+
+    {/* voir classement */}
+    <button
+      className="btn"
+      style={{
+        borderRadius: appTheme.radius.pill,
+        background: "linear-gradient(135deg,#facc15,#eab308)",
+        color: "#000",
+        padding: "4px 12px"
+      }}
+      onClick={() => {
+        setSelectedTrial(t);
+        setOpenResultsView(true);
+      }}
+    >
+      <EmojiEventsOutlinedIcon sx={{ fontSize: 18 }} />
+    </button>
+  </>
+)}
+
                     </div>
 
                   </td>
@@ -455,6 +501,22 @@ export default function CommissionerTrialListPage() {
         competitionId={competitionId}
         competitionName={competition?.name}
       />
+      
+      <TrialResultsDialog
+  open={openResults}
+  onClose={() => setOpenResults(false)}
+  trial={selectedTrial}
+  onSaved={() => {
+    setOpenResults(false);
+    setOpenResultsView(true); 
+  }}
+/>
+
+<TrialResultsViewDialog
+  open={openResultsView}
+  onClose={() => setOpenResultsView(false)}
+  trial={selectedTrial}
+/>
 
     </AdminPageLayout>
 
