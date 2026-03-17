@@ -79,6 +79,24 @@ const trialService = {
   return res.data;
   },
 
+  updateResults: async (trialId, payload) => {
+    const res = await api.put(
+      `/api/commissioner/trials/${trialId}/results`,
+      payload
+    );
+    return res.data;
+  },
+
+  simulateResults: async (trialId, performanceType) => {
+    const type = performanceType || "TIME";
+    const res = await api.post(
+      `/api/commissioner/trials/${trialId}/simulate-results?performanceType=${encodeURIComponent(
+        type
+      )}`
+    );
+    return res.data;
+  },
+
 };
 
 export default trialService;

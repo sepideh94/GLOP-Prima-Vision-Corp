@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
 import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
 import com.ciblorgasport.trial.domain.ranking.RankingService;
@@ -20,6 +21,7 @@ import com.ciblorgasport.trial.domain.result.input.ResultInputStrategy;
 import com.ciblorgasport.trial.infrastructure.ResultRepository;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
+import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -109,6 +111,43 @@ public class RecordTrialResultsUseCase {
     public List<Result> execute(Long trialId, ResultInputStrategy inputStrategy) {
         Trial trial = loadCompletedTrialOrThrow(trialId);
         return rankAndSave(trial, inputStrategy);
+    }
+
+    /**
+     * Modifie les résultats d'une épreuve déjà enregistrée.
+     * <p>
+     * Règles :
+     * <ul>
+     *   <li>L'épreuve doit être {@link Status#COMPLETED}</li>
+     *   <li>La modification n'est autorisée que le jour même ({@code endDate == today})</li>
+     *   <li>L'auteur de la modification est tracé sur chaque {@link Result}</li>
+     * </ul>
+     *
+     * @param commissioner utilisateur connecté ayant effectué la modification
+     * @throws ResultModificationNotAllowedException si la date de l'épreuve est dépassée
+     */
+    @Transactional
+    public List<Result> updateManual(Long trialId, List<ResultInputDto> inputs,
+                                     PerformanceType performanceType, UserAccount commissioner) {
+        Trial trial = loadCompletedTrialOrThrow(trialId);
+
+        if (trial.getEndDate() == null || !trial.getEndDate().isEqual(LocalDate.now())) {
+            throw new ResultModificationNotAllowedException(trialId);
+        }
+
+        resultRepository.deleteByTrialId(trialId);
+
+        List<TrialParticipant> participants = trialParticipantRepository.findByTrialId(trialId);
+        ResultInputStrategy strategy = new ManualResultInputStrategy(inputs, participants, performanceType);
+        List<Result> ranked = rankingService.rank(strategy.collect(trial));
+
+        LocalDateTime now = LocalDateTime.now();
+        ranked.forEach(r -> {
+            r.setUpdatedBy(commissioner);
+            r.setUpdatedAt(now);
+        });
+
+        return resultRepository.saveAll(ranked);
     }
 
     // -------------------------------------------------------------------------

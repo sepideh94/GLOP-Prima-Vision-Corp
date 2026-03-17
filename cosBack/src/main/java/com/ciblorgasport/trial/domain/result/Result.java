@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -303,6 +304,95 @@ class CommissionerTrialControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(body))
                     .andExpect(status().isBadRequest());
+
+            verifyNoInteractions(recordTrialResultsUseCase, trialResultService);
+        }
+    }
+
+    // =========================================================================
+    // PUT /api/commissioner/trials/{id}/results — modification des résultats
+    // =========================================================================
+
+    @Nested
+    @DisplayName("PUT /api/commissioner/trials/{id}/results")
+    class UpdateResults {
+
+        private static final String BODY = """
+                {
+                  "performanceType": "TIME",
+                  "results": [
+                    { "trialParticipantId": 1, "performanceValue": 10.01 },
+                    { "trialParticipantId": 2, "performanceValue": 10.05 }
+                  ]
+                }
+                """;
+
+        @Test
+        @DisplayName("200 — modification le jour même, retourne le classement recalculé")
+        void shouldReturn200WithUpdatedResults() throws Exception {
+            List<ResultResponse> updated = List.of(
+                    athleteResult(1L, 1, "10.01s", false),
+                    athleteResult(2L, 2, "10.05s", false)
+            );
+            // updatedBy est null car SecurityDisabledConfig — principal non injecté
+            given(trialResultService.getResultsByTrialId(7L)).willReturn(updated);
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].rank").value(1))
+                    .andExpect(jsonPath("$[0].performance").value("10.01s"));
+
+            verify(recordTrialResultsUseCase).updateManual(
+                    eq(7L), anyList(), eq(PerformanceType.TIME), isNull());
+            verify(trialResultService).getResultsByTrialId(7L);
+        }
+
+        @Test
+        @DisplayName("400 — date de l'épreuve dépassée (ResultModificationNotAllowedException)")
+        void shouldReturn400WhenModificationDateExceeded() throws Exception {
+            given(recordTrialResultsUseCase.updateManual(eq(7L), anyList(), any(), any()))
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException(7L));
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value(400));
+
+            verifyNoInteractions(trialResultService);
+        }
+
+        @Test
+        @DisplayName("409 — épreuve non terminée (TrialNotCompletedException)")
+        void shouldReturn409WhenTrialNotCompleted() throws Exception {
+            given(recordTrialResultsUseCase.updateManual(eq(5L), anyList(), any(), any()))
+                    .willThrow(new com.ciblorgasport.common.exception.TrialNotCompletedException(
+                            5L, com.ciblorgasport.common.model.Status.UPCOMING));
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 5L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.status").value(409));
+
+            verifyNoInteractions(trialResultService);
+        }
+
+        @Test
+        @DisplayName("400 — validation : performanceType manquant")
+        void shouldReturn400WhenPerformanceTypeMissing() throws Exception {
+            String invalidBody = """
+                    { "results": [{ "trialParticipantId": 1, "performanceValue": 10.01 }] }
+                    """;
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(invalidBody))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.validationErrors.performanceType").exists());
 
             verifyNoInteractions(recordTrialResultsUseCase, trialResultService);
         }

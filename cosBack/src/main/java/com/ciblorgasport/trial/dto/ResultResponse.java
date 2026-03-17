@@ -28,7 +28,17 @@ public class ResultResponse {
     /** Informations du participant (athlète ou équipe avec ses membres). */
     private TrialParticipantResponse participant;
 
+    /** Nom du commissaire ayant modifié le résultat (null si jamais modifié). */
+    private String updatedBy;
+
+    /** Horodatage de la dernière modification (null si jamais modifié). */
+    private LocalDateTime updatedAt;
+
     public static ResultResponse from(Result result, TrialParticipantResponse participantResponse) {
+        String updatedByName = result.getUpdatedBy() != null
+                ? result.getUpdatedBy().getFirstName() + " " + result.getUpdatedBy().getLastName()
+                : null;
+
         return ResultResponse.builder()
                 .id(result.getId())
                 .trialId(result.getTrial() != null ? result.getTrial().getId() : null)
@@ -39,6 +49,8 @@ public class ResultResponse {
                 .updatedBy(result.getUpdatedBy())
                 .updatedAt(result.getUpdatedAt())
                 .participant(participantResponse)
+                .updatedBy(updatedByName)
+                .updatedAt(result.getUpdatedAt())
                 .build();
     }
 }
