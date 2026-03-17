@@ -3,6 +3,7 @@ import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 
 const sidebarConfig = {
@@ -28,6 +29,11 @@ const sidebarConfig = {
       label: "Gestion des utilisateurs",
       icon: PeopleIcon,
       path: "/admin/users",
+    },
+    {
+      label: "Planning",
+      icon: ScheduleIcon,
+      path: "/admin/schedules/create",
     },
   ],
 

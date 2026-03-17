@@ -1,13 +1,13 @@
 package com.ciblorgasport.trial.infrastructure;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.trial.domain.CategoryGender;
@@ -56,4 +56,21 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("trialName") TrialName trialName,
             @Param("categoryGender") CategoryGender categoryGender,
             @Param("roundName") RoundName roundName);
+
+    
+    List<TrialParticipant> findByCompetitorId(Long competitorId);
+    
+    /**
+     * Récupère les participations aux épreuves directement pour l'athlète 
+     * OU via les équipes dont il est membre.
+     */
+    @Query("SELECT tp FROM TrialParticipant tp " +
+           "WHERE (tp.competitorId = :athleteId AND tp.competitorType = 'ATHLETE') " +
+           "OR (tp.competitorType = 'TEAM' AND tp.competitorId IN " +
+           "    (SELECT t.id FROM Team t JOIN t.members m WHERE m.id = :athleteId))")
+    List<TrialParticipant> findAllDirectAndTeamTrialParticipations(@Param("athleteId") Long athleteId);
 }
+
+
+
+
