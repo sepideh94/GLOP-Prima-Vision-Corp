@@ -34,22 +34,13 @@ import com.ciblorgasport.team.application.TeamImportService;
 import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.dto.TeamImportResult;
 import com.ciblorgasport.team.dto.TeamResponse;
-import com.ciblorgasport.trial.application.RecordTrialResultsUseCase;
 import com.ciblorgasport.trial.application.TrialParticipantService;
-import com.ciblorgasport.trial.application.TrialResultService;
 import com.ciblorgasport.trial.application.TrialService;
-import com.ciblorgasport.trial.domain.result.PerformanceType;
-import com.ciblorgasport.trial.domain.result.Result;
-import com.ciblorgasport.trial.domain.result.input.SensorResultInputStrategy;
 import com.ciblorgasport.trial.dto.AssignAthletesRequest;
 import com.ciblorgasport.trial.dto.AssignTeamsRequest;
-import com.ciblorgasport.trial.dto.RecordResultsRequest;
-import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.trial.dto.TrialUpdateRequest;
-import com.ciblorgasport.trial.infrastructure.SimulatedSensorDataReader;
-import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
@@ -74,10 +65,6 @@ public class CommissionnerController {
 	private final TrialService trialService;
 	private final TrialParticipantService trialParticipantService;
 	private final TeamImportService teamImportService;
-    private final RecordTrialResultsUseCase recordTrialResultsUseCase;
-    private final TrialResultService trialResultService;
-    private final SimulatedSensorDataReader simulatedSensorDataReader;
-    private final TrialParticipantRepository trialParticipantRepository;
 
     @PostMapping("/create-athlete")
     public ResponseEntity<?> createAthlete(@Valid @RequestBody CreateUserRequest request) {
@@ -252,45 +239,4 @@ public class CommissionnerController {
     
 
 
-    /**
-     * Saisie manuelle des résultats d'une épreuve terminée.
-     * Accessible uniquement aux commissaires (sécurisé par /api/commissioner/**).
-     * Retourne 409 si l'épreuve n'est pas encore terminée.
-     */
-    @PostMapping("/trials/{trialId}/results")
-    public ResponseEntity<List<Result>> recordResults(
-            @PathVariable Long trialId,
-            @Valid @RequestBody RecordResultsRequest request) {
-        List<Result> results = recordTrialResultsUseCase.recordManual(
-                trialId, request.results(), request.performanceType());
-        return ResponseEntity.status(HttpStatus.CREATED).body(results);
-    }
-
-    // ==================== SIMULATION CAPTEUR (DÉMO) ====================
-
-    /**
-     * Simule la réception de données capteur pour une épreuve terminée.
-     * Génère des performances aléatoires pour chaque participant assigné,
-     * calcule le classement et retourne les résultats.
-     * <p>
-     * Utilisation : démos et tests d'intégration — ne pas exposer en production.
-     *
-     * @param trialId         identifiant de l'épreuve (doit être COMPLETED)
-     * @param performanceType TYPE ou POINTS (défaut : TIME)
-     */
-    @PostMapping("/trials/{trialId}/simulate-results")
-    public ResponseEntity<List<ResultResponse>> simulateSensorResults(
-            @PathVariable Long trialId,
-            @RequestParam(defaultValue = "TIME") PerformanceType performanceType) {
-
-        var participants = trialParticipantRepository.findByTrialId(trialId);
-
-        SensorResultInputStrategy strategy = new SensorResultInputStrategy(
-                id -> simulatedSensorDataReader.readForTrial(id, performanceType),
-                participants,
-                performanceType);
-
-        recordTrialResultsUseCase.execute(trialId, strategy);
-        return ResponseEntity.ok(trialResultService.getResultsByTrialId(trialId));
-    }
 }
