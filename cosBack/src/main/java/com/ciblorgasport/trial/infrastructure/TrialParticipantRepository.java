@@ -1,13 +1,13 @@
 package com.ciblorgasport.trial.infrastructure;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.trial.domain.CategoryGender;
@@ -22,15 +22,36 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
 
     long countByTrialId(Long trialId);
 
-    // Correction : Utilisation de competitorId et competitorType
     boolean existsByTrialIdAndCompetitorIdAndCompetitorType(Long trialId, Long competitorId, CompetitorType competitorType);
+
+    /**
+     * Récupère une participation à une épreuve par son id
+     * en vérifiant qu'elle appartient bien à l'athlète connecté.
+     */
+    @Query("SELECT tp FROM TrialParticipant tp " +
+           "WHERE tp.id = :id " +
+           "AND tp.competitorId = :athleteId " +
+           "AND tp.competitorType = 'ATHLETE'")
+    Optional<TrialParticipant> findByIdAndAthleteId(
+            @Param("id") Long id,
+            @Param("athleteId") Long athleteId
+    );
+
+    /**
+     * Récupère toutes les participations aux épreuves
+     * d'un athlète donné.
+     */
+    @Query("SELECT tp FROM TrialParticipant tp " +
+           "WHERE tp.competitorId = :athleteId " +
+           "AND tp.competitorType = 'ATHLETE'")
+    List<TrialParticipant> findByAthleteId(@Param("athleteId") Long athleteId);
 
     /**
      * Vérifie si un athlète est déjà inscrit dans une série de qualification pour une épreuve donnée.
      */
     @Query("SELECT COUNT(tp) > 0 FROM TrialParticipant tp " +
            "WHERE tp.competitorId = :athleteId " +
-           "AND tp.competitorType = 'ATHLETE' " + // On force le type ATHLETE
+           "AND tp.competitorType = 'ATHLETE' " +
            "AND tp.trial.competition.id = :competitionId " +
            "AND tp.trial.trialName = :trialName " +
            "AND tp.trial.categoryGender = :categoryGender " +
@@ -57,11 +78,10 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("categoryGender") CategoryGender categoryGender,
             @Param("roundName") RoundName roundName);
 
-    
     List<TrialParticipant> findByCompetitorId(Long competitorId);
-    
+
     /**
-     * Récupère les participations aux épreuves directement pour l'athlète 
+     * Récupère les participations aux épreuves directement pour l'athlète
      * OU via les équipes dont il est membre.
      */
     @Query("SELECT tp FROM TrialParticipant tp " +
@@ -70,7 +90,3 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
            "    (SELECT t.id FROM Team t JOIN t.members m WHERE m.id = :athleteId))")
     List<TrialParticipant> findAllDirectAndTeamTrialParticipations(@Param("athleteId") Long athleteId);
 }
-
-
-
-

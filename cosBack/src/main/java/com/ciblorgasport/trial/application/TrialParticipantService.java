@@ -3,7 +3,6 @@ package com.ciblorgasport.trial.application;
 import java.util.List;
 
 import com.ciblorgasport.athlete.dto.AthleteResponse;
-import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.dto.TeamResponse;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 
@@ -21,9 +20,21 @@ public interface TrialParticipantService {
     List<TrialParticipantResponse> getByTrialId(Long trialId);
 
     /**
+     * Récupère toutes les participations aux épreuves
+     * pour un athlète donné.
+     */
+    List<TrialParticipantResponse> getByAthleteId(Long athleteId);
+
+    /**
      * Retire un athlète d'un trial.
      */
     void removeAthlete(Long trialId, Long athleteId);
+
+    /**
+     * Permet à un athlète de déclarer forfait
+     * sur sa participation à une épreuve.
+     */
+    void declareForfeit(Long trialParticipantId, Long athleteId);
 
     /**
      * Retourne les athlètes éligibles pour un trial selon sa phase :
@@ -33,9 +44,9 @@ public interface TrialParticipantService {
      */
     List<AthleteResponse> getEligibleAthletes(Long trialId);
 
-    public List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds) ;
-    public List<TeamResponse> getEligibleTeams(Long trialId);
-    public void removeTeam(Long trialId, Long teamId) ;
+    List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds);
 
+    List<TeamResponse> getEligibleTeams(Long trialId);
 
+    void removeTeam(Long trialId, Long teamId);
 }

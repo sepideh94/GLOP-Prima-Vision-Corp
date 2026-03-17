@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +31,8 @@ public class ParticipationService {
     private final AthleteRepository athleteRepository;
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
-	private final TeamValidationService teamValidationService;
-	
+    private final TeamValidationService teamValidationService;
+
     @Transactional
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
         List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
@@ -73,16 +72,16 @@ public class ParticipationService {
 
         return responses;
     }
-    
+
     @Transactional
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
         List<Participation> participations = participationRepository.findAllDirectAndTeamParticipations(athleteId);
 
         return participations.stream()
                 .collect(Collectors.toMap(
-                        p -> p.getCompetition().getId(), 
-                        p -> p,                          
-                        (p1, p2) -> p1                   
+                        p -> p.getCompetition().getId(),
+                        p -> p,
+                        (p1, p2) -> p1
                 ))
                 .values()
                 .stream()
@@ -94,7 +93,7 @@ public class ParticipationService {
     public void confirmAllParticipationsForAthlete(Long athleteId) {
         List<Participation> participations = participationRepository
                 .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE);
-        
+
         for (Participation p : participations) {
             p.setStatus(ParticipationStatus.CONFIRMED);
         }
@@ -102,23 +101,39 @@ public class ParticipationService {
     }
 
     @Transactional
-    public void declareForfeit(Long participationId, Long athleteId) {
+    public void confirmParticipation(Long participationId, Long athleteId) {
         Participation participation = participationRepository.findById(participationId)
-                .orElseThrow(() -> new EntityNotFoundException("Participation introuvable"));
-
-        if (!participation.getCompetitorId().equals(athleteId)) {
-            throw new AccessDeniedException("Accès non autorisé");
-        }
+                .orElseThrow(() -> new EntityNotFoundException("Participation non trouvée"));
 
         if (participation.getCompetitorType() != CompetitorType.ATHLETE) {
-            throw new AccessDeniedException("Seul un athlète peut déclarer forfait.");
+            throw new IllegalStateException("Seul un athlète peut confirmer sa participation.");
         }
 
-        participation.declareForfeit();
-        participationRepository.save(participation);
+        if (!participation.getCompetitorId().equals(athleteId)) {
+            throw new IllegalStateException("Accès non autorisé à cette participation.");
+        }
+
+        Athlete athlete = athleteRepository.findById(participation.getCompetitorId())
+                .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé"));
+
+        if (!athlete.isProfileComplete()) {
+            throw new IllegalStateException(
+                    "Impossible de confirmer la participation : votre profil est incomplet (documents manquants)."
+            );
+        }
+
+        participation.setCharterAccepted(true);
+        participation.setCharterAcceptedAt(LocalDateTime.now());
+        participation.setStatus(ParticipationStatus.CONFIRMED);
+
+        participationRepository.saveAndFlush(participation);
+
+        teamValidationService.validateTeamStatus(
+                participation.getCompetitorId(),
+                participation.getCompetition().getId()
+        );
     }
 
-    
     @Transactional
     public void acceptCharter(Long participationId) {
         Participation participation = participationRepository.findById(participationId)
@@ -130,7 +145,7 @@ public class ParticipationService {
 
             if (!athlete.isProfileComplete()) {
                 throw new IllegalStateException(
-                    "Impossible d'accepter la charte : votre profil est incomplet (documents manquants)."
+                        "Impossible d'accepter la charte : votre profil est incomplet (documents manquants)."
                 );
             }
         }
@@ -138,13 +153,13 @@ public class ParticipationService {
         participation.setCharterAccepted(true);
         participation.setCharterAcceptedAt(LocalDateTime.now());
         participation.setStatus(ParticipationStatus.CONFIRMED);
-        
+
         participationRepository.saveAndFlush(participation);
 
         if (participation.getCompetitorType() == CompetitorType.ATHLETE) {
             teamValidationService.validateTeamStatus(
-                participation.getCompetitorId(), 
-                participation.getCompetition().getId()
+                    participation.getCompetitorId(),
+                    participation.getCompetition().getId()
             );
         }
     }
