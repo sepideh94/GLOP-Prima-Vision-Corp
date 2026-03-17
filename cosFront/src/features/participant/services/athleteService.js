@@ -15,6 +15,11 @@ const athleteService = {
     const res = await api.get(`/api/commissioner/athletes/${athleteId}/participations`);
     return res.data;
   },
+
+  async getAthleteResults() {
+    const res = await api.get("/api/athlete/results");
+    return res.data;
+  },
 };
 
 export default athleteService;

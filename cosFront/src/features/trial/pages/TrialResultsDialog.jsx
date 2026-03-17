@@ -40,6 +40,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
   const [rowLocked, setRowLocked] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [simulating, setSimulating] = useState(false);
 
   const btnGreen = {
     mb: 0.5,
@@ -205,6 +206,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
   const hasAnyError = participants.some((p) => Boolean(fieldErrors[p.id]));
   const isSubmitDisabled =
     loading ||
+    simulating ||
     loadingParticipants ||
     participants.length === 0 ||
     hasAnyError ||
@@ -281,6 +283,50 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSimulate = async () => {
+    if (participants.length === 0 || hasExistingResults) {
+      return;
+    }
+    setSimulating(true);
+    setSubmitError(null);
+    try {
+      await trialService.simulateResults(trial.id, performanceType);
+      onClose();
+      onSaved && onSaved();
+    } catch (e) {
+      const status = e?.response?.status;
+      const data = e?.response?.data;
+      const backendMessage = extractBackendMessage(data);
+
+      if (status === 400) {
+        setSubmitError(
+          `Simulation impossible (400). Vérifiez que l'épreuve est bien terminée et respecte les règles métier.${backendMessage ? ` Détail: ${backendMessage}` : ""}`
+        );
+        return;
+      }
+      if (status === 401) {
+        setSubmitError("Session expirée. Veuillez vous reconnecter.");
+        return;
+      }
+      if (status === 403) {
+        setSubmitError("Accès refusé. Vous devez être commissaire pour simuler les résultats.");
+        return;
+      }
+      if (status === 404) {
+        setSubmitError("Épreuve introuvable (404). Actualisez la page et réessayez.");
+        return;
+      }
+
+      setSubmitError(
+        `Erreur lors de la simulation${status ? ` (HTTP ${status})` : ""}${
+          backendMessage ? ` : ${backendMessage}` : ""
+        }`
+      );
+    } finally {
+      setSimulating(false);
     }
   };
 
@@ -410,6 +456,53 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
             </Box>
           </Stack>
         </Paper>
+
+        {!hasExistingResults && !participantsError && (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2,
+              mb: 2.2,
+              borderRadius: 3,
+              background: "rgba(250, 250, 250, 0.9)",
+              border: "1px dashed rgba(156, 163, 175, 0.8)",
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              alignItems={{ xs: "flex-start", sm: "center" }}
+              justifyContent="space-between"
+            >
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: 13, mb: 0.3 }}>
+                  Remplissage automatique des résultats
+                </Typography>
+                <Typography sx={{ fontSize: 12, color: "text.secondary" }}>
+                  Optionnel : permet de remplir automatiquement les résultats pour
+                  tous les participants de cette épreuve.
+                </Typography>
+              </Box>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleSimulate}
+                disabled={
+                  simulating || loadingParticipants || participants.length === 0
+                }
+                sx={{
+                  mt: { xs: 1, sm: 0 },
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: appTheme.radius.pill,
+                  borderColor: "rgba(34,197,94,0.7)",
+                }}
+              >
+                {simulating ? "Simulation..." : "Simuler les résultats"}
+              </Button>
+          </Stack>
+          </Paper>
+        )}
 
         {loadingParticipants ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

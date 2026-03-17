@@ -74,6 +74,8 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       ? "Points"
       : null;
 
+  const lastUpdated = results.find((r) => r.updatedAt) || null;
+
   const rankCounts = results.reduce((acc, r) => {
     const key = String(r.rank ?? "");
     acc[key] = (acc[key] || 0) + 1;
@@ -158,6 +160,25 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
+        )}
+
+        {!error && lastUpdated && (
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              sx={{ fontSize: 12, color: "text.secondary", fontStyle: "italic" }}
+            >
+              Dernière modification par{" "}
+              <strong>{lastUpdated.updatedBy || "—"}</strong>{" "}
+              le{" "}
+              {new Date(lastUpdated.updatedAt).toLocaleString("fr-FR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Typography>
+          </Box>
         )}
 
         {loading ? (
