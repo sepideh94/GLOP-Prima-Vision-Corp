@@ -53,8 +53,8 @@ class TrialControllerTest {
         @DisplayName("200 — retourne la liste des résultats classés pour athlètes individuels")
         void shouldReturn200WithAthleteResults() throws Exception {
             List<ResultResponse> results = List.of(
-                    athleteResult(1L, 1, "10.01s"),
-                    athleteResult(2L, 2, "10.05s")
+                    athleteResult(1L, 1, "10.01s", false),
+                    athleteResult(2L, 2, "10.05s", false)
             );
             given(trialResultService.getResultsByTrialId(7L)).willReturn(results);
 
@@ -109,9 +109,9 @@ class TrialControllerTest {
         @Test
         @DisplayName("200 — ex aequo : tie=true sur les participants à égalité")
         void shouldReturnTieFlagOnEqualPerformances() throws Exception {
-            ResultResponse tied1 = athleteResult(1L, 1, "10.01s").toBuilder().tie(true).build();
-            ResultResponse tied2 = athleteResult(2L, 1, "10.01s").toBuilder().tie(true).build();
-            ResultResponse third = athleteResult(3L, 3, "10.05s");
+            ResultResponse tied1 = athleteResult(1L, 1, "10.01s", true);
+            ResultResponse tied2 = athleteResult(2L, 1, "10.01s", true);
+            ResultResponse third = athleteResult(3L, 3, "10.05s", false);
 
             given(trialResultService.getResultsByTrialId(10L)).willReturn(List.of(tied1, tied2, third));
 
@@ -183,12 +183,12 @@ class TrialControllerTest {
     // Builders
     // =========================================================================
 
-    private static ResultResponse athleteResult(Long id, int rank, String performance) {
+    private static ResultResponse athleteResult(Long id, int rank, String performance, boolean tie) {
         return ResultResponse.builder()
                 .id(id)
                 .trialId(7L)
                 .rank(rank)
-                .tie(false)
+                .tie(tie)
                 .performanceType("TIME")
                 .performance(performance)
                 .participant(athleteParticipant(id))
