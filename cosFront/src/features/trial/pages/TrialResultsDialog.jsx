@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import EditIcon from "@mui/icons-material/Edit";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
 
@@ -35,6 +36,8 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [participantsError, setParticipantsError] = useState(null);
+  const [hasExistingResults, setHasExistingResults] = useState(false);
+  const [rowLocked, setRowLocked] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingParticipants, setLoadingParticipants] = useState(false);
 
@@ -77,6 +80,8 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
     setFieldErrors({});
     setSubmitError(null);
     setParticipantsError(null);
+    setHasExistingResults(false);
+    setRowLocked({});
 
     trialService.getParticipants(trial.id)
       .then((data) => {
@@ -99,6 +104,46 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
         });
         setValues(initial);
         setFieldErrors({});
+
+        if (filtered.length > 0) {
+          // Charger d'éventuels résultats existants pour pré-remplir et verrouiller
+          trialService
+            .getResults(trial.id)
+            .then((results) => {
+              if (!Array.isArray(results) || results.length === 0) {
+                setHasExistingResults(false);
+                setRowLocked({});
+                return;
+              }
+
+              const byParticipant = {};
+              const locked = {};
+
+              results.forEach((r) => {
+                const participantId = r?.participant?.id;
+                if (!participantId) return;
+                const perfRaw = String(r.performance ?? "");
+                const numericPart = parseFloat(
+                  perfRaw.replace(/[^\d,.\-]/g, "").replace(",", ".")
+                );
+                if (!Number.isNaN(numericPart)) {
+                  byParticipant[participantId] = String(numericPart);
+                  locked[participantId] = true;
+                }
+              });
+
+              if (Object.keys(byParticipant).length > 0) {
+                setHasExistingResults(true);
+                setValues((prev) => ({ ...prev, ...byParticipant }));
+                setRowLocked(locked);
+              }
+            })
+            .catch(() => {
+              // Si l'appel échoue, on considère qu'il n'y a pas de résultats existants
+              setHasExistingResults(false);
+              setRowLocked({});
+            });
+        }
       })
       .catch((e) => {
         setParticipants([]);
@@ -198,7 +243,11 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
         })),
       };
 
-      await trialService.saveResults(trial.id, payload);
+      if (hasExistingResults) {
+        await trialService.updateResults(trial.id, payload);
+      } else {
+        await trialService.saveResults(trial.id, payload);
+      }
 
       onClose();
       onSaved && onSaved(); // 🔥 ouvre classement auto
@@ -210,7 +259,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
 
       if (status === 400) {
         setSubmitError(
-          `Enregistrement refusé (400). Vérifiez que l'épreuve est bien terminée et que toutes les valeurs sont valides.${backendMessage ? ` Détail: ${backendMessage}` : ""}`
+          `Enregistrement refusé (400). Vérifiez que l'épreuve est bien terminée, que la date autorise la modification et que toutes les valeurs sont valides.${backendMessage ? ` Détail: ${backendMessage}` : ""}`
         );
         return;
       }
@@ -389,6 +438,14 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                 <TableCell sx={{ fontWeight: 900, background: "#fff" }}>
                   Performance ({unitLabel})
                 </TableCell>
+                {hasExistingResults && (
+                  <TableCell
+                    align="right"
+                    sx={{ fontWeight: 900, background: "#fff" }}
+                  >
+                    Actions
+                  </TableCell>
+                )}
               </TableRow>
             </TableHead>
 
@@ -428,6 +485,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                       label={isTime ? "Temps" : "Points"}
                       value={values[p.id] || ""}
                       onChange={(e) => handleChange(p.id, e.target.value)}
+                      disabled={hasExistingResults && rowLocked[p.id]}
                       error={Boolean(fieldErrors[p.id])}
                       helperText={fieldErrors[p.id] || " "}
                       InputProps={{
@@ -439,6 +497,33 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                       }}
                     />
                   </TableCell>
+
+                  {hasExistingResults && (
+                    <TableCell align="right" width={90}>
+                      <Button
+                        variant="text"
+                        size="small"
+                        onClick={() =>
+                          setRowLocked((prev) => ({
+                            ...prev,
+                            [p.id]: !prev[p.id],
+                          }))
+                        }
+                        sx={{
+                          minWidth: "auto",
+                          px: 1,
+                          textTransform: "none",
+                          fontSize: 12,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: 16 }} />
+                        {rowLocked[p.id] ? "Modifier" : "Verrouiller"}
+                      </Button>
+                    </TableCell>
+                  )}
 
                 </TableRow>
               ))}

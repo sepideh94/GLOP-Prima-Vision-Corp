@@ -79,6 +79,14 @@ const trialService = {
   return res.data;
   },
 
+  updateResults: async (trialId, payload) => {
+    const res = await api.put(
+      `/api/commissioner/trials/${trialId}/results`,
+      payload
+    );
+    return res.data;
+  },
+
 };
 
 export default trialService;
