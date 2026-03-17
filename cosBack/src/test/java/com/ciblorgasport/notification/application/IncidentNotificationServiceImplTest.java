@@ -24,6 +24,7 @@ import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.incident.domain.IncidentStatus;
 import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.notification.dto.NotificationRecipient;
+import com.ciblorgasport.spectator.Spectator;
 
 @ExtendWith(MockitoExtension.class)
 class IncidentNotificationServiceImplTest {
@@ -33,6 +34,12 @@ class IncidentNotificationServiceImplTest {
 
     @Mock
     private CommissionnerIncidentRecipientResolver commissionnerIncidentRecipientResolver;
+
+    @Mock
+    private VolonteerIncidentRecipientResolver volonteerIncidentRecipientResolver;
+
+    @Mock
+    private SpectatorIncidentRecipientResolver spectatorIncidentRecipientResolver;
 
     @Mock
     private NotificationService notificationService;
@@ -94,6 +101,10 @@ class IncidentNotificationServiceImplTest {
                 eq("Un nouvel incident a été déclaré. Titre : Pluie forte | Description : Compétition perturbée"),
                 eq("http://localhost:3000")
         );
+
+        verify(commissionnerIncidentRecipientResolver, never()).resolve();
+        verify(volonteerIncidentRecipientResolver, never()).resolve(any());
+        verify(spectatorIncidentRecipientResolver, never()).resolve();
     }
 
     @Test
@@ -143,10 +154,27 @@ class IncidentNotificationServiceImplTest {
                 eq("Un incident a été résolu. Titre : Test2 | Description : Incident résolu maintenant"),
                 eq("http://localhost:3000")
         );
+
+        verify(commissionnerIncidentRecipientResolver, never()).resolve();
+        verify(volonteerIncidentRecipientResolver, never()).resolve(any());
+        verify(spectatorIncidentRecipientResolver, never()).resolve();
     }
 
     @Test
-    void shouldDoNothingWhenImpactLevelDoesNotContainAthleteOrCommissionner() {
+    void shouldCreateNotificationAndSendEmailForSpectatorWhenIncidentCreated() {
+        Spectator spectator = Spectator.builder()
+                .id(20L)
+                .firstName("Sara")
+                .lastName("Viewer")
+                .email("sara@test.com")
+                .build();
+
+        NotificationRecipient recipient = new NotificationRecipient(
+                spectator,
+                "sara@test.com",
+                "Sara Viewer"
+        );
+
         Incident incident = Incident.builder()
                 .id(3L)
                 .title("Spectator only")
@@ -155,10 +183,50 @@ class IncidentNotificationServiceImplTest {
                 .impactLevels(Set.of(ImpactLevel.SPECTATOR))
                 .build();
 
+        when(spectatorIncidentRecipientResolver.resolve()).thenReturn(List.of(recipient));
+
+        incidentNotificationService.notifyIncidentCreated(incident);
+
+        verify(spectatorIncidentRecipientResolver, times(1)).resolve();
+        verify(athleteIncidentRecipientResolver, never()).resolve(any());
+        verify(commissionnerIncidentRecipientResolver, never()).resolve();
+        verify(volonteerIncidentRecipientResolver, never()).resolve(any());
+
+        verify(notificationService, times(1)).createNotification(
+                eq(spectator),
+                eq(incident),
+                eq(NotificationType.INCIDENT),
+                eq("[Incident] Spectator only"),
+                eq("Un nouvel incident a été déclaré. Titre : Spectator only | Description : Info"),
+                eq("http://localhost:3000"),
+                eq("EN_COURS")
+        );
+
+        verify(emailService, times(1)).sendIncidentNotificationEmail(
+                eq("sara@test.com"),
+                eq("Sara Viewer"),
+                eq("[Incident] Spectator only"),
+                eq("Un nouvel incident a été déclaré. Titre : Spectator only | Description : Info"),
+                eq("http://localhost:3000")
+        );
+    }
+
+    @Test
+    void shouldDoNothingWhenImpactLevelsIsEmpty() {
+        Incident incident = Incident.builder()
+                .id(4L)
+                .title("No recipients")
+                .description("Info")
+                .status(IncidentStatus.EN_COURS)
+                .impactLevels(Set.of())
+                .build();
+
         incidentNotificationService.notifyIncidentCreated(incident);
 
         verify(athleteIncidentRecipientResolver, never()).resolve(any());
         verify(commissionnerIncidentRecipientResolver, never()).resolve();
+        verify(volonteerIncidentRecipientResolver, never()).resolve(any());
+        verify(spectatorIncidentRecipientResolver, never()).resolve();
         verify(notificationService, never()).createNotification(any(), any(), any(), any(), any(), any(), any());
         verify(emailService, never()).sendIncidentNotificationEmail(any(), any(), any(), any(), any());
     }
