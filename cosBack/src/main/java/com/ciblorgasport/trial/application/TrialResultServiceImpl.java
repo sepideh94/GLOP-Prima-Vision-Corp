@@ -1,13 +1,19 @@
 package com.ciblorgasport.trial.application;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.result.Result;
+import com.ciblorgasport.trial.dto.CompetitionResultsResponse;
 import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.infrastructure.ResultRepository;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
+import com.ciblorgasport.trial.infrastructure.TrialRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +31,8 @@ public class TrialResultServiceImpl implements TrialResultService {
 
     private final ResultRepository resultRepository;
     private final TrialParticipantService trialParticipantService;
+    private final TrialParticipantRepository trialParticipantRepository;
+    private final TrialRepository trialRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -40,6 +48,50 @@ public class TrialResultServiceImpl implements TrialResultService {
                 .map(result -> {
                     var participant = participantById.get(result.getTrialParticipant().getId());
                     return ResultResponse.from(result, participant);
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ResultResponse> getResultsByAthleteId(Long athleteId) {
+        // Recupere toutes les participations : directe (ATHLETE) + via equipe (TEAM)
+        var participations = trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
+        if (participations.isEmpty()) return List.of();
+
+        List<Long> participantIds = participations.stream()
+                .map(tp -> tp.getId())
+                .toList();
+
+        List<Result> results = resultRepository.findByTrialParticipantIdIn(participantIds);
+
+        var participantById = participations.stream()
+                .collect(Collectors.toMap(tp -> tp.getId(), tp -> tp));
+
+        return results.stream()
+                .map(result -> {
+                    var tp = participantById.get(result.getTrialParticipant().getId());
+                    var participantResponse = trialParticipantService.toResponse(tp);
+                    return ResultResponse.from(result, participantResponse);
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompetitionResultsResponse> getResultsByCompetitionId(Long competitionId) {
+        List<Trial> trials = trialRepository.findByCompetitionId(competitionId);
+
+        return trials.stream()
+                .map(trial -> {
+                    List<ResultResponse> results = getResultsByTrialId(trial.getId());
+                    return CompetitionResultsResponse.builder()
+                            .trialId(trial.getId())
+                            .trialName(trial.getTrialName() != null ? trial.getTrialName().name() : null)
+                            .categoryGender(trial.getCategoryGender() != null ? trial.getCategoryGender().name() : null)
+                            .roundName(trial.getRound() != null ? trial.getRound().getName().name() : null)
+                            .results(results)
+                            .build();
                 })
                 .toList();
     }

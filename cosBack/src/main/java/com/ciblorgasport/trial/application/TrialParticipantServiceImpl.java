@@ -300,4 +300,9 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             @Override public CompetitorType getCompetitorType() { return CompetitorType.TEAM; }
         };
     }
+
+    @Override
+    public TrialParticipantResponse toResponse(TrialParticipant tp) {
+        return mapToResponse(tp);
+    }
 }

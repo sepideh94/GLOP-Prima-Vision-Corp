@@ -3,8 +3,10 @@ package com.ciblorgasport.trial.api;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,6 +20,7 @@ import com.ciblorgasport.trial.dto.RecordResultsRequest;
 import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.infrastructure.SimulatedSensorDataReader;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
+import com.ciblorgasport.user.domain.UserAccount;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +51,26 @@ public class CommissionerTrialController {
             @Valid @RequestBody RecordResultsRequest request) {
 
         recordTrialResultsUseCase.recordManual(trialId, request.results(), request.performanceType());
+        return ResponseEntity.ok(trialResultService.getResultsByTrialId(trialId));
+    }
+
+    /**
+     * Modifie les résultats d'une épreuve déjà enregistrée.
+     * <p>
+     * Autorisé uniquement le jour de l'épreuve (comparaison sur endDate == today).
+     * L'auteur de la modification est tracé automatiquement.
+     *
+     * @throws com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException
+     *         si la date de l'épreuve est dépassée
+     */
+    @PutMapping("/{id}/results")
+    public ResponseEntity<List<ResultResponse>> updateResults(
+            @PathVariable("id") Long trialId,
+            @Valid @RequestBody RecordResultsRequest request,
+            @AuthenticationPrincipal UserAccount commissioner) {
+
+        recordTrialResultsUseCase.updateManual(
+                trialId, request.results(), request.performanceType(), commissioner);
         return ResponseEntity.ok(trialResultService.getResultsByTrialId(trialId));
     }
 

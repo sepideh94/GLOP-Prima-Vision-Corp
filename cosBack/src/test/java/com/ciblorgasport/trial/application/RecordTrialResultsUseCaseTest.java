@@ -3,6 +3,7 @@ package com.ciblorgasport.trial.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,8 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
 import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
+import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.trial.domain.ranking.RankingService;
 import com.ciblorgasport.trial.domain.result.PerformanceType;
 import com.ciblorgasport.trial.domain.result.Result;
@@ -153,8 +156,90 @@ class RecordTrialResultsUseCaseTest {
     }
 
     // -------------------------------------------------------------------------
+    // updateManual()
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("updateManual : jour J → supprime, recalcule, trace le commissaire")
+    void testUpdateManual_TodayTrial_Success() {
+        Trial trial = buildCompletedTrialToday(1L);
+        TrialParticipant tp1 = buildParticipant(10L);
+        TrialParticipant tp2 = buildParticipant(20L);
+        UserAccount commissioner = mock(UserAccount.class);
+
+        List<ResultInputDto> inputs = List.of(
+                new ResultInputDto(10L, new BigDecimal("10.01")),
+                new ResultInputDto(20L, new BigDecimal("10.05"))
+        );
+        List<Result> rankedResults = List.of(
+                buildRankedResult("10.01", 1),
+                buildRankedResult("10.05", 2)
+        );
+
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+        when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp1, tp2));
+        when(rankingService.rank(anyList())).thenReturn(rankedResults);
+        when(resultRepository.saveAll(anyList())).thenReturn(rankedResults);
+
+        List<Result> saved = useCase.updateManual(1L, inputs, PerformanceType.TIME, commissioner);
+
+        assertEquals(2, saved.size());
+        verify(resultRepository).deleteByTrialId(1L);
+        verify(rankingService).rank(anyList());
+        verify(resultRepository).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("updateManual : date dépassée → ResultModificationNotAllowedException")
+    void testUpdateManual_PastTrial_Throws() {
+        Trial trial = buildCompletedTrial(1L); // endDate = 2020-01-01
+        UserAccount commissioner = mock(UserAccount.class);
+
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+
+        assertThrows(ResultModificationNotAllowedException.class,
+                () -> useCase.updateManual(1L, List.of(), PerformanceType.TIME, commissioner));
+
+        verifyNoInteractions(rankingService, resultRepository);
+    }
+
+    @Test
+    @DisplayName("updateManual : épreuve non terminée → TrialNotCompletedException")
+    void testUpdateManual_TrialNotCompleted_Throws() {
+        Trial upcoming = buildUpcomingTrial(2L);
+        UserAccount commissioner = mock(UserAccount.class);
+
+        when(trialRepository.findById(2L)).thenReturn(Optional.of(upcoming));
+
+        assertThrows(TrialNotCompletedException.class,
+                () -> useCase.updateManual(2L, List.of(), PerformanceType.TIME, commissioner));
+
+        verifyNoInteractions(trialParticipantRepository, rankingService, resultRepository);
+    }
+
+    @Test
+    @DisplayName("updateManual : épreuve introuvable → TrialNotFoundException")
+    void testUpdateManual_TrialNotFound_Throws() {
+        when(trialRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(TrialNotFoundException.class,
+                () -> useCase.updateManual(99L, List.of(), PerformanceType.TIME, null));
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /** Épreuve terminée aujourd'hui : endDate == LocalDate.now(). */
+    private static Trial buildCompletedTrialToday(Long id) {
+        Trial t = new Trial();
+        t.setId(id);
+        t.setStartDate(LocalDate.now());
+        t.setStartHour(LocalTime.of(8, 0));
+        t.setEndDate(LocalDate.now());
+        t.setEndHour(LocalTime.of(1, 0)); // heure passée → COMPLETED
+        return t;
+    }
 
     /** Épreuve terminée : dates dans le passé. */
     private static Trial buildCompletedTrial(Long id) {

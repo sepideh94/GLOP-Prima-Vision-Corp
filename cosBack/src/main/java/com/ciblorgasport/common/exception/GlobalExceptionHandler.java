@@ -19,6 +19,7 @@ import com.ciblorgasport.competition.application.exceptions.CompetitionDateInteg
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
 import com.ciblorgasport.common.exception.TrialNotFoundException;
 import com.ciblorgasport.common.exception.TrialNotCompletedException;
+import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -94,6 +95,22 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(ResultModificationNotAllowedException.class)
+    public ResponseEntity<ApiError> handleResultModificationNotAllowed(
+            ResultModificationNotAllowedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Modification non autorisee")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(CompetitionDateIntegrityException.class)
