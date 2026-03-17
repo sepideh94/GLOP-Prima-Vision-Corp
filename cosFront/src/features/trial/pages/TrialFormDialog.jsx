@@ -756,7 +756,7 @@ useEffect(() => {
                     {assignedParticipants.map((p) => (
                       <Chip
                         key={getParticipantId(p)}
-                        label={`${p.athleteFirstName} ${p.athleteLastName}`}
+                        label={p.displayName || `Athlète ${getParticipantId(p)}`}
                         onDelete={() => handleRemoveChip(getParticipantId(p))}
                         sx={{
                           background: "rgba(34, 211, 238, 0.15)",
