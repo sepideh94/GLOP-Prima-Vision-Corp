@@ -1,6 +1,7 @@
 package com.ciblorgasport.trial.domain.result;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
@@ -70,6 +71,14 @@ public class Result {
     @Column(name = "is_tie", nullable = false)
     @Builder.Default
     private boolean tie = false;
+
+    /** Prénom + Nom du commissaire ayant modifié ce résultat ; null si jamais modifié. */
+    @Column(name = "updated_by")
+    private String updatedBy;
+
+    /** Horodatage de la dernière modification ; null si jamais modifié. */
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     /** Recrée le Value Object Performance à partir des colonnes persistées. */
     @Transient

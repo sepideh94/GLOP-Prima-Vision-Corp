@@ -2,6 +2,7 @@ package com.ciblorgasport.trial.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -153,6 +154,74 @@ class RecordTrialResultsUseCaseTest {
     }
 
     // -------------------------------------------------------------------------
+    // updateManual()
+    // -------------------------------------------------------------------------
+
+    @Test
+    @DisplayName("updateManual : épreuve terminée aujourd'hui → supprime, reclasse et persiste avec audit")
+    void testUpdateManual_CompletedTrialToday_Success() {
+        Trial trial = buildCompletedTrialToday(1L);
+        TrialParticipant tp1 = buildParticipant(10L);
+        TrialParticipant tp2 = buildParticipant(20L);
+
+        List<ResultInputDto> inputs = List.of(
+                new ResultInputDto(10L, new BigDecimal("10.01")),
+                new ResultInputDto(20L, new BigDecimal("10.05"))
+        );
+        List<Result> rankedResults = List.of(buildRankedResult("10.01", 1), buildRankedResult("10.05", 2));
+
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+        when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp1, tp2));
+        when(rankingService.rank(anyList())).thenReturn(rankedResults);
+        when(resultRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+
+        List<Result> saved = useCase.updateManual(1L, inputs, PerformanceType.TIME, "Jean Dupont");
+
+        verify(resultRepository).deleteAllByTrialId(1L);
+        verify(rankingService).rank(anyList());
+        verify(resultRepository).saveAll(anyList());
+        saved.forEach(r -> {
+            assertEquals("Jean Dupont", r.getUpdatedBy());
+            assertNotNull(r.getUpdatedAt());
+        });
+    }
+
+    @Test
+    @DisplayName("updateManual : épreuve introuvable → TrialNotFoundException")
+    void testUpdateManual_TrialNotFound_Throws() {
+        when(trialRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThrows(TrialNotFoundException.class,
+                () -> useCase.updateManual(99L, List.of(), PerformanceType.TIME, "Jean Dupont"));
+
+        verifyNoInteractions(resultRepository);
+    }
+
+    @Test
+    @DisplayName("updateManual : épreuve non terminée → TrialNotCompletedException")
+    void testUpdateManual_TrialNotCompleted_Throws() {
+        Trial upcomingTrial = buildUpcomingTrial(2L);
+        when(trialRepository.findById(2L)).thenReturn(Optional.of(upcomingTrial));
+
+        assertThrows(TrialNotCompletedException.class,
+                () -> useCase.updateManual(2L, List.of(), PerformanceType.TIME, "Jean Dupont"));
+
+        verifyNoInteractions(resultRepository);
+    }
+
+    @Test
+    @DisplayName("updateManual : endDate dépassée (pas aujourd'hui) → IllegalStateException")
+    void testUpdateManual_EndDatePast_Throws() {
+        Trial trial = buildCompletedTrial(1L); // endDate = 2020-01-01
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+
+        assertThrows(IllegalStateException.class,
+                () -> useCase.updateManual(1L, List.of(), PerformanceType.TIME, "Jean Dupont"));
+
+        verify(resultRepository, never()).deleteAllByTrialId(anyLong());
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
@@ -164,6 +233,17 @@ class RecordTrialResultsUseCaseTest {
         t.setStartHour(LocalTime.of(10, 0));
         t.setEndDate(LocalDate.of(2020, 1, 1));
         t.setEndHour(LocalTime.of(12, 0));
+        return t;
+    }
+
+    /** Épreuve terminée aujourd'hui (endDate == today, heure déjà passée). */
+    private static Trial buildCompletedTrialToday(Long id) {
+        Trial t = new Trial();
+        t.setId(id);
+        t.setStartDate(LocalDate.now());
+        t.setStartHour(LocalTime.of(0, 0));
+        t.setEndDate(LocalDate.now());
+        t.setEndHour(LocalTime.of(0, 1));
         return t;
     }
 

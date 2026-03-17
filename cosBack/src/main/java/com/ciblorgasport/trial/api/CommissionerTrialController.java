@@ -3,12 +3,16 @@ package com.ciblorgasport.trial.api;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.ciblorgasport.user.domain.UserAccount;
 
 import com.ciblorgasport.trial.application.RecordTrialResultsUseCase;
 import com.ciblorgasport.trial.application.TrialResultService;
@@ -48,6 +52,22 @@ public class CommissionerTrialController {
             @Valid @RequestBody RecordResultsRequest request) {
 
         recordTrialResultsUseCase.recordManual(trialId, request.results(), request.performanceType());
+        return ResponseEntity.ok(trialResultService.getResultsByTrialId(trialId));
+    }
+
+    /**
+     * Modifie les résultats d'une épreuve terminée.
+     * Efface le classement existant et le recalcule intégralement.
+     * Autorisé uniquement le jour même de l'épreuve (endDate == aujourd'hui).
+     */
+    @PutMapping("/{id}/results")
+    public ResponseEntity<List<ResultResponse>> updateResults(
+            @PathVariable("id") Long trialId,
+            @Valid @RequestBody RecordResultsRequest request,
+            @AuthenticationPrincipal UserAccount currentUser) {
+
+        String updatedBy = currentUser.getFirstName() + " " + currentUser.getLastName();
+        recordTrialResultsUseCase.updateManual(trialId, request.results(), request.performanceType(), updatedBy);
         return ResponseEntity.ok(trialResultService.getResultsByTrialId(trialId));
     }
 

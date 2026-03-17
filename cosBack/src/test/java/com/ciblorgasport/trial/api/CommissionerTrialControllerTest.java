@@ -2,15 +2,24 @@ package com.ciblorgasport.trial.api;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.math.BigDecimal;
 import java.util.List;
+
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import com.ciblorgasport.commissionner.Commissionner;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -376,8 +385,126 @@ class CommissionerTrialControllerTest {
     }
 
     // =========================================================================
+    // PUT /api/commissioner/trials/{id}/results — modification du classement
+    // =========================================================================
+
+    @Nested
+    @DisplayName("PUT /api/commissioner/trials/{id}/results")
+    class UpdateResults {
+
+        private static final String BODY = """
+                {
+                  "performanceType": "TIME",
+                  "results": [
+                    { "trialParticipantId": 1, "performanceValue": 10.01 },
+                    { "trialParticipantId": 2, "performanceValue": 10.05 }
+                  ]
+                }
+                """;
+
+        @Test
+        @DisplayName("200 — modification autorisée le jour même, retourne classement recalculé")
+        void shouldReturn200WhenUpdateAllowed() throws Exception {
+            List<ResultResponse> ranked = List.of(
+                    athleteResult(1L, 1, "10.01s", false),
+                    athleteResult(2L, 2, "10.05s", false)
+            );
+            given(trialResultService.getResultsByTrialId(7L)).willReturn(ranked);
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .with(authentication(mockPrincipal()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.length()").value(2))
+                    .andExpect(jsonPath("$[0].rank").value(1));
+
+            verify(recordTrialResultsUseCase).updateManual(eq(7L), anyList(), eq(PerformanceType.TIME), eq("Jean Commissaire"));
+            verify(trialResultService).getResultsByTrialId(7L);
+        }
+
+        @Test
+        @DisplayName("400 — date de l'épreuve dépassée (IllegalStateException)")
+        void shouldReturn400WhenEndDatePast() throws Exception {
+            given(recordTrialResultsUseCase.updateManual(eq(7L), anyList(), any(), anyString()))
+                    .willThrow(new IllegalStateException("La modification des résultats n'est autorisée que le jour même de l'épreuve."));
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .with(authentication(mockPrincipal()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.status").value(400));
+
+            verifyNoInteractions(trialResultService);
+        }
+
+        @Test
+        @DisplayName("404 — épreuve introuvable (TrialNotFoundException)")
+        void shouldReturn404WhenTrialNotFound() throws Exception {
+            given(recordTrialResultsUseCase.updateManual(eq(99L), anyList(), any(), anyString()))
+                    .willThrow(new com.ciblorgasport.common.exception.TrialNotFoundException(99L));
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 99L)
+                            .with(authentication(mockPrincipal()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.status").value(404));
+
+            verifyNoInteractions(trialResultService);
+        }
+
+        @Test
+        @DisplayName("409 — épreuve non terminée (TrialNotCompletedException)")
+        void shouldReturn409WhenTrialNotCompleted() throws Exception {
+            given(recordTrialResultsUseCase.updateManual(eq(5L), anyList(), any(), anyString()))
+                    .willThrow(new com.ciblorgasport.common.exception.TrialNotCompletedException(
+                            5L, com.ciblorgasport.common.model.Status.UPCOMING));
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 5L)
+                            .with(authentication(mockPrincipal()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(BODY))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.status").value(409));
+
+            verifyNoInteractions(trialResultService);
+        }
+
+        @Test
+        @DisplayName("400 — validation : liste de résultats vide")
+        void shouldReturn400WhenResultsListIsEmpty() throws Exception {
+            String body = """
+                    {
+                      "performanceType": "TIME",
+                      "results": []
+                    }
+                    """;
+
+            mockMvc.perform(put("/api/commissioner/trials/{id}/results", 7L)
+                            .with(authentication(mockPrincipal()))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.validationErrors.results").exists());
+
+            verifyNoInteractions(recordTrialResultsUseCase, trialResultService);
+        }
+    }
+
+    // =========================================================================
     // Builders
     // =========================================================================
+
+    private static Authentication mockPrincipal() {
+        Commissionner commissioner = new Commissionner();
+        commissioner.setFirstName("Jean");
+        commissioner.setLastName("Commissaire");
+        return new UsernamePasswordAuthenticationToken(
+                commissioner, null,
+                List.of(new SimpleGrantedAuthority("ROLE_COMMISSIONNER")));
+    }
 
     private static ResultResponse athleteResult(Long id, int rank, String performance, boolean tie) {
         return ResultResponse.builder()

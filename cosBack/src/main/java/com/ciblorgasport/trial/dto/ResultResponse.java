@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.dto;
 
+import java.time.LocalDateTime;
+
 import com.ciblorgasport.trial.domain.result.Result;
 
 import lombok.Builder;
@@ -20,6 +22,8 @@ public class ResultResponse {
     private boolean tie;
     private String performanceType;
     private String performance;
+    private String updatedBy;
+    private LocalDateTime updatedAt;
 
     /** Informations du participant (athlète ou équipe avec ses membres). */
     private TrialParticipantResponse participant;
@@ -32,6 +36,8 @@ public class ResultResponse {
                 .tie(result.isTie())
                 .performanceType(result.getPerformanceType().name())
                 .performance(result.getPerformance().formatted())
+                .updatedBy(result.getUpdatedBy())
+                .updatedAt(result.getUpdatedAt())
                 .participant(participantResponse)
                 .build();
     }

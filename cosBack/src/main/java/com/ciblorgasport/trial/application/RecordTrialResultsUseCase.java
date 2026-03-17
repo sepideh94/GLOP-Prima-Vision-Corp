@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.application;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -60,6 +62,44 @@ public class RecordTrialResultsUseCase {
         List<TrialParticipant> participants = trialParticipantRepository.findByTrialId(trialId);
         ResultInputStrategy strategy = new ManualResultInputStrategy(inputs, participants, performanceType);
         return rankAndSave(trial, strategy);
+    }
+
+    /**
+     * Modifie les résultats d'une épreuve terminée (reset complet + recalcul du classement).
+     * <p>
+     * Règles vérifiées :
+     * <ul>
+     *   <li>L'épreuve doit être {@link Status#COMPLETED}</li>
+     *   <li>La date de fin de l'épreuve doit être aujourd'hui</li>
+     * </ul>
+     *
+     * @param updatedBy prénom + nom du commissaire connecté (pour l'audit)
+     */
+    @Transactional
+    public List<Result> updateManual(Long trialId, List<ResultInputDto> inputs,
+                                     PerformanceType performanceType, String updatedBy) {
+        Trial trial = loadCompletedTrialOrThrow(trialId);
+
+        if (!LocalDate.now().equals(trial.getEndDate())) {
+            throw new IllegalStateException(
+                    "La modification des résultats n'est autorisée que le jour même de l'épreuve.");
+        }
+
+        resultRepository.deleteAllByTrialId(trialId);
+
+        List<TrialParticipant> participants = trialParticipantRepository.findByTrialId(trialId);
+        ResultInputStrategy strategy = new ManualResultInputStrategy(inputs, participants, performanceType);
+
+        List<Result> rawResults = strategy.collect(trial);
+        List<Result> ranked     = rankingService.rank(rawResults);
+
+        LocalDateTime now = LocalDateTime.now();
+        ranked.forEach(r -> {
+            r.setUpdatedBy(updatedBy);
+            r.setUpdatedAt(now);
+        });
+
+        return resultRepository.saveAll(ranked);
     }
 
     /**
