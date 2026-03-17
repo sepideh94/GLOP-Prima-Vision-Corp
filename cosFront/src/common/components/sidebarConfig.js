@@ -5,6 +5,7 @@ import PeopleIcon from "@mui/icons-material/People";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import DashboardIcon from "@mui/icons-material/Dashboard";
 
 const sidebarConfig = {
   ADMIN: [
@@ -34,6 +35,11 @@ const sidebarConfig = {
       label: "Planning",
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
+    },
+    {
+      label: "Dashboard & Reporting",
+      icon: DashboardIcon,
+      path: "/admin/dashboard",
     },
   ],
 

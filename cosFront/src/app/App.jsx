@@ -41,6 +41,7 @@ import AthleteCompetitionsPage from
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
 import AthleteSchedulePage from "../features/athlete/pages/AthleteSchedulePage.jsx";
 import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSchedulePage.jsx";
+import AdminDashboardPage from "../features/dashboard/pages/AdminDashboardPage.jsx";
 
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
@@ -98,6 +99,10 @@ export default function App() {
               <Route
                 path="/admin/schedules/create"
                 element={<AdminCreateSchedulePage />}
+              />
+              <Route
+                path="/admin/dashboard"
+                element={<AdminDashboardPage />}
               />
 
               <Route
