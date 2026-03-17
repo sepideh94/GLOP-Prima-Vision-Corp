@@ -118,6 +118,12 @@ export default function TrialListPage() {
       .getTrialsByCompetition(competitionId)
       .then(setTrials)
       .finally(() => setLoading(false));
+
+    const interval = setInterval(() => {
+      trialService.getTrialsByCompetition(competitionId).then(setTrials);
+    }, 60000);
+
+    return () => clearInterval(interval);
   }, [competitionId]);
 
   const handleSave = async (form) => {

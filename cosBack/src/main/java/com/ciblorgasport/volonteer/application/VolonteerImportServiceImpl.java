@@ -132,6 +132,7 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
     @Override
     public List<VolonteerCompetitionResponse> getVolonteersByCompetition(Long competitionId) {
         return assignmentRepository.findByCompetitionId(competitionId).stream()
+                .filter(assignment -> assignment.getStartTime() == null) 
                 .map(assignment -> {
                     Volonteer v = assignment.getVolonteer();
                     return VolonteerCompetitionResponse.builder()
@@ -141,30 +142,31 @@ public class VolonteerImportServiceImpl implements VolonteerImportService {
                             .email(v.getEmail())
                             .status(assignment.getStatus()) 
                             .competitionId(assignment.getCompetition().getId())
-	                        .competitionName(assignment.getCompetition().getName())
+                            .competitionName(assignment.getCompetition().getName())
                             .build();
                 })
                 .collect(Collectors.toList());
     }
 
-	@Override
-	public List<VolonteerCompetitionResponse> getAllVolonteersByEvent(Long eventId) {
-		List<Competition> competitions = competitionRepository.findByParentEventId(eventId);
-	    
-	    return competitions.stream()
-	            .flatMap(competition -> assignmentRepository.findByCompetitionId(competition.getId()).stream())
-	            .map(assignment -> {
-	                Volonteer v = assignment.getVolonteer();
-	                return VolonteerCompetitionResponse.builder()
-	                        .id(v.getId())
-	                        .firstName(v.getFirstName())
-	                        .lastName(v.getLastName())
-	                        .email(v.getEmail())
-	                        .status(assignment.getStatus())
-	                        .competitionId(assignment.getCompetition().getId())
-	                        .competitionName(assignment.getCompetition().getName())
-	                        .build();
-	            })
-	            .collect(Collectors.toList());
-	}
+    @Override
+    public List<VolonteerCompetitionResponse> getAllVolonteersByEvent(Long eventId) {
+        List<Competition> competitions = competitionRepository.findByParentEventId(eventId);
+        
+        return competitions.stream()
+                .flatMap(competition -> assignmentRepository.findByCompetitionId(competition.getId()).stream())
+                .filter(assignment -> assignment.getStartTime() == null)
+                .map(assignment -> {
+                    Volonteer v = assignment.getVolonteer();
+                    return VolonteerCompetitionResponse.builder()
+                            .id(v.getId())
+                            .firstName(v.getFirstName())
+                            .lastName(v.getLastName())
+                            .email(v.getEmail())
+                            .status(assignment.getStatus())
+                            .competitionId(assignment.getCompetition().getId())
+                            .competitionName(assignment.getCompetition().getName())
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
 }

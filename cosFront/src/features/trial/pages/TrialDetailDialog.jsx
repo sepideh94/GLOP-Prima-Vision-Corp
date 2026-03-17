@@ -105,7 +105,7 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
   useEffect(() => {
     if (open && trial?.id) {
       setLoadingParticipants(true);
-      trialService.getTrialAthletes(trial.id)
+      trialService.getParticipants(trial.id)
         .then(setParticipants)
         .catch(() => setParticipants([]))
         .finally(() => setLoadingParticipants(false));
@@ -221,18 +221,18 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Nom</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Prénom</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Participant</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {participants.map((p, i) => (
                     <TableRow key={p.id}>
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell>{p.athleteLastName}</TableCell>
-                      <TableCell>{p.athleteFirstName}</TableCell>
-                      <TableCell>{p.athleteEmail}</TableCell>
+                      <TableCell>{p.displayName}</TableCell>
+                      <TableCell>
+                        {p.competitorType === "TEAM" ? "Équipe" : "Athlète"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

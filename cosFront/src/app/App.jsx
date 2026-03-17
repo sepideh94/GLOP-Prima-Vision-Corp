@@ -21,6 +21,7 @@ import CompetitionListPage from "../features/competition/pages/CompetitionListPa
 import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
 import VolunteerSchedulePage from "../features/user/pages/VolunteerSchedulePage.jsx";
+import IncidentsPage from "../features/incident/pages/IncidentsPage.jsx";
 
 import CommissionerCompetitionListPage from
   "../features/competition/pages/CommissionerCompetitionListPage.jsx";
@@ -38,6 +39,8 @@ import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
 
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
+import AthleteSchedulePage from "../features/athlete/pages/AthleteSchedulePage.jsx";
+import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSchedulePage.jsx";
 
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
@@ -56,18 +59,15 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* PROTECTED */}
           <Route element={<PrivateRoute />}>
             <Route element={<Layout />}>
 
-              {/* DASHBOARDS */}
               <Route path="/admin" element={<Admin />} />
               <Route path="/athlete" element={<Athlete />} />
               <Route path="/commissioner" element={<Commissioner />} />
               <Route path="/spectator" element={<Spectator />} />
               <Route path="/volunteer" element={<Volunteer />} />
 
-              {/* ADMIN */}
               <Route path="/events" element={<EventsList />} />
               <Route
                 path="/admin/competitions"
@@ -78,9 +78,15 @@ export default function App() {
                 element={<TrialListPage />}
               />
               <Route
-                path="/admin/volunteers"
-                element={<VolunteersPage />}
-              /> 
+               path="/admin/volunteers"
+               element={<VolunteersPage />}
+              />
+
+              <Route
+               path="/admin/incidents"
+               element={<IncidentsPage />}
+              />
+              
               <Route
                 path="/admin/users"
                 element={<UsersManagementPage />}
@@ -89,8 +95,11 @@ export default function App() {
                 path="/admin/volunteer-schedule"
                 element={<VolunteerSchedulePage />}
               />
+              <Route
+                path="/admin/schedules/create"
+                element={<AdminCreateSchedulePage />}
+              />
 
-              {/* COMMISSIONER */}
               <Route
                 path="/commissioner/competitions"
                 element={<CommissionerCompetitionListPage />}
@@ -104,7 +113,6 @@ export default function App() {
                 element={<CommissionerParticipantsPage />}
               />
 
-              {/* ATHLETE */}
               <Route
                 path="/athlete/competitions"
                 element={<AthleteCompetitionsPage />}
@@ -112,6 +120,10 @@ export default function App() {
               <Route
                 path="/athlete/profile"
                 element={<ProfilePage />}
+              />
+              <Route
+                path="/athlete/schedule/:competitionId"
+                element={<AthleteSchedulePage />}
               />
 
               {/* SPECTATOR */}

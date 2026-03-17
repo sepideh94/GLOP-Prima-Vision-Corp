@@ -315,4 +315,17 @@ public class TrialServiceImpl implements TrialService {
         Trial cancelledTrial = trialRepository.save(trial);
         return TrialResponse.fromEntity(cancelledTrial);
     }
+    @Override
+    public List<TrialResponse> getTrialsBySiteAndPeriod(Long siteId, LocalDateTime start, LocalDateTime end) {
+        return trialRepository.findBySiteAndPeriod(
+                siteId, 
+                start.toLocalDate(), 
+                start.toLocalTime(), 
+                end.toLocalDate(), 
+                end.toLocalTime()
+        ).stream()
+        .map(TrialResponse::fromEntity)
+        .collect(Collectors.toList());
+    }
+    
 }

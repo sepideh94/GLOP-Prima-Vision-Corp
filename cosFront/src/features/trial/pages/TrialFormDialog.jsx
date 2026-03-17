@@ -21,7 +21,7 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
-
+import teamService from "../../participant/services/teamService";
 
 const TRIAL_NAME_OPTIONS = [
   { value: "FIFTY_M_FREESTYLE", label: "50m nage libre" },
@@ -107,12 +107,19 @@ export default function TrialFormDialog({
   // ── Onglets ───────────────────────────────────────────
   const [tab, setTab] = useState(0);
 
-  // ── Onglet participants ───────────────────────────────
+  // ── Onglet participants - athlètes ───────────────────
   const [competitionAthletes, setCompetitionAthletes] = useState([]);
   const [assignedParticipants, setAssignedParticipants] = useState([]);
   const [athleteSearch, setAthleteSearch] = useState("");
+
+  // ── Onglet participants - équipes ────────────────────
+  const [competitionTeams, setCompetitionTeams] = useState([]);
+  const [assignedTeams, setAssignedTeams] = useState([]);
+  const [teamSearch, setTeamSearch] = useState("");
+
   const [participantsLoading, setParticipantsLoading] = useState(false);
   const [participantsError, setParticipantsError] = useState("");
+  const getParticipantId = (p) => p.athleteId || p.competitorId;
 
   // Reset formulaire + état participants à chaque ouverture
   useEffect(() => {
@@ -120,9 +127,14 @@ export default function TrialFormDialog({
       setTab(0);
       setError("");
       setAthleteSearch("");
+      setTeamSearch("");
       setParticipantsError("");
+
       setCompetitionAthletes([]);
       setAssignedParticipants([]);
+
+      setCompetitionTeams([]);
+      setAssignedTeams([]);
 
       if (initialData) {
         setForm({
@@ -135,6 +147,7 @@ export default function TrialFormDialog({
           mode: initialData.mode || "",
           categoryGender: initialData.categoryGender || "",
           siteId: initialData.siteId || "",
+          roundName: initialData.roundName || "QUALIFICATION_HEAT",
         });
       } else {
         setForm(emptyForm);
@@ -142,22 +155,73 @@ export default function TrialFormDialog({
     }
   }, [open, initialData]);
 
-  // Charger les athlètes quand l'onglet participants est disponible
-  useEffect(() => {
-    if (open && showParticipantsTab && competition?.id && initialData?.id) {
-      setParticipantsLoading(true);
-      Promise.all([
-        trialService.getEligibleAthletes(initialData.id),
-        trialService.getTrialAthletes(initialData.id),
-      ])
-        .then(([athletes, participants]) => {
-          setCompetitionAthletes(athletes);
-          setAssignedParticipants(participants);
-        })
-        .catch(() => setParticipantsError("Erreur lors du chargement des participants"))
-        .finally(() => setParticipantsLoading(false));
-    }
-  }, [open, showParticipantsTab, competition?.id, initialData?.id]);
+  // ... imports inchangés
+
+// tout le début du fichier reste IDENTIQUE
+// je ne modifie rien jusqu'au useEffect participants
+
+useEffect(() => {
+
+  if (!open || !showParticipantsTab || !initialData?.id) return;
+
+  setParticipantsLoading(true);
+  setParticipantsError("");
+
+  /* ================= TEAM ================= */
+
+  if (form.mode === "TEAM") {
+
+    Promise.all([
+      teamService.getEligibleTeams(initialData.id),
+      trialService.getTrialAthletes(initialData.id)
+    ])
+      .then(([teams, participants]) => {
+
+        setCompetitionTeams(Array.isArray(teams) ? teams : []);
+
+        const assigned = (participants || []).filter(
+          (p) => p.competitorType?.toUpperCase() === "TEAM"
+        );
+
+        setAssignedTeams(assigned);
+
+      })
+      .catch((e) => {
+        console.error(e);
+        setParticipantsError("Erreur lors du chargement des équipes");
+      })
+      .finally(() => setParticipantsLoading(false));
+
+  }
+
+  /* ================= INDIVIDUAL ================= */
+
+  else if (form.mode === "INDIVIDUAL") {
+
+    Promise.all([
+      trialService.getEligibleAthletes(initialData.id),
+      trialService.getTrialAthletes(initialData.id)
+    ])
+      .then(([athletes, participants]) => {
+
+        setCompetitionAthletes(Array.isArray(athletes) ? athletes : []);
+
+        const assigned = (participants || []).filter(
+          (p) => p.competitorType?.toUpperCase() === "ATHLETE"
+        );
+
+        setAssignedParticipants(assigned);
+
+      })
+      .catch((e) => {
+        console.error(e);
+        setParticipantsError("Erreur lors du chargement des athlètes");
+      })
+      .finally(() => setParticipantsLoading(false));
+
+  }
+
+}, [open, showParticipantsTab, initialData?.id, form.mode]);
 
   // ── Handlers infos ────────────────────────────────────
   const handleChange = (e) => {
@@ -203,19 +267,35 @@ export default function TrialFormDialog({
   };
 
   // ── Handlers participants ─────────────────────────────
-  const assignedAthleteIds = new Set(assignedParticipants.map((p) => p.athleteId));
-  const isMaxReached = assignedParticipants.length >= MAX_PARTICIPANTS;
+  const assignedAthleteIds = new Set(
+  assignedParticipants.map((p) => getParticipantId(p))
+  );
+  const assignedTeamIds = new Set(
+  assignedTeams.map((t) => t.competitorId || t.id)
+  );
+
+  const participantsCount =
+    form.mode === "TEAM" ? assignedTeams.length : assignedParticipants.length;
+
+  const isMaxReached = participantsCount >= MAX_PARTICIPANTS;
 
   const filteredAthletes = competitionAthletes.filter((a) =>
     `${a.firstName} ${a.lastName}`.toLowerCase().includes(athleteSearch.toLowerCase())
   );
 
+  const filteredTeams = competitionTeams.filter((t) =>
+    (t.name || "").toLowerCase().includes(teamSearch.toLowerCase())
+  );
+
   const handleToggleAthlete = async (athlete) => {
     setParticipantsError("");
+
     if (assignedAthleteIds.has(athlete.id)) {
       try {
         await trialService.removeAthlete(initialData.id, athlete.id);
-        setAssignedParticipants((prev) => prev.filter((p) => p.athleteId !== athlete.id));
+        setAssignedParticipants((prev) =>
+        prev.filter((p) => getParticipantId(p) !== athlete.id)
+        );
       } catch (e) {
         setParticipantsError(e.response?.data?.message || "Erreur lors du retrait de l'athlète");
       }
@@ -225,19 +305,121 @@ export default function TrialFormDialog({
         const added = await trialService.assignAthletes(initialData.id, [athlete.id]);
         setAssignedParticipants((prev) => [...prev, ...added]);
       } catch (e) {
-        setParticipantsError(e.response?.data?.message || "Erreur lors de l'assignation de l'athlète");
+        const errorMessage = e.response?.data?.message || "Erreur lors de l'assignation de l'athlète";
+        setParticipantsError(errorMessage);
+        // Si l'erreur indique que la participation n'est pas confirmée, donner plus de détails
+        if (errorMessage.includes("participation confirmée") || errorMessage.includes("participation valide")) {
+          setParticipantsError(
+            errorMessage + " L'athlète doit avoir une participation confirmée (statut INVITED ou CONFIRMED) à cette compétition."
+          );
+        }
       }
     }
   };
+
+  const handleToggleTeam = async (team) => {
+
+  setParticipantsError("");
+
+  const isAssigned = assignedTeams.some(
+  (t) => (t.competitorId || t.id) === team.id
+  );
+
+  try {
+
+    if (isAssigned) {
+
+      await teamService.removeTeamFromTrial(
+        initialData.id,
+        team.id
+      );
+
+      setAssignedTeams((prev) =>
+        prev.filter((t) => t.competitorId !== team.id)
+      );
+
+      setCompetitionTeams((prev) => [...prev, team]);
+
+    } else {
+
+      if (assignedTeams.length >= MAX_PARTICIPANTS) return;
+
+      const added = await teamService.assignTeamsToTrial(
+        initialData.id,
+        [team.id]
+      );
+
+      setAssignedTeams((prev) => [...prev, ...added]);
+
+      setCompetitionTeams((prev) =>
+        prev.filter((t) => t.id !== team.id)
+      );
+
+    }
+
+  } catch (e) {
+
+    console.error(e);
+
+    setParticipantsError(
+      e.response?.data?.message ||
+      "Erreur lors de l'assignation de l'équipe"
+    );
+
+  }
+
+};
 
   const handleRemoveChip = async (athleteId) => {
     setParticipantsError("");
     try {
       await trialService.removeAthlete(initialData.id, athleteId);
-      setAssignedParticipants((prev) => prev.filter((p) => p.athleteId !== athleteId));
+      setAssignedParticipants((prev) =>
+      prev.filter((p) => getParticipantId(p) !== athleteId)
+      );
     } catch (e) {
       setParticipantsError(e.response?.data?.message || "Erreur lors du retrait de l'athlète");
     }
+  };
+
+  const handleRemoveTeamChip = async (teamId) => {
+
+  setParticipantsError("");
+
+  try {
+
+    await teamService.removeTeamFromTrial(initialData.id, teamId);
+
+    const removedTeam = assignedTeams.find(
+      (t) => (t.competitorId || t.id) === teamId
+    );
+
+    setAssignedTeams((prev) =>
+      prev.filter((t) => (t.competitorId || t.id) !== teamId)
+    );
+
+    if (removedTeam) {
+
+      setCompetitionTeams((prev) => [
+        ...prev,
+        {
+          id: removedTeam.competitorId || removedTeam.id,
+          name: removedTeam.displayName,
+          members: removedTeam.members || []
+        }
+      ]);
+
+    }
+
+  } catch (e) {
+
+    setParticipantsError(
+      e.response?.data?.message ||
+      "Erreur lors du retrait de l'équipe"
+    );
+
+  }
+
   };
 
   // ── Utilitaires ───────────────────────────────────────
@@ -299,15 +481,12 @@ export default function TrialFormDialog({
         <Box sx={{ borderBottom: 1, borderColor: "divider", px: 3 }}>
           <Tabs value={tab} onChange={(_, v) => setTab(v)}>
             <Tab label="Informations épreuve" />
-            <Tab
-              label={`Participants (${assignedParticipants.length}/${MAX_PARTICIPANTS})`}
-            />
+            <Tab label={`Participants (${participantsCount}/${MAX_PARTICIPANTS})`} />
           </Tabs>
         </Box>
       )}
 
       <DialogContent dividers>
-
         {/* ── ONGLET 0 : Informations ───────────────────── */}
         {tab === 0 && (
           <Box>
@@ -334,133 +513,199 @@ export default function TrialFormDialog({
             )}
 
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              {/* Type d'épreuve */}
               <Grid item xs={12} sm={6} md={6}>
                 <TextField
-                  select fullWidth label="Type d'épreuve *" name="trialName"
-                  value={form.trialName} onChange={handleChange}
+                  select
+                  fullWidth
+                  label="Type d'épreuve *"
+                  name="trialName"
+                  value={form.trialName}
+                  onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
                   sx={{
                     minWidth: getMinWidth(TRIAL_NAME_OPTIONS, "Type d'épreuve *"),
                     "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": { whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" },
+                    "& .MuiSelect-select": {
+                      whiteSpace: "nowrap",
+                      overflow: "visible",
+                      textOverflow: "clip",
+                    },
                   }}
                 >
                   {TRIAL_NAME_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
 
-              {/* Description */}
               <Grid item xs={12}>
-                <TextField fullWidth label="Description" name="description"
-                  value={form.description} onChange={handleChange} multiline rows={2} />
-              </Grid>
-
-              {/* Règles */}
-              <Grid item xs={12}>
-                <TextField fullWidth label="Règles" name="rules"
-                  value={form.rules} onChange={handleChange} multiline rows={2} />
-              </Grid>
-
-              {/* Date */}
-              <Grid item xs={12} sm={6} md={3}>
-                <DatePickerForm fullWidth label="Date*" name="startDate"
-                  value={form.startDate} onChange={handleChange} disablePast />
-              </Grid>
-
-              {/* Heure début */}
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField fullWidth label="Heure de début *" type="time" name="startHour"
-                  value={form.startHour} onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
-                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
+                <TextField
+                  fullWidth
+                  label="Description"
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  multiline
+                  rows={2}
                 />
               </Grid>
 
-              {/* Heure fin */}
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField fullWidth label="Heure de fin *" type="time" name="endHour"
-                  value={form.endHour} onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
-                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Règles"
+                  name="rules"
+                  value={form.rules}
+                  onChange={handleChange}
+                  multiline
+                  rows={2}
                 />
               </Grid>
 
-              {/* Mode */}
+              <Grid item xs={12} sm={6} md={3}>
+                <DatePickerForm
+                  fullWidth
+                  label="Date*"
+                  name="startDate"
+                  value={form.startDate}
+                  onChange={handleChange}
+                  disablePast
+                />
+              </Grid>
+
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  select fullWidth label="Mode *" name="mode"
-                  value={form.mode} onChange={handleChange}
+                  fullWidth
+                  label="Heure de début *"
+                  type="time"
+                  name="startHour"
+                  value={form.startHour}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
+                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  fullWidth
+                  label="Heure de fin *"
+                  type="time"
+                  name="endHour"
+                  value={form.endHour}
+                  onChange={handleChange}
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
+                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6} md={3}>
+                <TextField
+                  select
+                  fullWidth
+                  label="Mode *"
+                  name="mode"
+                  value={form.mode}
+                  onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
                   sx={{
                     minWidth: getMinWidth(MODE_OPTIONS, "Mode *"),
                     "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": { whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" },
+                    "& .MuiSelect-select": {
+                      whiteSpace: "nowrap",
+                      overflow: "visible",
+                      textOverflow: "clip",
+                    },
                   }}
                 >
                   {MODE_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
 
-              {/* Catégorie */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  select fullWidth label="Catégorie *" name="categoryGender"
-                  value={form.categoryGender} onChange={handleChange}
+                  select
+                  fullWidth
+                  label="Catégorie *"
+                  name="categoryGender"
+                  value={form.categoryGender}
+                  onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
                   sx={{
                     minWidth: getMinWidth(CATEGORY_OPTIONS, "Catégorie *"),
                     "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": { whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" },
+                    "& .MuiSelect-select": {
+                      whiteSpace: "nowrap",
+                      overflow: "visible",
+                      textOverflow: "clip",
+                    },
                   }}
                 >
                   {CATEGORY_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
 
-              {/* Site */}
               <Grid item xs={12} sm={6} md={3}>
                 <TextField
-                  select fullWidth label="Site *" name="siteId"
-                  value={form.siteId} onChange={handleChange}
+                  select
+                  fullWidth
+                  label="Site *"
+                  name="siteId"
+                  value={form.siteId}
+                  onChange={handleChange}
                   InputLabelProps={{ shrink: true }}
                   SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
                   sx={{
                     minWidth: getMinWidth(SITE_OPTIONS, "Site *"),
                     "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": { whiteSpace: "nowrap", overflow: "visible", textOverflow: "clip" },
+                    "& .MuiSelect-select": {
+                      whiteSpace: "nowrap",
+                      overflow: "visible",
+                      textOverflow: "clip",
+                    },
                   }}
                 >
                   {SITE_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
                   ))}
                 </TextField>
               </Grid>
 
-              {/* Phase */}
               <Grid item xs={12} sm={6} md={3}>
                 {isEdit ? (
                   <TextField
-                    fullWidth label="Phase" value={initialData?.roundDisplayName || "—"}
+                    fullWidth
+                    label="Phase"
+                    value={initialData?.roundDisplayName || "—"}
                     InputProps={{ readOnly: true }}
                     InputLabelProps={{ shrink: true }}
                     sx={{ "& .MuiInputBase-input": { color: "text.secondary" } }}
                   />
                 ) : (
                   <TextField
-                    select fullWidth label="Phase *" name="roundName"
-                    value={form.roundName} onChange={handleChange}
+                    select
+                    fullWidth
+                    label="Phase *"
+                    name="roundName"
+                    value={form.roundName}
+                    onChange={handleChange}
                     InputLabelProps={{ shrink: true }}
                     sx={{
                       minWidth: getMinWidth(ROUND_OPTIONS, "Phase *"),
@@ -468,7 +713,9 @@ export default function TrialFormDialog({
                     }}
                   >
                     {ROUND_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
                     ))}
                   </TextField>
                 )}
@@ -483,114 +730,218 @@ export default function TrialFormDialog({
             {/* Compteur + chips */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: "#555" }}>
-                {assignedParticipants.length} / {MAX_PARTICIPANTS} participants assignés
+                {participantsCount} / {MAX_PARTICIPANTS} participants assignés
               </Typography>
-              {assignedParticipants.length > 0 && (
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                  {assignedParticipants.map((p) => (
+
+              {form.mode === "TEAM" ? (
+                assignedTeams.length > 0 && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {assignedTeams.map((t) => (
                     <Chip
-                      key={p.athleteId}
-                      label={`${p.athleteFirstName} ${p.athleteLastName}`}
-                      onDelete={() => handleRemoveChip(p.athleteId)}
+                      key={t.competitorId || t.id}
+                      label={t.displayName || t.name || `Équipe ${t.competitorId}`}
+                      onDelete={() => handleRemoveTeamChip(t.competitorId || t.id)}
                       sx={{
                         background: "rgba(34, 211, 238, 0.15)",
                         fontWeight: 600,
                         border: "1px solid rgba(34, 211, 238, 0.4)",
                       }}
                     />
-                  ))}
-                </Box>
+                    ))}
+                  </Box>
+                )
+                ) : (
+                assignedParticipants.length > 0 && (
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {assignedParticipants.map((p) => (
+                      <Chip
+                        key={getParticipantId(p)}
+                        label={p.displayName || `Athlète ${getParticipantId(p)}`}
+                        onDelete={() => handleRemoveChip(getParticipantId(p))}
+                        sx={{
+                          background: "rgba(34, 211, 238, 0.15)",
+                          fontWeight: 600,
+                          border: "1px solid rgba(34, 211, 238, 0.4)",
+                        }}
+                      />
+                    ))}
+                  </Box>
+                )
               )}
             </Box>
 
             {isMaxReached && (
               <Alert severity="info" sx={{ mb: 2 }}>
-                Nombre maximum de participants atteint ({MAX_PARTICIPANTS}). Retirez un participant pour en ajouter un autre.
+                Nombre maximum de participants atteint ({MAX_PARTICIPANTS}). Retirez un participant
+                pour en ajouter un autre.
               </Alert>
             )}
 
-            {/* Barre de recherche */}
-            <TextField
-              fullWidth
-              size="small"
-              placeholder="Rechercher un athlète..."
-              value={athleteSearch}
-              onChange={(e) => setAthleteSearch(e.target.value)}
-              sx={{ mb: 2 }}
-            />
+            {form.mode === "TEAM" ? (
+              <>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Rechercher une équipe..."
+                  value={teamSearch}
+                  onChange={(e) => setTeamSearch(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
 
-            {/* Liste des athlètes */}
-            {participantsLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                <CircularProgress size={32} />
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  maxHeight: 320,
-                  overflowY: "auto",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: 2,
-                }}
-              >
-                {filteredAthletes.length === 0 ? (
-                  <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
-                    {competitionAthletes.length === 0
-                      ? "Aucun athlète importé pour cette compétition."
-                      : "Aucun athlète ne correspond à la recherche."}
+                {participantsLoading ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+                    <CircularProgress size={32} />
                   </Box>
                 ) : (
-                  filteredAthletes.map((athlete) => {
-                    const isAssigned = assignedAthleteIds.has(athlete.id);
-                    const isDisabled = isMaxReached && !isAssigned;
-                    return (
-                      <Box
-                        key={athlete.id}
-                        onClick={() => !isDisabled && handleToggleAthlete(athlete)}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          px: 2,
-                          py: 1.2,
-                          borderBottom: "1px solid #f0f0f0",
-                          opacity: isDisabled ? 0.38 : 1,
-                          cursor: isDisabled ? "not-allowed" : "pointer",
-                          transition: "background 0.15s",
-                          "&:last-child": { borderBottom: "none" },
-                          "&:hover": isDisabled
-                            ? {}
-                            : { background: "rgba(34, 211, 238, 0.06)" },
-                        }}
-                      >
-                        <Checkbox
-                          checked={isAssigned}
-                          disabled={isDisabled}
-                          size="small"
-                          sx={{ mr: 1, pointerEvents: "none" }}
-                        />
-                        <Box>
-                          <Typography
-                            sx={{ fontWeight: isAssigned ? 600 : 400, fontSize: "0.95rem" }}
-                          >
-                            {athlete.firstName} {athlete.lastName}
-                          </Typography>
-                          {athlete.email && (
-                            <Typography variant="caption" sx={{ color: "#888" }}>
-                              {athlete.email}
-                            </Typography>
-                          )}
-                        </Box>
+                  <Box
+                    sx={{
+                      maxHeight: 320,
+                      overflowY: "auto",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {filteredTeams.length === 0 ? (
+                      <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
+                        {competitionTeams.length === 0
+                          ? "Aucune équipe éligible pour cette épreuve."
+                          : "Aucune équipe ne correspond à la recherche."}
                       </Box>
-                    );
-                  })
-                )}
-              </Box>
-            )}
+                    ) : (
+                      filteredTeams.map((team) => {
+                        const isAssigned = assignedTeamIds.has(team.id);
+                        const isDisabled = isMaxReached && !isAssigned;
 
-            {participantsError && (
-              <Alert severity="error" sx={{ mt: 2 }}>
-                {participantsError}
-              </Alert>
+                        return (
+                          <Box
+                            key={team.id}
+                            onClick={() => !isDisabled && handleToggleTeam(team)}
+                            sx={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              px: 2,
+                              py: 1.2,
+                              borderBottom: "1px solid #f0f0f0",
+                              opacity: isDisabled ? 0.38 : 1,
+                              cursor: isDisabled ? "not-allowed" : "pointer",
+                              transition: "background 0.15s",
+                              "&:last-child": { borderBottom: "none" },
+                              "&:hover": isDisabled
+                                ? {}
+                                : { background: "rgba(34, 211, 238, 0.06)" },
+                            }}
+                          >
+                            <Checkbox
+                              checked={isAssigned}
+                              disabled={isDisabled}
+                              size="small"
+                              sx={{ mr: 1, mt: 0.2, pointerEvents: "none" }}
+                            />
+                            <Box>
+                              <Typography sx={{ fontWeight: isAssigned ? 600 : 400, fontSize: "0.95rem" }}>
+                                {team.name}
+                              </Typography>
+
+                              {team.members?.length > 0 && (
+                                <Box sx={{ mt: 0.5 }}>
+                                  {team.members.map((member) => (
+                                    <Typography
+                                      key={member.id}
+                                      variant="caption"
+                                      sx={{ display: "block", color: "#888" }}
+                                    >
+                                      {member.firstName} {member.lastName}
+                                    </Typography>
+                                  ))}
+                                </Box>
+                              )}
+                            </Box>
+                          </Box>
+                        );
+                      })
+                    )}
+                  </Box>
+                )}
+              </>
+            ) : (
+              <>
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Rechercher un athlète..."
+                  value={athleteSearch}
+                  onChange={(e) => setAthleteSearch(e.target.value)}
+                  sx={{ mb: 2 }}
+                />
+
+                {participantsLoading ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+                    <CircularProgress size={32} />
+                  </Box>
+                ) : (
+                  <Box
+                    sx={{
+                      maxHeight: 320,
+                      overflowY: "auto",
+                      border: "1px solid #e0e0e0",
+                      borderRadius: 2,
+                    }}
+                  >
+                    {filteredAthletes.length === 0 ? (
+                      <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
+                        {competitionAthletes.length === 0
+                          ? "Aucun athlète importé pour cette compétition."
+                          : "Aucun athlète ne correspond à la recherche."}
+                      </Box>
+                    ) : (
+                      filteredAthletes.map((athlete) => {
+                        const isAssigned = assignedAthleteIds.has(athlete.id);
+                        const isDisabled = isMaxReached && !isAssigned;
+
+                        return (
+                          <Box
+                            key={athlete.id}
+                            onClick={() => !isDisabled && handleToggleAthlete(athlete)}
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              px: 2,
+                              py: 1.2,
+                              borderBottom: "1px solid #f0f0f0",
+                              opacity: isDisabled ? 0.38 : 1,
+                              cursor: isDisabled ? "not-allowed" : "pointer",
+                              transition: "background 0.15s",
+                              "&:last-child": { borderBottom: "none" },
+                              "&:hover": isDisabled
+                                ? {}
+                                : { background: "rgba(34, 211, 238, 0.06)" },
+                            }}
+                          >
+                            <Checkbox
+                              checked={isAssigned}
+                              disabled={isDisabled}
+                              size="small"
+                              sx={{ mr: 1, pointerEvents: "none" }}
+                            />
+                            <Box>
+                              <Typography
+                                sx={{ fontWeight: isAssigned ? 600 : 400, fontSize: "0.95rem" }}
+                              >
+                                {athlete.firstName} {athlete.lastName}
+                              </Typography>
+                              {athlete.email && (
+                                <Typography variant="caption" sx={{ color: "#888" }}>
+                                  {athlete.email}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        );
+                      })
+                    )}
+                  </Box>
+                )}
+              </>
             )}
           </Box>
         )}

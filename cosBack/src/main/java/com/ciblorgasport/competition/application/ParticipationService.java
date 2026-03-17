@@ -1,5 +1,6 @@
 package com.ciblorgasport.competition.application;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -9,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
@@ -16,6 +18,7 @@ import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
+import com.ciblorgasport.team.application.TeamValidationService;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -29,6 +32,7 @@ public class ParticipationService {
     private final AthleteRepository athleteRepository;
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
+	private final TeamValidationService teamValidationService;
 	
     @Transactional
     public List<ParticipantResponse> getParticipantsByCompetition(Long competitionId) {
@@ -72,8 +76,15 @@ public class ParticipationService {
     
     @Transactional
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
-        return participationRepository
-                .findByCompetitorIdAndCompetitorType(athleteId, CompetitorType.ATHLETE)
+        List<Participation> participations = participationRepository.findAllDirectAndTeamParticipations(athleteId);
+
+        return participations.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getCompetition().getId(), 
+                        p -> p,                          
+                        (p1, p2) -> p1                   
+                ))
+                .values()
                 .stream()
                 .map(AthleteCompetitionDetailsResponse::fromEntity)
                 .collect(Collectors.toList());
@@ -105,5 +116,36 @@ public class ParticipationService {
 
         participation.declareForfeit();
         participationRepository.save(participation);
+    }
+
+    
+    @Transactional
+    public void acceptCharter(Long participationId) {
+        Participation participation = participationRepository.findById(participationId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation non trouvée"));
+
+        if (participation.getCompetitorType() == CompetitorType.ATHLETE) {
+            Athlete athlete = athleteRepository.findById(participation.getCompetitorId())
+                    .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé"));
+
+            if (!athlete.isProfileComplete()) {
+                throw new IllegalStateException(
+                    "Impossible d'accepter la charte : votre profil est incomplet (documents manquants)."
+                );
+            }
+        }
+
+        participation.setCharterAccepted(true);
+        participation.setCharterAcceptedAt(LocalDateTime.now());
+        participation.setStatus(ParticipationStatus.CONFIRMED);
+        
+        participationRepository.saveAndFlush(participation);
+
+        if (participation.getCompetitorType() == CompetitorType.ATHLETE) {
+            teamValidationService.validateTeamStatus(
+                participation.getCompetitorId(), 
+                participation.getCompetition().getId()
+            );
+        }
     }
 }

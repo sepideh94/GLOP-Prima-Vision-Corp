@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.domain;
 
+import org.springframework.stereotype.Component;
+
 import com.ciblorgasport.competition.domain.CompetitorType;
 
 /**
@@ -11,6 +13,7 @@ import com.ciblorgasport.competition.domain.CompetitorType;
  * Cette stratégie sera pleinement opérationnelle lors de l'introduction
  * de l'entité {@code Team} dans le domaine.
  */
+@Component
 public class TeamTrialModeStrategy implements TrialModeStrategy {
 
     private static final int MAX_PER_HEAT = 8;
