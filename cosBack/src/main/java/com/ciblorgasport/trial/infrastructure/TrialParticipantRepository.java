@@ -58,4 +58,19 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("roundName") RoundName roundName);
 
     
-    List<TrialParticipant> findByCompetitorId(Long competitorId);}
+    List<TrialParticipant> findByCompetitorId(Long competitorId);
+    
+    /**
+     * Récupère les participations aux épreuves directement pour l'athlète 
+     * OU via les équipes dont il est membre.
+     */
+    @Query("SELECT tp FROM TrialParticipant tp " +
+           "WHERE (tp.competitorId = :athleteId AND tp.competitorType = 'ATHLETE') " +
+           "OR (tp.competitorType = 'TEAM' AND tp.competitorId IN " +
+           "    (SELECT t.id FROM Team t JOIN t.members m WHERE m.id = :athleteId))")
+    List<TrialParticipant> findAllDirectAndTeamTrialParticipations(@Param("athleteId") Long athleteId);
+}
+
+
+
+

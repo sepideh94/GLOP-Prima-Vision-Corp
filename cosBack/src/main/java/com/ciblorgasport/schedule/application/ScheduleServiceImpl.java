@@ -253,11 +253,9 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
-        // CORRECTION : On utilise findByCompetitorId
-        List<TrialParticipant> participations = trialParticipantRepository.findByCompetitorId(athleteId);
+        List<TrialParticipant> participations = trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
 
         return participations.stream()
-            .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
             .map(TrialParticipant::getTrial)
             .filter(trial -> trial.getCompetition().getId().equals(competitionId))
             .map(trial -> new AthleteTrialScheduleResponse(
@@ -266,7 +264,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 trial.getRound() != null ? trial.getRound().getName().name() : "N/A", 
                 LocalDateTime.of(trial.getStartDate(), trial.getStartHour()), 
                 LocalDateTime.of(trial.getEndDate(), trial.getEndHour()),     
-                trial.getSite().getAdress(), 
+                trial.getSite() != null ? trial.getSite().getAdress() : "Non assigné", 
                 trial.getStatus().name() 
             ))
             .sorted(Comparator.comparing(AthleteTrialScheduleResponse::startTime))

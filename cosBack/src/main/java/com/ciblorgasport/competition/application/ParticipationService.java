@@ -76,8 +76,15 @@ public class ParticipationService {
     
     @Transactional
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
-        return participationRepository
-                .findAllDirectAndTeamParticipations(athleteId)
+        List<Participation> participations = participationRepository.findAllDirectAndTeamParticipations(athleteId);
+
+        return participations.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getCompetition().getId(), 
+                        p -> p,                          
+                        (p1, p2) -> p1                   
+                ))
+                .values()
                 .stream()
                 .map(AthleteCompetitionDetailsResponse::fromEntity)
                 .collect(Collectors.toList());
