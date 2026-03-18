@@ -20,6 +20,14 @@ public interface NotificationService {
             String incidentStatus
     );
 
+    Notification createSystemNotification(
+            UserAccount recipient,
+            NotificationType type,
+            String title,
+            String message,
+            String link
+    );
+
     void markAsRead(Long notificationId, UserAccount actor);
 
     List<NotificationResponse> getMyNotifications(UserAccount actor);

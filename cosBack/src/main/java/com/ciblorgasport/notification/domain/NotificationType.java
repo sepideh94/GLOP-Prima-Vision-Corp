@@ -1,5 +1,7 @@
 package com.ciblorgasport.notification.domain;
 
 public enum NotificationType {
-    INCIDENT
+    INCIDENT,
+    ACCREDITATION_VALIDATED,
+    ACCREDITATION_REFUSED
 }
