@@ -119,8 +119,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Transactional
     @Override
     public List<TrialParticipantResponse> getByAthleteId(Long athleteId) {
-        return trialParticipantRepository.findByAthleteId(athleteId).stream()
-                .map(TrialParticipantResponse::fromEntity)
+        return trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -142,15 +142,15 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         trialParticipantRepository.delete(tp);
     }
 
-    @Transactional
     @Override
+    @Transactional
     public void declareForfeit(Long trialParticipantId, Long athleteId) {
-        TrialParticipant trialParticipant = trialParticipantRepository
-                .findByIdAndAthleteId(trialParticipantId, athleteId)
+        TrialParticipant participant = trialParticipantRepository
+                .findAccessibleByIdForAthlete(trialParticipantId, athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
 
-        trialParticipant.declareForfeit();
-        trialParticipantRepository.save(trialParticipant);
+        participant.declareForfeit();
+        trialParticipantRepository.save(participant);
     }
 
     @Transactional

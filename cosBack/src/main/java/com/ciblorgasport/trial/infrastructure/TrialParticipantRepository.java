@@ -24,31 +24,32 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
 
     boolean existsByTrialIdAndCompetitorIdAndCompetitorType(Long trialId, Long competitorId, CompetitorType competitorType);
 
-    /**
-     * Récupère une participation à une épreuve par son id
-     * en vérifiant qu'elle appartient bien à l'athlète connecté.
-     */
-    @Query("SELECT tp FROM TrialParticipant tp " +
-           "WHERE tp.id = :id " +
-           "AND tp.competitorId = :athleteId " +
-           "AND tp.competitorType = 'ATHLETE'")
-    Optional<TrialParticipant> findByIdAndAthleteId(
+    @Query("""
+        SELECT tp
+        FROM TrialParticipant tp
+        WHERE tp.id = :id
+          AND (
+                (tp.competitorType = com.ciblorgasport.competition.domain.CompetitorType.ATHLETE
+                 AND tp.competitorId = :athleteId)
+             OR (tp.competitorType = com.ciblorgasport.competition.domain.CompetitorType.TEAM
+                 AND tp.competitorId IN (
+                        SELECT t.id
+                        FROM Team t
+                        JOIN t.members m
+                        WHERE m.id = :athleteId
+                 ))
+          )
+    """)
+    Optional<TrialParticipant> findAccessibleByIdForAthlete(
             @Param("id") Long id,
             @Param("athleteId") Long athleteId
     );
 
-    /**
-     * Récupère toutes les participations aux épreuves
-     * d'un athlète donné.
-     */
     @Query("SELECT tp FROM TrialParticipant tp " +
            "WHERE tp.competitorId = :athleteId " +
            "AND tp.competitorType = 'ATHLETE'")
     List<TrialParticipant> findByAthleteId(@Param("athleteId") Long athleteId);
 
-    /**
-     * Vérifie si un athlète est déjà inscrit dans une série de qualification pour une épreuve donnée.
-     */
     @Query("SELECT COUNT(tp) > 0 FROM TrialParticipant tp " +
            "WHERE tp.competitorId = :athleteId " +
            "AND tp.competitorType = 'ATHLETE' " +
@@ -63,9 +64,6 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("trialName") TrialName trialName,
             @Param("categoryGender") CategoryGender categoryGender);
 
-    /**
-     * Récupère les IDs des compétiteurs qualifiés depuis le tour précédent.
-     */
     @Query("SELECT DISTINCT tp.competitorId FROM TrialParticipant tp " +
            "WHERE tp.trial.competition = :competition " +
            "AND tp.trial.trialName = :trialName " +
@@ -80,10 +78,6 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
 
     List<TrialParticipant> findByCompetitorId(Long competitorId);
 
-    /**
-     * Récupère les participations aux épreuves directement pour l'athlète
-     * OU via les équipes dont il est membre.
-     */
     @Query("SELECT tp FROM TrialParticipant tp " +
            "WHERE (tp.competitorId = :athleteId AND tp.competitorType = 'ATHLETE') " +
            "OR (tp.competitorType = 'TEAM' AND tp.competitorId IN " +
