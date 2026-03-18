@@ -8,6 +8,9 @@ import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.notification.domain.NotificationType;
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
+import com.ciblorgasport.admin.Admin;
+import java.util.List;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -21,6 +24,7 @@ public class CommissionnerAccreditationService {
     private final StorageService storageService;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final UserAccountRepository userAccountRepository;
 
 
     @Transactional
@@ -38,6 +42,20 @@ public class CommissionnerAccreditationService {
         commissionner.setAccreditationDocument(document);
         commissionner.setAccredited(false); 
         commissionnerRepository.save(commissionner);
+
+        List<Admin> admins = userAccountRepository.findAllAdmins();
+        String commissionnerName = commissionner.getFirstName();
+        
+        for (Admin admin : admins) {
+            emailService.sendAdminAccreditationSubmittedEmail(admin.getEmail(), admin.getFirstName(), commissionnerName);
+            notificationService.createSystemNotification(
+                    admin,
+                    NotificationType.ACCREDITATION_SUBMITTED,
+                    "Nouvelle accréditation soumise",
+                    "Le commissaire " + commissionnerName + " a soumis un document d'accréditation en attente de validation.",
+                    "/admin/commissioners" 
+            );
+        }
     }
 
     public byte[] downloadMyAccreditation(String email) {
