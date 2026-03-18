@@ -87,6 +87,7 @@ class CommissionnerControllerTest {
         testCommissioner.setFirstName("Test");
         testCommissioner.setLastName("Commissioner");
         testCommissioner.setPassword("password123");
+        testCommissioner.setAccredited(true);
         testCommissioner = userAccountRepository.save(testCommissioner);
 
         // Créer un événement
@@ -165,7 +166,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Accès commissioner aux endpoints doit être autorisé")
         void commissionerAccess_ShouldBeAllowed() throws Exception {
             mockMvc.perform(get("/api/commissioner/events/" + testEvent.getId() + "/competitions"))
@@ -180,7 +181,7 @@ class CommissionnerControllerTest {
     class GetCompetitionsByEventTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner la liste des compétitions pour un événement existant")
         void getCompetitionsByEvent_WithExistingEvent_ShouldReturnCompetitions() throws Exception {
             mockMvc.perform(get("/api/commissioner/events/" + testEvent.getId() + "/competitions"))
@@ -191,7 +192,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner une liste vide pour un événement sans compétitions")
         void getCompetitionsByEvent_WithNoCompetitions_ShouldReturnEmptyList() throws Exception {
             // Créer un nouvel événement sans compétitions
@@ -207,7 +208,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner plusieurs compétitions si elles existent")
         void getCompetitionsByEvent_WithMultipleCompetitions_ShouldReturnAll() throws Exception {
             // Ajouter une deuxième compétition
@@ -231,7 +232,7 @@ class CommissionnerControllerTest {
     class GetTrialsByCompetitionTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner la liste des épreuves pour une compétition existante")
         void getTrialsByCompetition_WithExistingCompetition_ShouldReturnTrials() throws Exception {
             mockMvc.perform(get("/api/commissioner/competitions/" + testCompetition.getId() + "/trials"))
@@ -242,7 +243,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner une liste vide pour une compétition sans épreuves")
         void getTrialsByCompetition_WithNoTrials_ShouldReturnEmptyList() throws Exception {
             // Créer une nouvelle compétition sans épreuves
@@ -259,7 +260,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner plusieurs épreuves si elles existent")
         void getTrialsByCompetition_WithMultipleTrials_ShouldReturnAll() throws Exception {
             // Ajouter une deuxième épreuve
@@ -289,7 +290,7 @@ class CommissionnerControllerTest {
     class UpdateTrialTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit mettre à jour une épreuve avec des données valides")
         void updateTrial_WithValidData_ShouldReturnUpdatedTrial() throws Exception {
             String updateJson = String.format("""
@@ -330,7 +331,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner 400 avec des données invalides")
         void updateTrial_WithInvalidData_ShouldReturnBadRequest() throws Exception {
             // Missing required fields
