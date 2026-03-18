@@ -202,4 +202,24 @@ public void sendAccreditationRefusedEmail(String to, String firstName, String re
 
     sendEmail(to, "Votre accréditation a été refusée - CiblOrgaSport", body);
 }
+
+@Override
+public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName) {
+    String loginLink = appBaseUrl + "/login";
+
+    String body = """
+            Bonjour %s,
+
+            Le commissaire %s vient de soumettre son document d'accréditation.
+            Veuillez vous connecter à la plateforme pour l'examiner et statuer (Validation ou Refus).
+
+            Lien de connexion :
+            %s
+
+            Cordialement,
+            L'équipe CiblOrgaSport
+            """.formatted(adminFirstName != null ? adminFirstName : "Administrateur", commissionnerName != null ? commissionnerName : "Inconnu", loginLink);
+
+    sendEmail(toAdminEmail, "Nouvelle soumission d'accréditation - CiblOrgaSport", body);
+}
 }
