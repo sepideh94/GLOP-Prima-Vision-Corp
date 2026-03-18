@@ -39,4 +39,8 @@ public class EmailServiceTestImpl implements EmailService {
     @Override
     public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
     }
+
+    @Override
+    public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName) {
+    }
 }
