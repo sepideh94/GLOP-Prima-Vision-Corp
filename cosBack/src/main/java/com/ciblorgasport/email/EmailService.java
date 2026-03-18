@@ -16,4 +16,6 @@ public interface EmailService {
     void sendAccreditationValidatedEmail(String to, String firstName);
 
     void sendAccreditationRefusedEmail(String to, String firstName, String reason);
+    
+    void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName);
 }
