@@ -12,4 +12,8 @@ public interface EmailService {
     void sendVolonteerInviteEmail(String to, String firstName, String token);
 
     void sendIncidentNotificationEmail(String to, String firstName, String subject, String message, String link);
+
+    void sendAccreditationValidatedEmail(String to, String firstName);
+
+    void sendAccreditationRefusedEmail(String to, String firstName, String reason);
 }

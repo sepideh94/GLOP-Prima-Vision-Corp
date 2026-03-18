@@ -162,4 +162,44 @@ public void sendIncidentNotificationEmail(String to, String displayName, String 
 
     sendEmail(to, subject, body);
 }
+
+@Override
+public void sendAccreditationValidatedEmail(String to, String firstName) {
+    String loginLink = appBaseUrl + "/login";
+
+    String body = """
+            Bonjour %s,
+
+            Nous avons le plaisir de vous informer que votre accréditation a été validée par un administrateur. 
+            Vous avez désormais accès à l'ensemble des fonctionnalités de votre espace commissaire.
+
+            Connectez-vous pour commencer :
+            %s
+
+            Sportivement,
+            L'équipe CiblOrgaSport
+            """.formatted(firstName != null ? firstName : "", loginLink);
+
+    sendEmail(to, "Votre accréditation a été validée - CiblOrgaSport", body);
+}
+
+@Override
+public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
+    String loginLink = appBaseUrl + "/login";
+
+    String body = """
+            Bonjour %s,
+
+            Votre accréditation a été refusée par un administrateur pour le motif suivant :
+            "%s"
+
+            Veuillez vous connecter à votre espace commissaire pour soumettre un nouveau document valide :
+            %s
+
+            Cordialement,
+            L'équipe CiblOrgaSport
+            """.formatted(firstName != null ? firstName : "", reason != null ? reason : "Non spécifié", loginLink);
+
+    sendEmail(to, "Votre accréditation a été refusée - CiblOrgaSport", body);
+}
 }
