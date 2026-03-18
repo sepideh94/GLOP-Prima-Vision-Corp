@@ -45,6 +45,33 @@ const spectatorProfileService = {
     const favorites = this.getFavorites();
     return favorites.includes(eventId);
   },
+
+  // Gestion des compétitions suivies (localStorage)
+  getCompetitionFavorites() {
+    const favorites = localStorage.getItem("spectator_competition_favorites");
+    return favorites ? JSON.parse(favorites) : [];
+  },
+
+  addCompetitionFavorite(competitionId) {
+    const favorites = this.getCompetitionFavorites();
+    const id = String(competitionId);
+    if (!favorites.includes(id)) {
+      favorites.push(id);
+      localStorage.setItem("spectator_competition_favorites", JSON.stringify(favorites));
+    }
+  },
+
+  removeCompetitionFavorite(competitionId) {
+    const favorites = this.getCompetitionFavorites();
+    const id = String(competitionId);
+    const updated = favorites.filter((cId) => String(cId) !== id);
+    localStorage.setItem("spectator_competition_favorites", JSON.stringify(updated));
+  },
+
+  isCompetitionFavorite(competitionId) {
+    const favorites = this.getCompetitionFavorites();
+    return favorites.includes(String(competitionId));
+  },
 };
 
 export default spectatorProfileService;
