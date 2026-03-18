@@ -277,8 +277,9 @@ export default function UsersManagementPage() {
       ROLE_COMMISSIONNER: "Commissaire",
       ATHLETE: "Athlète",
       ROLE_ATHLETE: "Athlète",
-      VOLUNTEER: "Volontaire",
-      ROLE_VOLUNTEER: "Volontaire",
+      // Backend utilise `ROLE_VOLONTEER` (avec O) et pas `ROLE_VOLUNTEER`
+      VOLONTEER: "Volontaires",
+      ROLE_VOLONTEER: "Volontaires",
       SPECTATOR: "Spectateur",
       ROLE_SPECTATOR: "Spectateur",
     };
@@ -449,7 +450,7 @@ export default function UsersManagementPage() {
             <MenuItem value="ADMIN">Administrateur</MenuItem>
             <MenuItem value="COMMISSIONNER">Commissaire</MenuItem>
             <MenuItem value="ATHLETE">Athlète</MenuItem>
-            <MenuItem value="VOLONTEER">Volontaire</MenuItem>
+            <MenuItem value="VOLONTEER">Volontaires</MenuItem>
             <MenuItem value="SPECTATOR">Spectateur</MenuItem>
           </Select>
         </FormControl>
