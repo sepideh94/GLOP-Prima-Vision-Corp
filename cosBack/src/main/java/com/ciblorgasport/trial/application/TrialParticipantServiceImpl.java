@@ -6,7 +6,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
-import com.ciblorgasport.athlete.application.AthleteService;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
@@ -38,7 +37,20 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     private final AthleteRepository athleteRepository;
     private final TeamRepository teamRepository;
     private final ParticipationRepository participationRepository;
-    private final AthleteService athleteService;
+
+    private boolean isAthleteEligible(Athlete athlete) {
+        // Règles métier : compte activé + profil complété + charte acceptée.
+        // Note: `isProfileComplete()` inclut déjà `hasAcceptedCharte`.
+        return athlete != null && athlete.isActive() && athlete.isProfileComplete();
+    }
+
+    private boolean isTeamEligible(Team team) {
+        // Règles métier : chaque athlète membre doit satisfaire les mêmes conditions.
+        if (team == null || team.getMembers() == null || team.getMembers().isEmpty()) {
+            return false;
+        }
+        return team.getMembers().stream().allMatch(this::isAthleteEligible);
+    }
 
     @Transactional
     @Override
@@ -75,12 +87,18 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             Athlete athlete = athleteRepository.findById(athleteId)
                     .orElseThrow(() -> new RuntimeException("Athlète introuvable: " + athleteId));
 
+            if (!isAthleteEligible(athlete)) {
+                throw new IllegalArgumentException(
+                        "L'athlète " + athlete.getDisplayName()
+                                + " n'est pas éligible : compte non activé, profil incomplet ou charte non acceptée.");
+            }
+
             strategy.validateParticipant(toParticipant(athlete));
 
             // Vérification participation active (INVITED ou CONFIRMED)
             boolean hasActiveParticipation = participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatusIn(
                     trial.getCompetition().getId(), athleteId, CompetitorType.ATHLETE,
-                    List.of(ParticipationStatus.INVITED, ParticipationStatus.CONFIRMED));
+                    List.of(ParticipationStatus.CONFIRMED));
 
             if (!hasActiveParticipation) {
                 throw new IllegalArgumentException("Participation non confirmée pour l'athlète: " + athlete.getDisplayName());
@@ -160,7 +178,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             if (qualifiedIds.isEmpty()) return new ArrayList<>();
 
             return athleteRepository.findAllById(qualifiedIds).stream()
-                    .map(a -> AthleteResponse.fromEntity(a))
+                    .filter(this::isAthleteEligible)
+                    .map(AthleteResponse::fromEntity)
                     .collect(Collectors.toList());
         }
 
@@ -173,7 +192,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         List<Long> eligibleIds = participationRepository.findByCompetition_Id(trial.getCompetition().getId())
                 .stream()
                 .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                .filter(p -> p.getStatus() == ParticipationStatus.INVITED || p.getStatus() == ParticipationStatus.CONFIRMED)
+                .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
                 .map(p -> p.getCompetitorId())
                 .filter(id -> !alreadyAssignedIds.contains(id))
                 .distinct()
@@ -182,6 +201,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         if (eligibleIds.isEmpty()) return new ArrayList<>();
 
         return athleteRepository.findAllById(eligibleIds).stream()
+                .filter(this::isAthleteEligible)
                 .map(AthleteResponse::fromEntity)
                 .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
                 .collect(Collectors.toList());
@@ -267,6 +287,12 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             Team team = teamRepository.findById(teamId)
                     .orElseThrow(() -> new RuntimeException("Équipe introuvable avec l'ID: " + teamId));
 
+            if (!isTeamEligible(team)) {
+                throw new IllegalArgumentException(
+                        "L'équipe " + team.getName()
+                                + " n'est pas éligible : tous les membres doivent avoir un compte activé, un profil complété et la charte acceptée.");
+            }
+
             // Validation par la stratégie (vérifie que l'épreuve accepte bien des équipes)
             strategy.validateParticipant(toParticipant(team));
 
@@ -276,7 +302,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     trial.getCompetition().getId(),
                     teamId,
                     CompetitorType.TEAM,
-                    List.of(ParticipationStatus.INVITED, ParticipationStatus.CONFIRMED));
+                    List.of(ParticipationStatus.CONFIRMED));
 
             if (!hasActiveParticipation) {
                 throw new IllegalArgumentException("L'équipe " + team.getName() + " n'est pas inscrite à cette compétition.");
@@ -341,7 +367,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             confirmedTeamIds = participationRepository
                     .findByCompetition_Id(trial.getCompetition().getId())
                     .stream()
-                    .filter(p -> p.getCompetitorType() == CompetitorType.TEAM && (p.getStatus() == ParticipationStatus.INVITED || p.getStatus() == ParticipationStatus.CONFIRMED))
+                    .filter(p -> p.getCompetitorType() == CompetitorType.TEAM && (p.getStatus() == ParticipationStatus.CONFIRMED))
                     .map(p -> p.getCompetitorId())
                     .collect(Collectors.toList());
         }
@@ -357,7 +383,9 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         
         if (confirmedTeamIds.isEmpty()) return new ArrayList<>();
         
-        List<Team> eligibleTeams = teamRepository.findAllById(confirmedTeamIds);
+        List<Team> eligibleTeams = teamRepository.findAllById(confirmedTeamIds).stream()
+                .filter(this::isTeamEligible)
+                .collect(Collectors.toList());
         
         return eligibleTeams.stream().map(team -> {
             List<AthleteSummary> members = team.getMembers().stream()
