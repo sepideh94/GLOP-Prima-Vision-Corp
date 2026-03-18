@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.trial.domain.CategoryGender;
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialMode;
 import com.ciblorgasport.trial.domain.TrialName;
 import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.trial.round.domain.RoundName;
@@ -30,12 +31,14 @@ public interface TrialRepository extends JpaRepository<Trial, Long> {
         WHERE t.competition = :competition
         AND t.trialName = :trialName
         AND t.categoryGender = :categoryGender
+        AND t.mode = :mode
         AND t.round = :round
         """)
     Integer findMaxRoundNumber(
         @Param("competition") Competition competition,
         @Param("trialName") TrialName trialName,
         @Param("categoryGender") CategoryGender categoryGender,
+        @Param("mode") TrialMode mode,
         @Param("round") Round round);
 
     /**
