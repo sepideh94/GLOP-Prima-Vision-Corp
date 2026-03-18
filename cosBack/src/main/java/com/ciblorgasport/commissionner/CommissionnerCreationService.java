@@ -3,6 +3,7 @@ package com.ciblorgasport.commissionner;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
@@ -22,13 +23,19 @@ public class CommissionnerCreationService {
     private final ActivationTokenRepository activationTokenRepository;
     private final EmailService emailService;
 
+    /**
+     * Crée un nouveau commissaire avec un statut non-accrédité par défaut.
+     * Déclenche l'envoi d'un mail d'invitation pour la configuration du mot de passe.
+     */
+    @Transactional
     public UserAccount createUser(CreateCommissionnerRequest request) {
 
         Commissionner newCommissaire = Commissionner.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
                 .email(request.getEmail())
-                .password("")
+                .password("") 
+                .isAccredited(false) 
                 .build();
 
         newCommissaire.setActive(false);
@@ -47,7 +54,11 @@ public class CommissionnerCreationService {
 
         activationTokenRepository.save(inviteToken);
 
-        emailService.sendCommissionnerInviteEmail(saved.getEmail(), saved.getFirstName(), token);
+        emailService.sendCommissionnerInviteEmail(
+                saved.getEmail(), 
+                saved.getFirstName(), 
+                token
+        );
 
         return saved;
     }
