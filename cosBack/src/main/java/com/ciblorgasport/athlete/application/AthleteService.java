@@ -30,7 +30,7 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
-    private final TeamValidationService teamValidationService; 
+    private final TeamValidationService teamValidationService;
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -90,22 +90,22 @@ public class AthleteService {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
 
-        boolean wasCharterAcceptedBefore = athlete.isHasAcceptedCharte();
-
         if (request.getNationality() != null) athlete.setNationality(request.getNationality());
         if (request.getBirthDate() != null) athlete.setBirthDate(request.getBirthDate());
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
+
         if (request.getHasAcceptedCharte() != null) {
             if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
-                athlete.setCharterAcceptedAt(LocalDateTime.now()); 
+                athlete.setCharterAcceptedAt(LocalDateTime.now());
             }
             athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
         }
+
         Athlete saved = athleteRepository.save(athlete);
-        
+
         this.checkAndConfirmParticipations(saved);
-        
+
         return AthleteResponse.fromEntity(saved);
     }
 
@@ -113,27 +113,17 @@ public class AthleteService {
         if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
             List<Participation> participations = participationRepository
                     .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
-            
+
             for (Participation p : participations) {
                 p.setStatus(ParticipationStatus.CONFIRMED);
                 p.setCharterAccepted(true);
                 p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
-                
+
                 participationRepository.saveAndFlush(p);
-                
+
                 teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
             }
         }
-
-        List<Participation> participations = participationRepository
-                .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
-
-        participations.stream()
-                .filter(p -> p.getStatus() == ParticipationStatus.INVITED
-                        || p.getStatus() == ParticipationStatus.PENDING)
-                .forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
-
-        participationRepository.saveAll(participations);
     }
 
     @Transactional
