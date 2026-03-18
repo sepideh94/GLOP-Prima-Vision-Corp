@@ -5,6 +5,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+import com.ciblorgasport.notification.domain.NotificationType;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -16,6 +19,8 @@ public class CommissionnerAccreditationService {
 
     private final CommissionerRepository commissionnerRepository;
     private final StorageService storageService;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
 
     @Transactional
@@ -80,11 +85,36 @@ public class CommissionnerAccreditationService {
     // --- LOGIQUE POUR L'ADMIN (MARIUS) ---
 
     @Transactional
-    public void validateAccreditation(Long commissionnerId, boolean isValid) {
+    public void validateAccreditation(Long commissionnerId, boolean isValid, String reason) {
         Commissionner commissionner = commissionnerRepository.findById(commissionnerId)
                 .orElseThrow(() -> new EntityNotFoundException("Commissaire introuvable"));
 
-        commissionner.setAccredited(isValid);
+        if (isValid) {
+            commissionner.setAccredited(true);
+            emailService.sendAccreditationValidatedEmail(commissionner.getEmail(), commissionner.getFirstName());
+            notificationService.createSystemNotification(
+                    commissionner,
+                    NotificationType.ACCREDITATION_VALIDATED,
+                    "Accréditation validée",
+                    "Votre accréditation CEN a été validée avec succès.",
+                    "/commissioner/dashboard"
+            );
+        } else {
+            commissionner.setAccredited(false);
+            if (commissionner.getAccreditationDocument() != null) {
+                storageService.deleteFile(commissionner.getAccreditationDocument());
+                commissionner.setAccreditationDocument(null);
+            }
+            emailService.sendAccreditationRefusedEmail(commissionner.getEmail(), commissionner.getFirstName(), reason);
+            notificationService.createSystemNotification(
+                    commissionner,
+                    NotificationType.ACCREDITATION_REFUSED,
+                    "Accréditation refusée",
+                    "Votre accréditation a été refusée pour le motif suivant : " + reason + ". Veuillez soumettre un nouveau document.",
+                    "/commissioner/profile/accreditation"
+            );
+        }
+
         commissionnerRepository.save(commissionner);
     }
 

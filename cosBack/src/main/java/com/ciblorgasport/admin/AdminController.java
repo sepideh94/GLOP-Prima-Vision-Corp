@@ -138,13 +138,19 @@ public class AdminController {
 
     // ==================== Accréditations Commissaires ====================
 
-    @PatchMapping("/commissioners/{id}/validate-accreditation")
-    public ResponseEntity<Map<String, String>> validateAccreditation(
+    @PostMapping("/commissioners/{id}/accreditation/validate")
+    public ResponseEntity<Map<String, String>> validateAccreditation(@PathVariable("id") Long id) {
+        accreditationService.validateAccreditation(id, true, null);
+        return ResponseEntity.ok(Map.of("message", "Accréditation validée pour le commissaire " + id));
+    }
+
+    @PostMapping("/commissioners/{id}/accreditation/refuse")
+    public ResponseEntity<Map<String, String>> refuseAccreditation(
             @PathVariable("id") Long id,
-            @RequestParam("isValid") boolean isValid) {
-        accreditationService.validateAccreditation(id, isValid);
-        String status = isValid ? "validée" : "refusée";
-        return ResponseEntity.ok(Map.of("message", "Accréditation " + status + " pour le commissaire " + id));
+            @RequestBody(required = false) Map<String, String> body) {
+        String reason = (body != null && body.containsKey("reason")) ? body.get("reason") : "Non spécifié";
+        accreditationService.validateAccreditation(id, false, reason);
+        return ResponseEntity.ok(Map.of("message", "Accréditation refusée pour le commissaire " + id));
     }
 
     @GetMapping("/commissioners/{id}/accreditation")
@@ -153,7 +159,7 @@ public class AdminController {
         String contentType = accreditationService.getAccreditationContentTypeById(id);
 
         return ResponseEntity.ok()
-                .header(CONTENT_DISPOSITION, "attachment; filename=\"accreditation-" + id + "\"")
+                .header(CONTENT_DISPOSITION, "inline; filename=\"accreditation-" + id + "\"")
                 .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
                 .body(fileData);
     }
