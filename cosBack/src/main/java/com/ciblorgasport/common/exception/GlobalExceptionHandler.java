@@ -212,4 +212,20 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+    
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiError> handleAccessDeniedException(
+            org.springframework.security.access.AccessDeniedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.FORBIDDEN.value())
+                .error(HttpStatus.FORBIDDEN.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
+    }
 }
