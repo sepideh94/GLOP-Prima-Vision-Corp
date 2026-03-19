@@ -202,6 +202,13 @@
   </configuration>
 </plugin>
 
+      <!-- Pin Surefire version for stable test discovery/execution in CI -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${maven.surefire.plugin.version}</version>
+      </plugin>
+
 
       <!-- Spring Boot repackage -->
       <plugin>
