@@ -17,12 +17,9 @@ import {
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import scheduleService from "../../schedule/services/scheduleService";
-<<<<<<< feature/forfait
 import athleteTrialService from "../services/athleteTrialService";
-=======
 import athleteService from "../../participant/services/athleteService";
 import AthleteTrialResultsDialog from "../components/AthleteTrialResultsDialog";
->>>>>>> develop
 
 const PHASE_LABELS = {
   QUALIFICATION_HEAT: "Qualification",
@@ -106,7 +103,6 @@ export default function AthleteSchedulePage() {
     }
   };
 
-<<<<<<< feature/forfait
   const handleDeclareForfeit = async (trialParticipantId) => {
     try {
       setError(null);
@@ -137,7 +133,6 @@ export default function AthleteSchedulePage() {
     }
   };
 
-=======
   const loadAthleteResults = async () => {
     try {
       setResultsLoading(true);
@@ -182,7 +177,6 @@ export default function AthleteSchedulePage() {
     );
   }, [selectedTrial, athleteResults]);
 
->>>>>>> develop
   return (
     <Box
       sx={{
