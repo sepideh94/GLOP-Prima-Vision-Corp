@@ -23,6 +23,7 @@ import com.ciblorgasport.incident.dto.IncidentResponse;
 import com.ciblorgasport.incident.dto.IncidentUpdateRequest;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
 import com.ciblorgasport.notification.application.IncidentNotificationService;
+import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.domain.Trial;
@@ -42,6 +43,7 @@ public class IncidentServiceImpl implements IncidentService {
     private final SiteRepository siteRepository;
     private final TrialRepository trialRepository;
     private final IncidentNotificationService incidentNotificationService;
+    private final NotificationService notificationService;
 
     @Override
     public IncidentResponse create(UserAccount actor, IncidentCreateRequest req) {
@@ -124,6 +126,10 @@ public class IncidentServiceImpl implements IncidentService {
         if (!incidentRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable.");
         }
+
+        // Suppression des notifications liées avant de supprimer l'incident
+        // pour éviter les violations de clé étrangère (notification.incident_id -> incident.id).
+        notificationService.deleteByIncidentId(id);
         incidentRepository.deleteById(id);
     }
 
