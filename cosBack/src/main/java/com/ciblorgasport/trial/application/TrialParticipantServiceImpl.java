@@ -150,8 +150,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Transactional
     @Override
     public List<TrialParticipantResponse> getByAthleteId(Long athleteId) {
-        return trialParticipantRepository.findByAthleteId(athleteId).stream()
-                .map(TrialParticipantResponse::fromEntity)
+        return trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -176,12 +176,12 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Transactional
     @Override
     public void declareForfeit(Long trialParticipantId, Long athleteId) {
-        TrialParticipant trialParticipant = trialParticipantRepository
+        TrialParticipant participant = trialParticipantRepository
                 .findAccessibleByIdForAthlete(trialParticipantId, athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
 
-        trialParticipant.declareForfeit();
-        trialParticipantRepository.save(trialParticipant);
+        participant.declareForfeit();
+        trialParticipantRepository.save(participant);
     }
 
     @Transactional(readOnly = true)
@@ -196,7 +196,6 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             RoundName previousRound = (currentRound == RoundName.FINALE)
                     ? RoundName.DEMI_FINALE
                     : RoundName.QUALIFICATION_HEAT;
-
             List<Long> qualifiedIds = new ArrayList<>(trialParticipantRepository.findQualifiedCompetitorIds(
                     trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound));
 
@@ -434,8 +433,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     .collect(Collectors.toList());
         }
 
-        List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId)
-                .stream()
+        List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(tp -> tp.getCompetitorType() == CompetitorType.TEAM)
                 .map(TrialParticipant::getCompetitorId)
                 .collect(Collectors.toList());
