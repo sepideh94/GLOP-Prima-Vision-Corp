@@ -4,6 +4,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import PersonIcon from "@mui/icons-material/Person";
 import PeopleIcon from "@mui/icons-material/People";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import appTheme from "../theme/appTheme";
@@ -34,6 +35,11 @@ export default function Navbar() {
   const goProfile = () => {
     handleCloseMenu();
     navigate("/spectator/profile");
+  };
+
+  const goNotifications = () => {
+    handleCloseMenu();
+    navigate("/spectator/notifications");
   };
 
   const goFriends = () => {
@@ -90,6 +96,13 @@ export default function Navbar() {
                     <PersonIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.cyan }} />
                     Mon profil
                   </MenuItem>
+                <MenuItem onClick={goNotifications}>
+                  <NotificationsIcon
+                    fontSize="small"
+                    sx={{ mr: 1, color: appTheme.colors.violet }}
+                  />
+                  Mes notifications
+                </MenuItem>
                   <MenuItem onClick={goFriends}>
                     <PeopleIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.green }} />
                     Retrouver des amis
