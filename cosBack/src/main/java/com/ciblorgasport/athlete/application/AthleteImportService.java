@@ -118,8 +118,11 @@ public class AthleteImportService {
     }
 
     /**
+     * Invite un athlète à une compétition s'il n'est pas déjà invité.
      * Si l'athlète a déjà un profil complet, la participation est créée directement
      * en CONFIRMED. Sinon elle reste en INVITED.
+     *
+     * @return true si une nouvelle invitation a été créée, false si déjà invité
      */
     private boolean inviteAthleteToCompetition(Athlete athlete, Competition competition) {
         boolean alreadyExists = participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorType(
@@ -133,10 +136,9 @@ public class AthleteImportService {
             return false;
         }
 
-        ParticipationStatus initialStatus =
-                athlete.isProfileComplete()
-                        ? ParticipationStatus.CONFIRMED
-                        : ParticipationStatus.INVITED;
+        ParticipationStatus initialStatus = athlete.isProfileComplete()
+                ? ParticipationStatus.CONFIRMED
+                : ParticipationStatus.INVITED;
 
         Participation participation = Participation.builder()
                 .competition(competition)

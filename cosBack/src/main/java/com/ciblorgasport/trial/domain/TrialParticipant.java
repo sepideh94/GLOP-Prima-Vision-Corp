@@ -23,7 +23,6 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "trial_participant", uniqueConstraints = {
-    // La contrainte unique s'applique désormais sur le couple id/type pour un trial donné
     @UniqueConstraint(columnNames = {"trial_id", "competitor_id", "competitor_type"})
 })
 @Data
@@ -47,7 +46,28 @@ public class TrialParticipant {
     @Column(name = "competitor_type", nullable = false)
     private CompetitorType competitorType;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private TrialParticipantStatus status = TrialParticipantStatus.ACTIVE;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public void declareForfeit() {
+        if (this.trial != null && this.trial.hasStarted()) {
+            throw new IllegalStateException("L'épreuve a déjà commencé.");
+        }
+
+        if (this.status == TrialParticipantStatus.FORFEIT) {
+            throw new IllegalStateException("Le forfait a déjà été déclaré pour cette épreuve.");
+        }
+
+        this.status = TrialParticipantStatus.FORFEIT;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

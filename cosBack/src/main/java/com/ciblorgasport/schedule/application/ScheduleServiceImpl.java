@@ -252,24 +252,33 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
-    public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
-        List<TrialParticipant> participations = trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
+public List<AthleteTrialScheduleResponse> getAthleteScheduleByCompetition(Long athleteId, Long competitionId) {
+    List<TrialParticipant> participations =
+            trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
 
-        return participations.stream()
-            .map(TrialParticipant::getTrial)
-            .filter(trial -> trial.getCompetition().getId().equals(competitionId))
-            .map(trial -> new AthleteTrialScheduleResponse(
-                trial.getId(),
-                trial.getName(),
-                trial.getRound() != null ? trial.getRound().getName().name() : "N/A", 
-                LocalDateTime.of(trial.getStartDate(), trial.getStartHour()), 
-                LocalDateTime.of(trial.getEndDate(), trial.getEndHour()),     
-                trial.getSite() != null ? trial.getSite().getAdress() : "Non assigné", 
-                trial.getStatus().name() 
-            ))
+    return participations.stream()
+            .filter(tp -> tp.getTrial() != null)
+            .filter(tp -> tp.getTrial().getCompetition() != null)
+            .filter(tp -> tp.getTrial().getCompetition().getId().equals(competitionId))
+            .map(tp -> {
+                Trial trial = tp.getTrial();
+
+                return new AthleteTrialScheduleResponse(
+                        trial.getId(),
+                        tp.getId(),
+                        trial.getName(),
+                        trial.getRound() != null ? trial.getRound().getName().name() : "N/A",
+                        LocalDateTime.of(trial.getStartDate(), trial.getStartHour()),
+                        LocalDateTime.of(trial.getEndDate(), trial.getEndHour()),
+                        trial.getSite() != null ? trial.getSite().getAdress() : "Non assigné",
+                        trial.getStatus() != null ? trial.getStatus().name() : null,
+                        tp.getStatus() != null ? tp.getStatus().name() : null,
+                        trial.getCompetition() != null ? trial.getCompetition().getName() : null
+                );
+            })
             .sorted(Comparator.comparing(AthleteTrialScheduleResponse::startTime))
             .toList();
-    }
+}
 }
     
    

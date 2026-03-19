@@ -143,4 +143,23 @@ public void sendVolonteerInviteEmail(String to, String firstName, String token) 
 
     mailSender.send(msg);
 }
+
+@Override
+public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message, String link) {
+    String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
+
+    String body = """
+            Bonjour %s,
+
+            %s
+
+            Pour consulter les détails, veuillez vous connecter à votre espace :
+            %s
+
+            Cordialement,
+            L'équipe CiblOrgaSport
+            """.formatted(safeDisplayName, message, link);
+
+    sendEmail(to, subject, body);
+}
 }
