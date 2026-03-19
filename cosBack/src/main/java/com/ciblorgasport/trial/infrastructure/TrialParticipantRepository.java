@@ -45,11 +45,18 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
             @Param("athleteId") Long athleteId
     );
 
+    /**
+     * Récupère toutes les participations aux épreuves
+     * d'un athlète donné.
+     */
     @Query("SELECT tp FROM TrialParticipant tp " +
            "WHERE tp.competitorId = :athleteId " +
            "AND tp.competitorType = 'ATHLETE'")
     List<TrialParticipant> findByAthleteId(@Param("athleteId") Long athleteId);
 
+    /**
+     * Vérifie si un athlète est déjà inscrit dans une série de qualification pour une épreuve donnée.
+     */
     @Query("SELECT COUNT(tp) > 0 FROM TrialParticipant tp " +
            "WHERE tp.competitorId = :athleteId " +
            "AND tp.competitorType = 'ATHLETE' " +
@@ -78,6 +85,10 @@ public interface TrialParticipantRepository extends JpaRepository<TrialParticipa
 
     List<TrialParticipant> findByCompetitorId(Long competitorId);
 
+    /**
+     * Récupère les participations aux épreuves directement pour l'athlète
+     * OU via les équipes dont il est membre.
+     */
     @Query("SELECT tp FROM TrialParticipant tp " +
            "WHERE (tp.competitorId = :athleteId AND tp.competitorType = 'ATHLETE') " +
            "OR (tp.competitorType = 'TEAM' AND tp.competitorId IN " +

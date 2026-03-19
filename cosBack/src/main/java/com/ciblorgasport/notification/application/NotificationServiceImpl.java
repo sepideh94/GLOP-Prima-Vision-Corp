@@ -101,6 +101,14 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.saveAll(notifications);
     }
 
+    @Override
+    public void deleteByIncidentId(Long incidentId) {
+        if (incidentId == null) {
+            return;
+        }
+        notificationRepository.deleteByIncident_Id(incidentId);
+    }
+
     private NotificationResponse toResponse(Notification notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())

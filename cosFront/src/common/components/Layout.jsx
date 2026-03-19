@@ -1,11 +1,14 @@
 import { Box } from "@mui/material";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import appTheme from "../theme/appTheme";
 
 export default function Layout() {
+  const location = useLocation();
+  const isSpectatorArea = location.pathname.startsWith("/spectator");
+
   return (
     <Box
       sx={{
@@ -18,11 +21,13 @@ export default function Layout() {
     >
       <Navbar />
 
-        <Box sx={{ display: "flex", flex: 1, mt: "64px" }}>
+      <Box sx={{ display: "flex", flex: 1, mt: "64px" }}>
+        {!isSpectatorArea && <Sidebar />}
 
-        <Sidebar />
-
-        <Box component="main" sx={{ flex: 1, px: 6, py: 5 }}>
+        <Box
+          component="main"
+          sx={{ flex: 1, px: isSpectatorArea ? 3 : 6, py: 5 }}
+        >
           <Outlet />
         </Box>
       </Box>

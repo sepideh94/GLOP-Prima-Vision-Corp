@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
@@ -26,6 +27,30 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiError> handleResponseStatusException(
+            ResponseStatusException ex,
+            HttpServletRequest request
+    ) {
+        int statusCode = ex.getStatusCode().value();
+        String errorText;
+        if (ex.getStatusCode() instanceof HttpStatus httpStatus) {
+            errorText = httpStatus.getReasonPhrase();
+        } else {
+            errorText = ex.getStatusCode().toString();
+        }
+
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(statusCode)
+                .error(errorText)
+                .message(ex.getReason() == null ? "Requête invalide." : ex.getReason())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(ex.getStatusCode()).body(error);
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidationException(
