@@ -20,6 +20,7 @@
     <jjwt.version>0.11.5</jjwt.version>
     <commons-lang3.version>3.16.0</commons-lang3.version>
     <commons-csv.version>1.10.0</commons-csv.version>
+    <google-maps-services.version>2.2.0</google-maps-services.version>
 
     <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
     <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
@@ -131,6 +132,13 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-csv</artifactId>
       <version>${commons-csv.version}</version>
+    </dependency>
+
+    <!-- Google Maps Services -->
+    <dependency>
+      <groupId>com.google.maps</groupId>
+      <artifactId>google-maps-services</artifactId>
+      <version>${google-maps-services.version}</version>
     </dependency>
 
     <!-- Tests -->

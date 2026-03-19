@@ -1,0 +1,50 @@
+package com.ciblorgasport.geolocation.application.usecase;
+
+import com.ciblorgasport.geolocation.domain.GeoPoint;
+import com.ciblorgasport.geolocation.dto.TrialWithLocationDto;
+import com.ciblorgasport.trial.infrastructure.TrialRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class FindNearbyTrialsUseCase {
+
+    private final TrialRepository trialRepository;
+
+    public List<TrialWithLocationDto> execute(double latitude, double longitude, double radiusKm) {
+        GeoPoint userPoint = new GeoPoint(latitude, longitude);
+
+        return trialRepository.findAll().stream()
+                .filter(trial -> !trial.isCancelled())
+                .filter(trial -> trial.getSite() != null)
+                .filter(trial -> {
+                    GeoPoint sitePoint = new GeoPoint(
+                            trial.getSite().getLatitude(),
+                            trial.getSite().getLongitude()
+                    );
+                    return userPoint.distanceTo(sitePoint) <= radiusKm;
+                })
+                .map(trial -> TrialWithLocationDto.builder()
+                        .trialId(trial.getId())
+                        .trialName(trial.getName())
+                        .startDate(trial.getStartDate())
+                        .startHour(trial.getStartHour())
+                        .endDate(trial.getEndDate())
+                        .endHour(trial.getEndHour())
+                        .siteId(trial.getSite().getId())
+                        .siteAddress(trial.getSite().getAdress())
+                        .latitude(trial.getSite().getLatitude())
+                        .longitude(trial.getSite().getLongitude())
+                        .distanceKm(userPoint.distanceTo(new GeoPoint(
+                                trial.getSite().getLatitude(),
+                                trial.getSite().getLongitude()
+                        )))
+                        .build())
+                .sorted(java.util.Comparator.comparingDouble(TrialWithLocationDto::getDistanceKm))
+                .collect(Collectors.toList());
+    }
+}
