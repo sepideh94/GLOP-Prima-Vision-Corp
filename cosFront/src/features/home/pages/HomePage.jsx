@@ -56,8 +56,38 @@ export default function HomePage() {
         minHeight: "100vh",
         background: appTheme.gradients.page,
         fontFamily: appTheme.typography.fontFamily,
+        position: "relative",
       }}
     >
+      {/* Background Image with Overlay */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          zIndex: 0,
+          // Image de natation (sport/compétition) en arrière-plan
+          backgroundImage:
+            "url(https://images.unsplash.com/photo-1576610616656-d3aa5d1f4534?auto=format&fit=crop&w=1975&q=80)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            // Overlay moins opaque pour laisser l'image de natation visible derrière le texte
+            background:
+              "linear-gradient(135deg, rgba(15, 23, 42, 0.25) 0%, rgba(30, 41, 59, 0.18) 50%, rgba(15, 23, 42, 0.25) 100%)",
+          },
+        }}
+      />
+
       {/* Hero Section */}
       <Box
         sx={{
@@ -66,6 +96,7 @@ export default function HomePage() {
           pt: { xs: 8, md: 12 },
           pb: { xs: 8, md: 12 },
           px: { xs: 3, md: 6 },
+          zIndex: 1,
         }}
       >
         <Container maxWidth="lg">
@@ -242,7 +273,10 @@ export default function HomePage() {
         sx={{
           py: { xs: 8, md: 12 },
           px: { xs: 3, md: 6 },
-          background: "rgba(255, 255, 255, 0.3)",
+          background: "rgba(255, 255, 255, 0.14)",
+          backdropFilter: "blur(10px)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Container maxWidth="lg">
@@ -270,9 +304,16 @@ export default function HomePage() {
             </Typography>
           </Box>
 
-          <Grid container spacing={4} sx={{ alignItems: "stretch" }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(2, 1fr)" },
+              gap: 4,
+              alignItems: "stretch",
+            }}
+          >
             {features.map((feature, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: "flex" }}>
+              <Box key={index} sx={{ display: "flex" }}>
                 <Card
                   sx={{
                     width: "100%",
@@ -320,9 +361,9 @@ export default function HomePage() {
                     </Typography>
                   </CardContent>
                 </Card>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         </Container>
       </Box>
 
@@ -331,6 +372,8 @@ export default function HomePage() {
         sx={{
           py: { xs: 8, md: 12 },
           px: { xs: 3, md: 6 },
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Container maxWidth="md">
@@ -421,8 +464,11 @@ export default function HomePage() {
           py: 4,
           px: 3,
           textAlign: "center",
-          background: "rgba(226, 232, 240, 0.5)",
-          borderTop: "1px solid rgba(0,0,0,0.08)",
+          background: "rgba(15, 23, 42, 0.6)",
+          backdropFilter: "blur(10px)",
+          borderTop: "1px solid rgba(148, 163, 184, 0.2)",
+          position: "relative",
+          zIndex: 1,
         }}
       >
         <Typography

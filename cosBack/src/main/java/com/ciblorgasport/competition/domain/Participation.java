@@ -1,7 +1,6 @@
 package com.ciblorgasport.competition.domain;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -24,7 +23,6 @@ import lombok.NoArgsConstructor;
  * Utilise un pattern polymorphique avec competitorId et competitorType
  * pour supporter différents types de participants (Athlete, Team, etc.).
  */
-
 @Entity
 @Table(name = "participation")
 @Data
@@ -59,7 +57,7 @@ public class Participation {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
+
     @Column(name = "charter_accepted", nullable = false, columnDefinition = "boolean default false")
     @Builder.Default
     private boolean charterAccepted = false;
@@ -74,18 +72,5 @@ public class Participation {
         this.charterAccepted = true;
         this.charterAcceptedAt = LocalDateTime.now();
         this.status = ParticipationStatus.CONFIRMED;
-    }
-
-    public void declareForfeit() {
-        if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("La compétition est terminée.");
-        }
-
-        if (this.status == ParticipationStatus.CANCELLED) {
-            throw new IllegalStateException("Le forfait a déjà été déclaré.");
-        }
-
-        this.status = ParticipationStatus.CANCELLED;
-        this.updatedAt = LocalDateTime.now();
     }
 }

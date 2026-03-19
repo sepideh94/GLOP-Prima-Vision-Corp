@@ -18,6 +18,9 @@ import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.team.application.TeamValidationService;
+import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.dto.TrialParticipantResponse;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -30,7 +33,8 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
-    private final TeamValidationService teamValidationService; 
+    private final TeamValidationService teamValidationService;
+    private final TrialParticipantRepository trialParticipantRepository;
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -90,42 +94,56 @@ public class AthleteService {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
 
-        boolean wasCharterAcceptedBefore = athlete.isHasAcceptedCharte();
-
         if (request.getNationality() != null) athlete.setNationality(request.getNationality());
         if (request.getBirthDate() != null) athlete.setBirthDate(request.getBirthDate());
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
+
         if (request.getHasAcceptedCharte() != null) {
             if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
-                athlete.setCharterAcceptedAt(LocalDateTime.now()); 
+                athlete.setCharterAcceptedAt(LocalDateTime.now());
             }
             athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
         }
+
         Athlete saved = athleteRepository.save(athlete);
-        
+
         this.checkAndConfirmParticipations(saved);
-        
+
         return AthleteResponse.fromEntity(saved);
     }
 
     private void checkAndConfirmParticipations(Athlete athlete) {
-        boolean canConfirm = athlete.isProfileComplete() && athlete.isHasAcceptedCharte();
-
-        if (canConfirm) {
+        if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
             List<Participation> participations = participationRepository
                     .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
-            
+
             for (Participation p : participations) {
                 p.setStatus(ParticipationStatus.CONFIRMED);
                 p.setCharterAccepted(true);
                 p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
-                
+
                 participationRepository.saveAndFlush(p);
-                
+
                 teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
             }
-        } // sinon : ne pas forcer le statut CONFIRMED tant que profil + charte + documents ne sont pas valides.
+        }
+    }
+
+    @Transactional
+    public TrialParticipantResponse declareTrialForfeit(Long athleteId, Long participationId) {
+        athleteRepository.findById(athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
+
+        TrialParticipant participant = trialParticipantRepository
+                .findAccessibleByIdForAthlete(participationId, athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
+
+        participant.declareForfeit();
+
+        TrialParticipant saved = trialParticipantRepository.save(participant);
+
+        return TrialParticipantResponse.fromEntity(saved);
     }
 
     @Transactional

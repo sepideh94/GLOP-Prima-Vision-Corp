@@ -1,0 +1,32 @@
+package com.ciblorgasport.notification.application;
+
+import java.util.List;
+
+import com.ciblorgasport.incident.domain.Incident;
+import com.ciblorgasport.notification.domain.Notification;
+import com.ciblorgasport.notification.domain.NotificationType;
+import com.ciblorgasport.notification.dto.NotificationResponse;
+import com.ciblorgasport.user.domain.UserAccount;
+
+public interface NotificationService {
+
+    Notification createNotification(
+            UserAccount recipient,
+            Incident incident,
+            NotificationType type,
+            String title,
+            String message,
+            String link,
+            String incidentStatus
+    );
+
+    void markAsRead(Long notificationId, UserAccount actor);
+
+    List<NotificationResponse> getMyNotifications(UserAccount actor);
+
+    long countUnread(UserAccount actor);
+
+    void updateIncidentNotificationsStatus(Incident incident, String incidentStatus);
+
+    void deleteByIncidentId(Long incidentId);
+}

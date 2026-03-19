@@ -27,4 +27,8 @@ public class EmailServiceTestImpl implements EmailService {
 	@Override
 	public void sendVolonteerInviteEmail(String to, String firstName, String token) {		
 	}
+
+    @Override
+    public void sendIncidentNotificationEmail(String to, String firstName, String subject, String message, String link){
+    }
 }
