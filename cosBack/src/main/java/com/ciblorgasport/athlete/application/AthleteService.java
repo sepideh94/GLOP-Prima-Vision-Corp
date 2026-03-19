@@ -114,7 +114,9 @@ public class AthleteService {
     }
 
     private void checkAndConfirmParticipations(Athlete athlete) {
-        if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
+        boolean canConfirm = athlete.isProfileComplete() && athlete.isHasAcceptedCharte();
+
+        if (canConfirm) {
             List<Participation> participations = participationRepository
                     .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
 
@@ -127,6 +129,7 @@ public class AthleteService {
 
                 teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
             }
+<<<<<<< feature/forfait
         }
     }
 
@@ -144,6 +147,9 @@ public class AthleteService {
         TrialParticipant saved = trialParticipantRepository.save(participant);
 
         return TrialParticipantResponse.fromEntity(saved);
+=======
+        } // sinon : ne pas forcer le statut CONFIRMED tant que profil + charte + documents ne sont pas valides.
+>>>>>>> develop
     }
 
     @Transactional

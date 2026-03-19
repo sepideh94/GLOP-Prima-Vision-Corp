@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
@@ -17,7 +17,12 @@ import {
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import scheduleService from "../../schedule/services/scheduleService";
+<<<<<<< feature/forfait
 import athleteTrialService from "../services/athleteTrialService";
+=======
+import athleteService from "../../participant/services/athleteService";
+import AthleteTrialResultsDialog from "../components/AthleteTrialResultsDialog";
+>>>>>>> develop
 
 const PHASE_LABELS = {
   QUALIFICATION_HEAT: "Qualification",
@@ -62,6 +67,11 @@ export default function AthleteSchedulePage() {
   const [schedule, setSchedule] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [athleteResults, setAthleteResults] = useState(null);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  const [resultsError, setResultsError] = useState(null);
+  const [selectedTrial, setSelectedTrial] = useState(null);
+  const [openResultsDialog, setOpenResultsDialog] = useState(false);
 
   useEffect(() => {
     if (competitionId) {
@@ -96,6 +106,7 @@ export default function AthleteSchedulePage() {
     }
   };
 
+<<<<<<< feature/forfait
   const handleDeclareForfeit = async (trialParticipantId) => {
     try {
       setError(null);
@@ -126,6 +137,52 @@ export default function AthleteSchedulePage() {
     }
   };
 
+=======
+  const loadAthleteResults = async () => {
+    try {
+      setResultsLoading(true);
+      setResultsError(null);
+      const data = await athleteService.getAthleteResults();
+      setAthleteResults(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Erreur lors du chargement des résultats athlète:", err);
+      if (err.response?.status === 401) {
+        setResultsError("Session expirée. Veuillez vous reconnecter.");
+      } else if (err.response?.status === 403) {
+        setResultsError("Vous n'avez pas accès aux résultats.");
+      } else {
+        setResultsError(
+          err.response?.data?.message ||
+            "Erreur lors du chargement de vos résultats"
+        );
+      }
+    } finally {
+      setResultsLoading(false);
+    }
+  };
+
+  const handleOpenResultsDialog = async (trial) => {
+    setSelectedTrial(trial);
+    setOpenResultsDialog(true);
+    if (athleteResults === null) {
+      await loadAthleteResults();
+    }
+  };
+
+  const handleCloseResultsDialog = () => {
+    setOpenResultsDialog(false);
+    setSelectedTrial(null);
+    setResultsError(null);
+  };
+
+  const resultsForSelectedTrial = useMemo(() => {
+    if (!selectedTrial || !Array.isArray(athleteResults)) return [];
+    return athleteResults.filter(
+      (r) => r.trialId === selectedTrial.trialId
+    );
+  }, [selectedTrial, athleteResults]);
+
+>>>>>>> develop
   return (
     <Box
       sx={{
@@ -343,6 +400,33 @@ export default function AthleteSchedulePage() {
                         <strong>Lieu:</strong> {trial.siteAddress}
                       </Typography>
                     </Box>
+                    {trial.trialStatus === "COMPLETED" && (
+                      <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => handleOpenResultsDialog(trial)}
+                          sx={{
+                            textTransform: "none",
+                            fontWeight: 800,
+                            fontSize: 14,
+                            px: 3,
+                            py: 1,
+                            borderRadius: appTheme.radius.pill,
+                            background:
+                              "linear-gradient(135deg, #22c55e, #16a34a)",
+                            color: "#fff",
+                            boxShadow: "0 6px 16px rgba(34,197,94,0.35)",
+                            "&:hover": {
+                              background:
+                                "linear-gradient(135deg, #16a34a, #15803d)",
+                            },
+                          }}
+                        >
+                          Voir mes résultats
+                        </Button>
+                      </Box>
+                    )}
                   </Box>
 
                   <Box sx={{ mt: 3 }}>
@@ -373,6 +457,15 @@ export default function AthleteSchedulePage() {
           })}
         </Box>
       )}
+
+      <AthleteTrialResultsDialog
+        open={openResultsDialog}
+        onClose={handleCloseResultsDialog}
+        trial={selectedTrial}
+        loading={resultsLoading}
+        error={resultsError}
+        results={resultsForSelectedTrial}
+      />
     </Box>
   );
 }

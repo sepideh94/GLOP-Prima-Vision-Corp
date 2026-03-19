@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.team.dto.TeamResponse;
+import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 
 public interface TrialParticipantService {
@@ -46,7 +47,13 @@ public interface TrialParticipantService {
 
     List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds);
 
+<<<<<<< feature/forfait
     List<TeamResponse> getEligibleTeams(Long trialId);
 
     void removeTeam(Long trialId, Long teamId);
 }
+=======
+    /** Convertit une entite TrialParticipant en DTO enrichi (displayName + members). */
+    TrialParticipantResponse toResponse(TrialParticipant tp);
+}
+>>>>>>> develop
