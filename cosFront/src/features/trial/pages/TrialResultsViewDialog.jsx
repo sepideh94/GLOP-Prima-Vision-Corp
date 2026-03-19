@@ -21,6 +21,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
 
@@ -200,7 +201,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
               Aucun résultat enregistré
             </Typography>
             <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-              Saisissez d’abord les performances, puis revenez consulter le classement.
+              Les résultats de cette épreuve ne sont pas encore publiés.
             </Typography>
           </Paper>
         ) : (
@@ -294,6 +295,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       <DialogActions sx={{ p: 2 }}>
         <Button
           onClick={onClose}
+          startIcon={<VisibilityIcon sx={{ fontSize: 18 }} />}
           sx={{
             textTransform: "none",
             fontWeight: 700,

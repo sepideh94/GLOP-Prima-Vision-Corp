@@ -62,6 +62,17 @@ const spectatorService = {
     const res = await api.get(`/api/trials/${id}`);
     return res.data;
   },
+
+  // Résultats (spectateur authentifié)
+  async getCompetitionResults(competitionId) {
+    const res = await api.get(`/api/competitions/${competitionId}/results`);
+    return res.data;
+  },
+
+  async getTrialResults(trialId) {
+    const res = await api.get(`/api/trials/${trialId}/results`);
+    return res.data;
+  },
 };
 
 export default spectatorService;
