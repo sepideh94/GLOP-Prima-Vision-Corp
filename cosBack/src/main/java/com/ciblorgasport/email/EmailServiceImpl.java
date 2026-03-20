@@ -6,7 +6,6 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-
 @Service
 @Profile("!test")
 public class EmailServiceImpl implements EmailService {
@@ -38,6 +37,7 @@ public class EmailServiceImpl implements EmailService {
         msg.setText(body);
         mailSender.send(msg);
     }
+
 
     @Override
     public void sendActivationEmail(String to, String firstName, String token) {
@@ -118,108 +118,175 @@ public class EmailServiceImpl implements EmailService {
         );
     }
 
-@Override
-public void sendVolonteerInviteEmail(String to, String firstName, String token) {
-    String resetLink = appBaseUrl + "/reset-password?token=" + token;
+    @Override
+    public void sendVolonteerInviteEmail(String to, String firstName, String token) {
+        String resetLink = appBaseUrl + "/reset-password?token=" + token;
 
-    String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
+        String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
 
-    SimpleMailMessage msg = new SimpleMailMessage();
-    msg.setFrom(from);
-    msg.setTo(to);
-    msg.setSubject("Invitation : Devenez volontaire - CiblOrgaSport");
-    msg.setText(
-        "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
-        "Vous avez été invité(e) à rejoindre l'équipe des volontaires sur CiblOrgaSport.\n\n" +
-        "Votre aide est précieuse pour la réussite de nos compétitions.\n\n" +
-        "👉 Accéder à mon espace volontaire :\n" +
-        volonteerLink + "\n\n" +
-        "🔐 Activer mon compte / Définir mon mot de passe :\n" +
-        resetLink + "\n\n" +
-        "Ce lien est nécessaire pour votre première connexion.\n\n" +
-        "Sportivement,\n" +
-        "L’équipe CiblOrgaSport"
-    );
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("Invitation : Devenez volontaire - CiblOrgaSport");
+        msg.setText(
+            "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
+            "Vous avez été invité(e) à rejoindre l'équipe des volontaires sur CiblOrgaSport.\n\n" +
+            "Votre aide est précieuse pour la réussite de nos compétitions.\n\n" +
+            "👉 Accéder à mon espace volontaire :\n" +
+            volonteerLink + "\n\n" +
+            "🔐 Activer mon compte / Définir mon mot de passe :\n" +
+            resetLink + "\n\n" +
+            "Ce lien est nécessaire pour votre première connexion.\n\n" +
+            "Sportivement,\n" +
+            "L’équipe CiblOrgaSport"
+        );
 
-    mailSender.send(msg);
-}
+        mailSender.send(msg);
+    }
 
-@Override
-public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message, String link) {
-    String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
+    @Override
+    public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message, String link) {
+        String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
 
-    String body = """
-            Bonjour %s,
+        String body = """
+                Bonjour %s,
 
-            %s
+                %s
 
-            Pour consulter les détails, veuillez vous connecter à votre espace :
-            %s
+                Pour consulter les détails, veuillez vous connecter à votre espace :
+                %s
 
-            Cordialement,
-            L'équipe CiblOrgaSport
-            """.formatted(safeDisplayName, message, link);
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(safeDisplayName, message, link);
 
-    sendEmail(to, subject, body);
-}
+        sendEmail(to, subject, body);
+    }
 
-@Override
-public void sendAccreditationValidatedEmail(String to, String firstName) {
-    String loginLink = appBaseUrl + "/login";
+    @Override
+    public void sendAccreditationValidatedEmail(String to, String firstName) {
+        String loginLink = appBaseUrl + "/login";
 
-    String body = """
-            Bonjour %s,
+        String body = """
+                Bonjour %s,
 
-            Nous avons le plaisir de vous informer que votre accréditation a été validée par un administrateur. 
-            Vous avez désormais accès à l'ensemble des fonctionnalités de votre espace commissaire.
+                Nous avons le plaisir de vous informer que votre accréditation a été validée par un administrateur. 
+                Vous avez désormais accès à l'ensemble des fonctionnalités de votre espace commissaire.
 
-            Connectez-vous pour commencer :
-            %s
+                Connectez-vous pour commencer :
+                %s
 
-            Sportivement,
-            L'équipe CiblOrgaSport
-            """.formatted(firstName != null ? firstName : "", loginLink);
+                Sportivement,
+                L'équipe CiblOrgaSport
+                """.formatted(firstName != null ? firstName : "", loginLink);
 
-    sendEmail(to, "Votre accréditation a été validée - CiblOrgaSport", body);
-}
+        sendEmail(to, "Votre accréditation a été validée - CiblOrgaSport", body);
+    }
 
-@Override
-public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
-    String loginLink = appBaseUrl + "/login";
+    @Override
+    public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
+        String loginLink = appBaseUrl + "/login";
 
-    String body = """
-            Bonjour %s,
+        String body = """
+                Bonjour %s,
 
-            Votre accréditation a été refusée par un administrateur pour le motif suivant :
-            "%s"
+                Votre accréditation a été refusée par un administrateur pour le motif suivant :
+                "%s"
 
-            Veuillez vous connecter à votre espace commissaire pour soumettre un nouveau document valide :
-            %s
+                Veuillez vous connecter à votre espace commissaire pour soumettre un nouveau document valide :
+                %s
 
-            Cordialement,
-            L'équipe CiblOrgaSport
-            """.formatted(firstName != null ? firstName : "", reason != null ? reason : "Non spécifié", loginLink);
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(firstName != null ? firstName : "", reason != null ? reason : "Non spécifié", loginLink);
 
-    sendEmail(to, "Votre accréditation a été refusée - CiblOrgaSport", body);
-}
+        sendEmail(to, "Votre accréditation a été refusée - CiblOrgaSport", body);
+    }
 
-@Override
-public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName) {
-    String loginLink = appBaseUrl + "/login";
+    @Override
+    public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName) {
+        String loginLink = appBaseUrl + "/login";
 
-    String body = """
-            Bonjour %s,
+        String body = """
+                Bonjour %s,
 
-            Le commissaire %s vient de soumettre son document d'accréditation.
-            Veuillez vous connecter à la plateforme pour l'examiner et statuer (Validation ou Refus).
+                Le commissaire %s vient de soumettre son document d'accréditation.
+                Veuillez vous connecter à la plateforme pour l'examiner et statuer (Validation ou Refus).
 
-            Lien de connexion :
-            %s
+                Lien de connexion :
+                %s
 
-            Cordialement,
-            L'équipe CiblOrgaSport
-            """.formatted(adminFirstName != null ? adminFirstName : "Administrateur", commissionnerName != null ? commissionnerName : "Inconnu", loginLink);
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(adminFirstName != null ? adminFirstName : "Administrateur", commissionnerName != null ? commissionnerName : "Inconnu", loginLink);
 
-    sendEmail(toAdminEmail, "Nouvelle soumission d'accréditation - CiblOrgaSport", body);
-}
+        sendEmail(toAdminEmail, "Nouvelle soumission d'accréditation - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendCommissionerParticipationSubmittedEmail(String toEmail, String commissionnerName, String athleteName) {
+        String link = appBaseUrl + "/commissioner/participations";
+
+        String body = """
+                Bonjour %s,
+
+                L'athlète %s vient de soumettre ses documents justificatifs (certificat médical, passeport) et a signé la charte.
+                Veuillez vous connecter à la plateforme pour les vérifier.
+
+                Lien de connexion :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(commissionnerName != null ? commissionnerName : "Commissaire", athleteName != null ? athleteName : "Inconnu", link);
+
+        sendEmail(toEmail, "Nouvelles pièces justificatives reçues - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName) {
+        String link = appBaseUrl + "/athlete/competitions";
+
+        String body = """
+                Bonjour %s,
+
+                Nous avons le plaisir de vous informer que vos documents justificatifs ont été validés par un commissaire.
+                Votre participation est désormais confirmée !
+
+                Vous pouvez consulter le détail de vos compétitions :
+                %s
+
+                Sportivement,
+                L'équipe CiblOrgaSport
+                """.formatted(athleteName != null ? athleteName : "", link);
+
+        sendEmail(toEmail, "Vos documents ont été validés - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument, String reason) {
+        String link = appBaseUrl + "/athlete/profile";
+
+        String body = """
+                Bonjour %s,
+
+                Un commissaire a examiné vos documents justificatifs et a dû en refuser le contenu.
+                
+                Document concerné : %s
+                Motif du refus : "%s"
+
+                Veuillez vous connecter à votre profil pour soumettre de nouveaux documents valides.
+
+                Lien vers votre profil :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(athleteName != null ? athleteName : "", 
+                             rejectedDocument != null ? rejectedDocument : "Inconnu",
+                             reason != null ? reason : "Veuillez vérifier votre profil.",
+                             link);
+
+        sendEmail(toEmail, "Vos documents ont été refusés - CiblOrgaSport", body);
+    }
 }

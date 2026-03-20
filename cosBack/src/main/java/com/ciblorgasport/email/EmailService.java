@@ -18,4 +18,10 @@ public interface EmailService {
     void sendAccreditationRefusedEmail(String to, String firstName, String reason);
     
     void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName);
+
+    void sendCommissionerParticipationSubmittedEmail(String toEmail, String commissionnerName, String athleteName);
+
+    void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName);
+
+    void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument, String reason);
 }
