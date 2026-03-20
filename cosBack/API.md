@@ -20,8 +20,11 @@
 11. [Participations Athlète](#11-participations-athlète)
 12. [Commissaire](#12-commissaire)
 13. [Pays](#13-pays)
-14. [Enums de référence](#14-enums-de-référence)
-15. [Erreurs](#15-erreurs)
+14. [Carte interactive](#14-carte-interactive)
+15. [Fan Zones](#15-fan-zones)
+16. [Géolocalisation Athlète](#16-géolocalisation-athlète)
+17. [Enums de référence](#17-enums-de-référence)
+18. [Erreurs](#18-erreurs)
 
 ---
 
@@ -384,6 +387,8 @@ Crée une épreuve rattachée à une compétition. Les dates doivent être dans 
   "mode": "INDIVIDUAL",
   "categoryGender": "MALE",
   "siteId": 1,
+  "siteLatitude": 48.8566,
+  "siteLongitude": 2.3522,
   "competitionId": 1,
   "roundId": 1,
   "roundDisplayName": "Qualification/Heat",
@@ -960,7 +965,296 @@ Liste tous les pays disponibles.
 
 ---
 
-## 14. Enums de référence
+---
+
+## 14. Carte interactive
+
+### GET /map/data
+Retourne toutes les données nécessaires pour alimenter la carte interactive : sites, fan zones, épreuves et (optionnellement) positions des athlètes.
+
+**Accès** : Public
+
+**Query params** :
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `includeAthletes` | boolean | `false` | Inclure les positions GPS des athlètes |
+
+**Response** `200` :
+```json
+{
+  "sites": [
+    {
+      "id": 1,
+      "type": "SITE",
+      "name": "Piscine Olympique — 1 avenue des Jeux",
+      "latitude": 48.8566,
+      "longitude": 2.3522,
+      "metadata": null
+    }
+  ],
+  "fanZones": [
+    {
+      "id": 1,
+      "type": "FAN_ZONE",
+      "name": "Bar Olympique",
+      "latitude": 48.8600,
+      "longitude": 2.3600,
+      "metadata": "BAR"
+    }
+  ],
+  "events": [
+    {
+      "trialId": 1,
+      "trialName": "50m nage libre - Qualification/Heat 1",
+      "startDate": "2026-07-27",
+      "startHour": "09:00",
+      "siteId": 1,
+      "latitude": 48.8566,
+      "longitude": 2.3522
+    }
+  ],
+  "athleteLocations": null
+}
+```
+
+> `athleteLocations` est `null` si `includeAthletes=false`, sinon liste d'`AthleteLocationResponse`.
+
+---
+
+## 15. Fan Zones
+
+### GET /api/fan-zones/nearby
+Recherche les fan zones à proximité d'une position GPS. Combine les fan zones enregistrées en base et les suggestions Google Maps (bars, espaces publics).
+
+**Accès** : Public
+
+**Query params** :
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `latitude` | double | requis | Latitude de l'utilisateur |
+| `longitude` | double | requis | Longitude de l'utilisateur |
+| `radiusKm` | double | `5.0` | Rayon de recherche en kilomètres |
+
+**Response** `200` :
+```json
+{
+  "savedFanZones": [
+    {
+      "id": 1,
+      "name": "Bar Olympique",
+      "address": "3 rue des Champions",
+      "latitude": 48.8600,
+      "longitude": 2.3600,
+      "capacity": 200,
+      "type": "BAR",
+      "description": "Bar officiel partenaire",
+      "googlePlaceId": null
+    }
+  ],
+  "googleSuggestions": [
+    {
+      "googlePlaceId": "ChIJD7fiBh9u5kcR...",
+      "name": "Le Café du Stade",
+      "address": "5 avenue des Sports, Paris",
+      "latitude": 48.8590,
+      "longitude": 2.3580,
+      "suggestedType": "BAR",
+      "rating": 4.2
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/trials/nearby
+Recherche les épreuves dont le site est dans un rayon donné, triées par distance croissante.
+
+**Accès** : Public
+
+**Query params** :
+| Paramètre | Type | Défaut | Description |
+|-----------|------|--------|-------------|
+| `latitude` | double | requis | Latitude de l'utilisateur |
+| `longitude` | double | requis | Longitude de l'utilisateur |
+| `radiusKm` | double | `10.0` | Rayon de recherche en kilomètres |
+
+**Response** `200` :
+```json
+[
+  {
+    "trialId": 1,
+    "trialName": "50m nage libre - Qualification/Heat 1",
+    "startDate": "2026-07-27",
+    "startHour": "09:00",
+    "endDate": "2026-07-27",
+    "endHour": "10:00",
+    "siteId": 1,
+    "siteAddress": "Piscine Olympique, 1 avenue des Jeux",
+    "latitude": 48.8566,
+    "longitude": 2.3522,
+    "distanceKm": 0.87
+  }
+]
+```
+
+---
+
+### POST /api/directions
+Calcule un itinéraire entre la position de l'utilisateur et une destination (site, fan zone ou coordonnées libres).
+
+**Accès** : Public
+
+**Request body** :
+```json
+{
+  "fromLatitude": 48.8500,
+  "fromLongitude": 2.3400,
+  "siteId": 1,
+  "fanZoneId": null,
+  "toLatitude": null,
+  "toLongitude": null,
+  "travelMode": "WALKING"
+}
+```
+
+> Exactement **une** des trois destinations doit être fournie : `siteId`, `fanZoneId` ou `toLatitude`+`toLongitude`.
+
+**Response** `200` :
+```json
+{
+  "summary": "Via Avenue de la Paix",
+  "distanceKm": 1.2,
+  "durationMinutes": 15,
+  "polyline": [],
+  "htmlInstructions": "Prenez la direction nord sur Rue Gambetta",
+  "destinationLatitude": 48.8566,
+  "destinationLongitude": 2.3522
+}
+```
+
+**Erreurs possibles** :
+| Code | Message |
+|------|---------|
+| 400 | "Site introuvable: {id}" |
+| 400 | "Fan zone introuvable: {id}" |
+| 400 | "Destination non spécifiée. Fournir siteId, fanZoneId ou coordonnées GPS." |
+
+---
+
+### POST /api/admin/fan-zones
+Crée une fan zone manuellement.
+
+**Accès** : ADMIN
+
+**Request body** :
+```json
+{
+  "name": "Bar Olympique",
+  "address": "3 rue des Champions, Paris",
+  "latitude": 48.8600,
+  "longitude": 2.3600,
+  "capacity": 200,
+  "type": "BAR",
+  "description": "Bar officiel partenaire de l'événement"
+}
+```
+
+**Response** `200` :
+```json
+{
+  "id": 1,
+  "name": "Bar Olympique",
+  "address": "3 rue des Champions, Paris",
+  "latitude": 48.8600,
+  "longitude": 2.3600,
+  "capacity": 200,
+  "type": "BAR",
+  "description": "Bar officiel partenaire de l'événement",
+  "googlePlaceId": null
+}
+```
+
+---
+
+### POST /api/admin/fan-zones/import
+Importe une fan zone depuis Google Maps via un Place ID.
+
+**Accès** : ADMIN
+
+**Request body** :
+```json
+{
+  "placeId": "ChIJD7fiBh9u5kcRYJSMaMOCCwQ",
+  "overrideType": "BAR",
+  "description": "Partenaire officiel"
+}
+```
+
+> `overrideType` est optionnel. Si absent, le type est déduit des catégories Google (`bar` → `BAR`, `stadium` → `EVENT_SPACE`, sinon `PUBLIC_VIEWING`).
+
+**Response** `200` : Objet `FanZoneResponse` (identique à la création manuelle, avec `googlePlaceId` renseigné)
+
+---
+
+## 16. Géolocalisation Athlète
+
+### PUT /api/athletes/{athleteId}/location
+Met à jour la position GPS de l'athlète en temps réel. Crée l'entrée si elle n'existe pas encore, sinon la met à jour (upsert).
+
+**Accès** : ATHLETE, ADMIN
+
+**Path param** : `athleteId` (Long)
+
+**Request body** :
+```json
+{
+  "latitude": 48.8566,
+  "longitude": 2.3522
+}
+```
+
+**Response** `200` :
+```json
+{
+  "id": 1,
+  "athleteId": 42,
+  "latitude": 48.8566,
+  "longitude": 2.3522,
+  "timestamp": "2026-07-27T09:45:00"
+}
+```
+
+---
+
+### GET /api/athletes/{athleteId}/meeting-info
+Retourne les épreuves à venir de l'athlète avec les coordonnées GPS du site, triées par date croissante.
+
+**Accès** : ATHLETE, ADMIN
+
+**Path param** : `athleteId` (Long)
+
+**Response** `200` :
+```json
+[
+  {
+    "trialId": 1,
+    "trialName": "50m nage libre - Qualification/Heat 1",
+    "startDate": "2026-07-27",
+    "startHour": "09:00",
+    "siteId": 1,
+    "siteAddress": "Piscine Olympique, 1 avenue des Jeux",
+    "latitude": 48.8566,
+    "longitude": 2.3522
+  }
+]
+```
+
+> Retourne une liste vide `[]` si l'athlète n'a pas d'épreuves à venir.
+
+---
+
+## 17. Enums de référence
 
 ### TrialName (type d'épreuve de natation)
 | Valeur | Libellé |
@@ -1029,9 +1323,24 @@ Liste tous les pays disponibles.
 | `ATHLETE` |
 | `TEAM` |
 
+### FanZoneType
+| Valeur | Description |
+|--------|-------------|
+| `PUBLIC_VIEWING` | Espace de visionnage public |
+| `BAR` | Bar ou établissement de restauration |
+| `EVENT_SPACE` | Espace événementiel ou stade |
+
+### TravelMode (mode de transport pour les itinéraires)
+| Valeur | Description |
+|--------|-------------|
+| `DRIVING` | En voiture |
+| `WALKING` | À pied |
+| `TRANSIT` | Transports en commun |
+| `BICYCLING` | À vélo |
+
 ---
 
-## 15. Erreurs
+## 18. Erreurs
 
 Toutes les erreurs retournent un objet `ApiError` :
 

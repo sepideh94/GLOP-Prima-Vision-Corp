@@ -29,6 +29,8 @@ public class TrialResponse {
     private TrialMode mode;
     private CategoryGender categoryGender;
     private Long siteId;
+    private Double siteLatitude;
+    private Double siteLongitude;
     private Long competitionId;
     private Long roundId;
     private String roundDisplayName;
@@ -62,6 +64,8 @@ public class TrialResponse {
                 .mode(trial.getMode())
                 .categoryGender(trial.getCategoryGender())
                 .siteId(trial.getSite() != null ? trial.getSite().getId() : null)
+                .siteLatitude(trial.getSite() != null ? trial.getSite().getLatitude() : null)
+                .siteLongitude(trial.getSite() != null ? trial.getSite().getLongitude() : null)
                 .competitionId(trial.getCompetition() != null ? trial.getCompetition().getId() : null)
                 .roundId(trial.getRound() != null ? trial.getRound().getId() : null)
                 .roundDisplayName(trial.getRound() != null ? trial.getRound().getDisplayName() : null)
