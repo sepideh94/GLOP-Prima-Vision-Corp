@@ -18,7 +18,13 @@ import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.team.application.TeamValidationService;
+import com.ciblorgasport.commissionner.CommissionerRepository;
+import com.ciblorgasport.commissionner.Commissionner;
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+import com.ciblorgasport.notification.domain.NotificationType;
 
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +37,10 @@ public class AthleteService {
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
     private final TeamValidationService teamValidationService;
+    private final CommissionerRepository commissionerRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final UserAccountRepository userAccountRepository;
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -114,14 +124,42 @@ public class AthleteService {
             List<Participation> participations = participationRepository
                     .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
 
+            boolean newlySubmitted = false;
+
             for (Participation p : participations) {
-                p.setStatus(ParticipationStatus.CONFIRMED);
+                if (p.getStatus() == ParticipationStatus.PENDING) {
+                    p.setStatus(ParticipationStatus.PENDING_VALIDATION);
+                    newlySubmitted = true;
+                } else if (p.getStatus() != ParticipationStatus.CONFIRMED && p.getStatus() != ParticipationStatus.PENDING_VALIDATION) {
+                    p.setStatus(ParticipationStatus.PENDING_VALIDATION);
+                    newlySubmitted = true;
+                } else if (p.getStatus() == ParticipationStatus.PENDING_VALIDATION) {
+                    // Already pending validation, no newly submitted state change
+                }
+
                 p.setCharterAccepted(true);
                 p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
 
                 participationRepository.saveAndFlush(p);
 
                 teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
+            }
+
+            if (newlySubmitted) {
+                List<Commissionner> commissionners = commissionerRepository.findAll();
+                String athleteName = athlete.getFirstName() + " " + athlete.getLastName();
+                for (Commissionner c : commissionners) {
+                    userAccountRepository.findById(c.getId()).ifPresent(user -> {
+                        emailService.sendCommissionerParticipationSubmittedEmail(user.getEmail(), user.getFirstName(), athleteName);
+                        notificationService.createSystemNotification(
+                            user, 
+                            NotificationType.PARTICIPATION_SUBMITTED, 
+                            "Nouveaux documents", 
+                            "L'athlète " + athleteName + " a soumis ses documents justificatifs.", 
+                            "/commissioner/participations"
+                        );
+                    });
+                }
             }
         }
     }
