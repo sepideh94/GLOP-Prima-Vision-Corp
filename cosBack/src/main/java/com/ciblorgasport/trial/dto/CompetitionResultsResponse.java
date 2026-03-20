@@ -14,6 +14,9 @@ import lombok.Data;
 @Builder
 public class CompetitionResultsResponse {
 
+    private Long competitionId;
+    private String competitionName;
+
     private Long trialId;
     private String trialName;
     private String categoryGender;

@@ -252,6 +252,11 @@ export default function CompetitionResultsPage() {
 
   const resultsByRound = competitionResults.reduce((acc, trialGroup) => {
     const trialMeta = trialsById[trialGroup.trialId];
+    const hasTeamResults =
+      Array.isArray(trialGroup.results) &&
+      trialGroup.results.some(
+        (r) => r?.participant?.competitorType === "TEAM"
+      );
     const roundName = trialMeta?.roundId
       ? `Round ${trialMeta.roundNumber || "N/A"}`
       : "Sans round";
@@ -270,6 +275,8 @@ export default function CompetitionResultsPage() {
       displayRound: trialMeta?.roundId
         ? `Round ${trialMeta.roundNumber || "N/A"}`
         : getRoundLabel(trialGroup.roundName),
+      displayCompetitorMode:
+        trialMeta?.mode === "TEAM" || hasTeamResults ? "Équipe" : "Individuel",
     });
 
     return acc;
@@ -754,6 +761,16 @@ export default function CompetitionResultsPage() {
                               }}
                             />
                           )}
+                          <Chip
+                            size="small"
+                            label={trialGroup.displayCompetitorMode}
+                            sx={{
+                              fontWeight: 700,
+                              background: "rgba(167, 139, 250, 0.17)",
+                              color: "#DDD6FE",
+                              border: "1px solid rgba(167, 139, 250, 0.42)",
+                            }}
+                          />
                           <Chip
                             size="small"
                             label={`${performanceLabel}`}
