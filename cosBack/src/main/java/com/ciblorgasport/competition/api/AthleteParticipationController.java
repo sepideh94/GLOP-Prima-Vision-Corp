@@ -2,6 +2,7 @@ package com.ciblorgasport.competition.api;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -44,6 +45,11 @@ public class AthleteParticipationController {
     public ResponseEntity<List<TrialResponse>> getMyTrials(
             @PathVariable Long competitionId,
             @AuthenticationPrincipal UserAccount user) {
+        
+        if (!participationService.isConfirmed(user.getId(), competitionId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         return ResponseEntity.ok(trialService.getTrialsForAthlete(competitionId, user.getId()));
     }
 }
