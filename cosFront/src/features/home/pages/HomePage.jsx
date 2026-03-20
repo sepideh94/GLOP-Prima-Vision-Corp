@@ -53,18 +53,44 @@ export default function HomePage() {
                 trialName: trialGroup.trialName,
                 roundName: trialGroup.roundName,
                 categoryGender: trialGroup.categoryGender,
+                startDate: trialGroup.startDate,
+                startHour: trialGroup.startHour,
+                endDate: trialGroup.endDate,
+                endHour: trialGroup.endHour,
                 results: trialGroup.results,
                 latestUpdatedAt: latestUpdate,
               };
             })
         );
 
+        const parseDate = (value) => {
+          if (!value) return null;
+          const d = new Date(value);
+          return Number.isNaN(d.getTime()) ? null : d;
+        };
+
+        const getTrialSortDate = (trial) => {
+          const endFromSplit =
+            trial?.endDate && trial?.endHour
+              ? parseDate(`${trial.endDate}T${trial.endHour}`)
+              : null;
+          const startFromSplit =
+            trial?.startDate && trial?.startHour
+              ? parseDate(`${trial.startDate}T${trial.startHour}`)
+              : null;
+          return (
+            endFromSplit ||
+            startFromSplit ||
+            parseDate(trial.latestUpdatedAt) ||
+            new Date(0)
+          ).getTime();
+        };
+
         trialRows.sort(
-          (a, b) =>
-            new Date(b.latestUpdatedAt || 0).getTime() - new Date(a.latestUpdatedAt || 0).getTime()
+          (a, b) => getTrialSortDate(b) - getTrialSortDate(a)
         );
 
-        setLatestTrials(trialRows.slice(0, 3));
+        setLatestTrials(trialRows.slice(0, 2));
       } catch (e) {
         setLatestTrials([]);
         setResultsError("Impossible de charger les derniers classements pour le moment.");
@@ -85,6 +111,50 @@ export default function HomePage() {
       hour: "2-digit",
       minute: "2-digit",
     })}`;
+  };
+
+  const formatScheduleLine = (startDate, startHour, endDate, endHour) => {
+    if (!startDate || !startHour) return null;
+    const start = new Date(`${startDate}T${startHour}`);
+    const end = endDate && endHour ? new Date(`${endDate}T${endHour}`) : null;
+
+    if (Number.isNaN(start.getTime())) return null;
+
+    const day = start.toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const startTime = start.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    if (!end || Number.isNaN(end.getTime())) {
+      return `${day} · ${startTime}`;
+    }
+
+    const sameDay = start.toDateString() === end.toDateString();
+    const endTime = end.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    if (sameDay) {
+      return `${day} · ${startTime} - ${endTime}`;
+    }
+
+    const endFull = end.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    return `${day} ${startTime} → ${endFull}`;
   };
 
   const prettifyEnum = (value) => {
@@ -125,11 +195,53 @@ export default function HomePage() {
       ONE_HUNDRED_M_FREESTYLE: "100m nage libre",
       TWO_HUNDRED_M_FREESTYLE: "200m nage libre",
       FIVE_HUNDRED_M_FREESTYLE: "500m nage libre",
+      FIFTY_M_BUTTERFLY: "50m papillon",
+      ONE_HUNDRED_M_BUTTERFLY: "100m papillon",
+      TWO_HUNDRED_M_BUTTERFLY: "200m papillon",
+      FIFTY_M_BACKSTROKE: "50m dos",
+      ONE_HUNDRED_M_BACKSTROKE: "100m dos",
+      TWO_HUNDRED_M_BACKSTROKE: "200m dos",
+      FIFTY_M_BREASTSTROKE: "50m brasse",
+      ONE_HUNDRED_M_BREASTSTROKE: "100m brasse",
+      TWO_HUNDRED_M_BREASTSTROKE: "200m brasse",
+      TWO_HUNDRED_M_MEDLEY: "200m 4 nages",
+      FOUR_HUNDRED_M_MEDLEY: "400m 4 nages",
       RELAY_4X100M_FREESTYLE: "Relais 4x100m nage libre",
       RELAY_4X200M_FREESTYLE: "Relais 4x200m nage libre",
+      RELAY_4X100M_MEDLEY: "Relais 4x100m 4 nages",
       CENT_METRES: "100 mètres",
     };
     return map[key] || prettifyEnum(value);
+  };
+
+  const getFrenchTrialLabelFromText = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+    const key = raw.toUpperCase().replace(/\s+/g, " ").trim();
+    const textMap = {
+      "FIFTY M FREESTYLE": "50m nage libre",
+      "ONE HUNDRED M FREESTYLE": "100m nage libre",
+      "TWO HUNDRED M FREESTYLE": "200m nage libre",
+      "FIVE HUNDRED M FREESTYLE": "500m nage libre",
+      "FIFTY M BUTTERFLY": "50m papillon",
+      "ONE HUNDRED M BUTTERFLY": "100m papillon",
+      "TWO HUNDRED M BUTTERFLY": "200m papillon",
+      "FIFTY M BACKSTROKE": "50m dos",
+      "ONE HUNDRED M BACKSTROKE": "100m dos",
+      "TWO HUNDRED M BACKSTROKE": "200m dos",
+      "FIFTY M BREASTSTROKE": "50m brasse",
+      "ONE HUNDRED M BREASTSTROKE": "100m brasse",
+      "TWO HUNDRED M BREASTSTROKE": "200m brasse",
+      "TWO HUNDRED M MEDLEY": "200m 4 nages",
+      "FOUR HUNDRED M MEDLEY": "400m 4 nages",
+    };
+    return textMap[key] || null;
+  };
+
+  const getDisplayTrialName = (value) => {
+    const frenchFromText = getFrenchTrialLabelFromText(value);
+    if (frenchFromText) return frenchFromText;
+    return getTrialNameLabel(value);
   };
 
   const latestSectionDescription = useMemo(() => {
@@ -362,35 +474,6 @@ export default function HomePage() {
               </Button>
             </Box>
 
-            {/* Stats or Tags */}
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                justifyContent: "center",
-                flexWrap: "wrap",
-              }}
-            >
-              {["Programmes", "Événements", "Résultats", "Participants"].map((tag) => (
-                <Box
-                  key={tag}
-                  sx={{
-                    px: 3,
-                    py: 1,
-                    borderRadius: "999px",
-                    background: "rgba(15, 23, 42, 0.6)",
-                    border: "1px solid rgba(148, 163, 184, 0.2)",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    color: appTheme.colors.textSecondary,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  {tag}
-                </Box>
-              ))}
-            </Box>
           </Box>
         </Container>
       </Box>
@@ -630,7 +713,8 @@ export default function HomePage() {
                       <Box key={`${trial.competitionId}-${trial.trialId}`} sx={{ display: "flex" }}>
                         <Card
                           sx={{
-                            height: 360,
+                            minHeight: 360,
+                            height: "100%",
                             width: "100%",
                             borderRadius: appTheme.radius.lg,
                             background:
@@ -638,23 +722,74 @@ export default function HomePage() {
                             border: "1px solid rgba(56, 189, 248, 0.26)",
                             boxShadow: "0 16px 36px rgba(15, 23, 42, 0.42)",
                             display: "flex",
+                            flexDirection: "column",
                           }}
                         >
                           <CardContent
                             sx={{
-                              display: "grid",
-                              gridTemplateRows: "60px 34px 148px 24px",
+                              display: "flex",
+                              flexDirection: "column",
                               width: "100%",
-                              height: "100%",
-                              gap: 1.1,
+                              flex: 1,
+                              gap: 1.25,
+                              pt: 2,
+                              pb: 2,
+                              px: 2.25,
+                              minHeight: 0,
+                              "&:last-child": { pb: 2 },
                             }}
                           >
                             <Box>
-                              <Typography sx={{ color: "#E2E8F0", fontWeight: 900, mb: 0.4 }}>
-                                {getTrialNameLabel(trial.trialName || `Épreuve ${trial.trialId}`)}
-                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  justifyContent: "space-between",
+                                  alignItems: "flex-start",
+                                  gap: 1,
+                                  mb: 0.4,
+                                }}
+                              >
+                                <Typography
+                                  sx={{
+                                    color: "#E2E8F0",
+                                    fontWeight: 900,
+                                    flex: 1,
+                                    minWidth: 0,
+                                    pr: 1,
+                                  }}
+                                >
+                                  {getDisplayTrialName(trial.trialName || `Épreuve ${trial.trialId}`)}
+                                </Typography>
+                                <Stack
+                                  direction="row"
+                                  spacing={1}
+                                  flexWrap="nowrap"
+                                  sx={{ flexShrink: 0, alignItems: "center" }}
+                                >
+                                  <Chip
+                                    size="small"
+                                    label={modeLabel}
+                                    sx={{
+                                      background: "rgba(167,139,250,0.18)",
+                                      color: "#DDD6FE",
+                                      border: "1px solid rgba(167,139,250,0.35)",
+                                      fontWeight: 800,
+                                    }}
+                                  />
+                                  <Chip
+                                    size="small"
+                                    label={performanceLabel}
+                                    sx={{
+                                      background: "rgba(134,239,172,0.14)",
+                                      color: "#BBF7D0",
+                                      border: "1px solid rgba(134,239,172,0.35)",
+                                      fontWeight: 800,
+                                    }}
+                                  />
+                                </Stack>
+                              </Box>
                               <Typography
-                                sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13 }}
+                                sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13, mt: 0.75 }}
                               >
                                 {trial.competitionName || `Compétition ${trial.competitionId}`}{" "}
                                 {trial.roundName || trial.categoryGender ? "· " : ""}
@@ -663,38 +798,21 @@ export default function HomePage() {
                                   ? `· ${getGenderLabel(trial.categoryGender)}`
                                   : ""}
                               </Typography>
+                              {(trial.startDate && trial.startHour) || (trial.endDate && trial.endHour) ? (
+                                <Typography
+                                  sx={{ color: "rgba(226,232,240,0.62)", fontSize: 12, mt: 0.35 }}
+                                >
+                                  {formatScheduleLine(
+                                    trial.startDate,
+                                    trial.startHour,
+                                    trial.endDate,
+                                    trial.endHour
+                                  ) || ""}
+                                </Typography>
+                              ) : null}
                             </Box>
 
-                            <Stack
-                              direction="row"
-                              spacing={1}
-                              flexWrap="wrap"
-                              useFlexGap
-                              sx={{ alignSelf: "start" }}
-                            >
-                              <Chip
-                                size="small"
-                                label={modeLabel}
-                                sx={{
-                                  background: "rgba(167,139,250,0.18)",
-                                  color: "#DDD6FE",
-                                  border: "1px solid rgba(167,139,250,0.35)",
-                                  fontWeight: 800,
-                                }}
-                              />
-                              <Chip
-                                size="small"
-                                label={performanceLabel}
-                                sx={{
-                                  background: "rgba(134,239,172,0.14)",
-                                  color: "#BBF7D0",
-                                  border: "1px solid rgba(134,239,172,0.35)",
-                                  fontWeight: 800,
-                                }}
-                              />
-                            </Stack>
-
-                            <Stack spacing={0.8} sx={{ height: 148 }}>
+                            <Stack spacing={0.8} sx={{ width: "100%" }}>
                               {[0, 1, 2].map((idx) => {
                                 const result = topResults[idx];
                                 if (!result) {
@@ -769,7 +887,8 @@ export default function HomePage() {
                               sx={{
                                 color: "rgba(226,232,240,0.68)",
                                 fontSize: 12,
-                                alignSelf: "end",
+                                mt: "auto",
+                                pt: 0.5,
                               }}
                             >
                               {formatWhen(trial.latestUpdatedAt)}

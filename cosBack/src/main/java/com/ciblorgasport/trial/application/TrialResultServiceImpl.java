@@ -97,6 +97,10 @@ public class TrialResultServiceImpl implements TrialResultService {
                             .trialName(trial.getTrialName() != null ? trial.getTrialName().name() : null)
                             .categoryGender(trial.getCategoryGender() != null ? trial.getCategoryGender().name() : null)
                             .roundName(trial.getRound() != null ? trial.getRound().getName().name() : null)
+                            .startDate(trial.getStartDate())
+                            .startHour(trial.getStartHour())
+                            .endDate(trial.getEndDate())
+                            .endHour(trial.getEndHour())
                             .results(results)
                             .build();
                 })

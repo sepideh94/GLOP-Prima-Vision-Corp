@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.dto;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 import lombok.Builder;
@@ -21,6 +23,10 @@ public class CompetitionResultsResponse {
     private String trialName;
     private String categoryGender;
     private String roundName;
+    private LocalDate startDate;
+    private LocalTime startHour;
+    private LocalDate endDate;
+    private LocalTime endHour;
 
     /** Classement de cette epreuve, trie par rang. Vide si aucun resultat. */
     private List<ResultResponse> results;

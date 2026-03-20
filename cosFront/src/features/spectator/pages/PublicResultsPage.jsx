@@ -94,6 +94,49 @@ export default function PublicResultsPage() {
     [resultsByTrial]
   );
 
+  const sortedResultsByTrial = useMemo(() => {
+    const toDate = (value) => {
+      if (!value) return null;
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const resolveTrialDate = (trialGroup) => {
+      const endFromSplit =
+        trialGroup?.endDate && trialGroup?.endHour
+          ? toDate(`${trialGroup.endDate}T${trialGroup.endHour}`)
+          : null;
+      const startFromSplit =
+        trialGroup?.startDate && trialGroup?.startHour
+          ? toDate(`${trialGroup.startDate}T${trialGroup.startHour}`)
+          : null;
+      const endFromIso =
+        toDate(trialGroup?.endTime) ||
+        toDate(trialGroup?.trialEndTime) ||
+        toDate(trialGroup?.scheduledEndTime);
+      const startFromIso =
+        toDate(trialGroup?.startTime) ||
+        toDate(trialGroup?.trialStartTime) ||
+        toDate(trialGroup?.scheduledStartTime);
+
+      const latestResultUpdate = (Array.isArray(trialGroup?.results) ? trialGroup.results : [])
+        .map((r) => toDate(r?.updatedAt))
+        .filter(Boolean)
+        .sort((a, b) => b - a)[0];
+
+      return endFromSplit || endFromIso || startFromSplit || startFromIso || latestResultUpdate || null;
+    };
+
+    return [...resultsByTrial].sort((a, b) => {
+      const dateA = resolveTrialDate(a);
+      const dateB = resolveTrialDate(b);
+      if (!dateA && !dateB) return 0;
+      if (!dateA) return 1;
+      if (!dateB) return -1;
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [resultsByTrial]);
+
   const selectedCompetitionName = useMemo(
     () =>
       availableCompetitions.find((c) => c.competitionId === selectedCompetitionId)?.competitionName ||
@@ -106,6 +149,136 @@ export default function PublicResultsPage() {
     if (rank === 2) return "🥈";
     if (rank === 3) return "🥉";
     return rank;
+  };
+
+  const prettifyEnum = (value) => {
+    if (!value || typeof value !== "string") return "Non défini";
+    return value
+      .toLowerCase()
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const getGenderLabel = (value) => {
+    const key = String(value || "").toUpperCase();
+    if (key === "MALE" || key === "MEN") return "Homme";
+    if (key === "FEMALE" || key === "WOMEN") return "Femme";
+    if (key === "MIXED") return "Mixte";
+    return prettifyEnum(value);
+  };
+
+  const getRoundLabel = (value) => {
+    const key = String(value || "").toUpperCase();
+    const map = {
+      QUALIFICATION_HEAT: "Série de qualification",
+      QUALIFICATION: "Qualification",
+      SEMI_FINAL: "Demi-finale",
+      FINAL: "Finale",
+      FINALE: "Finale",
+      HEAT: "Série",
+    };
+    return map[key] || prettifyEnum(value);
+  };
+
+  const getTrialNameLabel = (value) => {
+    const key = String(value || "").toUpperCase();
+    const map = {
+      FIFTY_M_FREESTYLE: "50m nage libre",
+      ONE_HUNDRED_M_FREESTYLE: "100m nage libre",
+      TWO_HUNDRED_M_FREESTYLE: "200m nage libre",
+      FIVE_HUNDRED_M_FREESTYLE: "500m nage libre",
+      FIFTY_M_BUTTERFLY: "50m papillon",
+      ONE_HUNDRED_M_BUTTERFLY: "100m papillon",
+      TWO_HUNDRED_M_BUTTERFLY: "200m papillon",
+      FIFTY_M_BACKSTROKE: "50m dos",
+      ONE_HUNDRED_M_BACKSTROKE: "100m dos",
+      TWO_HUNDRED_M_BACKSTROKE: "200m dos",
+      FIFTY_M_BREASTSTROKE: "50m brasse",
+      ONE_HUNDRED_M_BREASTSTROKE: "100m brasse",
+      TWO_HUNDRED_M_BREASTSTROKE: "200m brasse",
+      TWO_HUNDRED_M_MEDLEY: "200m 4 nages",
+      FOUR_HUNDRED_M_MEDLEY: "400m 4 nages",
+      RELAY_4X100M_FREESTYLE: "Relais 4x100m nage libre",
+      RELAY_4X200M_FREESTYLE: "Relais 4x200m nage libre",
+      RELAY_4X100M_MEDLEY: "Relais 4x100m 4 nages",
+      CENT_METRES: "100 mètres",
+    };
+    return map[key] || prettifyEnum(value);
+  };
+
+  const getFrenchTrialLabelFromText = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return null;
+
+    const key = raw.toUpperCase().replace(/\s+/g, " ").trim();
+    const textMap = {
+      "FIFTY M FREESTYLE": "50m nage libre",
+      "ONE HUNDRED M FREESTYLE": "100m nage libre",
+      "TWO HUNDRED M FREESTYLE": "200m nage libre",
+      "FIVE HUNDRED M FREESTYLE": "500m nage libre",
+      "FIFTY M BUTTERFLY": "50m papillon",
+      "ONE HUNDRED M BUTTERFLY": "100m papillon",
+      "TWO HUNDRED M BUTTERFLY": "200m papillon",
+      "FIFTY M BACKSTROKE": "50m dos",
+      "ONE HUNDRED M BACKSTROKE": "100m dos",
+      "TWO HUNDRED M BACKSTROKE": "200m dos",
+      "FIFTY M BREASTSTROKE": "50m brasse",
+      "ONE HUNDRED M BREASTSTROKE": "100m brasse",
+      "TWO HUNDRED M BREASTSTROKE": "200m brasse",
+      "TWO HUNDRED M MEDLEY": "200m 4 nages",
+      "FOUR HUNDRED M MEDLEY": "400m 4 nages",
+    };
+
+    return textMap[key] || null;
+  };
+
+  const getDisplayTrialName = (trialGroup) => {
+    const customName =
+      trialGroup?.trialDisplayName ||
+      trialGroup?.customTrialName ||
+      trialGroup?.displayName ||
+      trialGroup?.name;
+
+    if (customName && String(customName).trim()) {
+      const frenchFromText = getFrenchTrialLabelFromText(customName);
+      return frenchFromText || customName;
+    }
+
+    return getTrialNameLabel(trialGroup?.trialName) || `Épreuve ${trialGroup?.trialId}`;
+  };
+
+  const formatDateTime = (iso) => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return null;
+    return d.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const normalizeTime = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    return raw.length >= 5 ? raw.slice(0, 5) : raw;
+  };
+
+  const formatDateAndHour = (dateValue, hourValue) => {
+    if (!dateValue || !hourValue) return null;
+    const date = new Date(`${dateValue}T${hourValue}`);
+    if (Number.isNaN(date.getTime())) return `${dateValue} ${normalizeTime(hourValue)}`;
+    return date.toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -229,7 +402,7 @@ export default function PublicResultsPage() {
               {resultsByTrial.length} épreuve(s) · {totalResults} résultat(s)
             </Typography>
 
-            {resultsByTrial.map((trialGroup) => {
+            {sortedResultsByTrial.map((trialGroup) => {
               const results = Array.isArray(trialGroup?.results) ? trialGroup.results : [];
               const hasTeam = results.some((r) => r?.participant?.competitorType === "TEAM");
               const modeLabel = hasTeam ? "Équipe" : "Individuel";
@@ -265,7 +438,7 @@ export default function PublicResultsPage() {
                     >
                       <Box>
                         <Typography sx={{ fontWeight: 900, fontSize: 17, color: "#E2E8F0" }}>
-                          {trialGroup?.trialName || `Épreuve ${trialGroup?.trialId}`}
+                          {getDisplayTrialName(trialGroup)}
                         </Typography>
                         {selectedCompetitionId && selectedCompetitionName && (
                           <Typography sx={{ color: "#67E8F9", fontSize: 12, mb: 0.3, fontWeight: 700 }}>
@@ -273,9 +446,74 @@ export default function PublicResultsPage() {
                           </Typography>
                         )}
                         <Typography sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13 }}>
-                          {trialGroup?.roundName || "Round non défini"}
-                          {trialGroup?.categoryGender ? ` · ${trialGroup?.categoryGender}` : ""}
+                          {getRoundLabel(trialGroup?.roundName || "ROUND")}
+                          {trialGroup?.categoryGender
+                            ? ` · ${getGenderLabel(trialGroup?.categoryGender)}`
+                            : ""}
                         </Typography>
+                        {(trialGroup?.startDate ||
+                          trialGroup?.startHour ||
+                          trialGroup?.endDate ||
+                          trialGroup?.endHour ||
+                          trialGroup?.startTime ||
+                          trialGroup?.trialStartTime ||
+                          trialGroup?.scheduledStartTime ||
+                          trialGroup?.endTime ||
+                          trialGroup?.trialEndTime ||
+                          trialGroup?.scheduledEndTime) && (
+                          <Typography sx={{ color: "rgba(226,232,240,0.72)", fontSize: 12, mt: 0.4 }}>
+                            {formatDateTime(
+                              trialGroup?.startDate && trialGroup?.startHour
+                                ? `${trialGroup.startDate}T${trialGroup.startHour}`
+                                : trialGroup?.startTime ||
+                                  trialGroup?.trialStartTime ||
+                                  trialGroup?.scheduledStartTime
+                            ) ||
+                            formatDateAndHour(trialGroup?.startDate, trialGroup?.startHour)
+                              ? `Début: ${
+                                  formatDateAndHour(
+                                    trialGroup?.startDate,
+                                    trialGroup?.startHour
+                                  ) ||
+                                  formatDateTime(
+                                    trialGroup?.startTime ||
+                                      trialGroup?.trialStartTime ||
+                                      trialGroup?.scheduledStartTime
+                                  )
+                                }`
+                              : ""}
+                            {formatDateAndHour(trialGroup?.endDate, trialGroup?.endHour) ||
+                            formatDateTime(
+                              trialGroup?.endTime ||
+                                trialGroup?.trialEndTime ||
+                                trialGroup?.scheduledEndTime
+                            )
+                              ? `${
+                                  formatDateAndHour(
+                                    trialGroup?.startDate,
+                                    trialGroup?.startHour
+                                  ) ||
+                                  formatDateTime(
+                                    trialGroup?.startTime ||
+                                      trialGroup?.trialStartTime ||
+                                      trialGroup?.scheduledStartTime
+                                  )
+                                    ? " · "
+                                    : ""
+                                }Fin: ${
+                                  formatDateAndHour(
+                                    trialGroup?.endDate,
+                                    trialGroup?.endHour
+                                  ) ||
+                                  formatDateTime(
+                                    trialGroup?.endTime ||
+                                      trialGroup?.trialEndTime ||
+                                      trialGroup?.scheduledEndTime
+                                  )
+                                }`
+                              : ""}
+                          </Typography>
+                        )}
                       </Box>
                       <Stack direction="row" spacing={1}>
                         <Chip
