@@ -35,4 +35,6 @@ public interface NotificationService {
     long countUnread(UserAccount actor);
 
     void updateIncidentNotificationsStatus(Incident incident, String incidentStatus);
+
+    void deleteByIncidentId(Long incidentId);
 }
