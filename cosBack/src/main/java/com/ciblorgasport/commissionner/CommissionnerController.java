@@ -33,6 +33,7 @@ import com.ciblorgasport.competition.application.ParticipationService;
 import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.dto.CompetitionResponse;
 import com.ciblorgasport.competition.dto.ParticipantResponse;
+import com.ciblorgasport.competition.dto.RefuseParticipationRequest;
 import com.ciblorgasport.team.application.TeamImportService;
 import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.dto.TeamImportResult;
@@ -216,6 +217,55 @@ public class CommissionnerController {
     public ResponseEntity<AthleteResponse> getAthleteProfile(@PathVariable("athleteId") Long athleteId) {
         AthleteResponse profile = athleteService.getAthleteProfile(athleteId);
         return ResponseEntity.ok(profile);
+    }
+
+    // ==================== ATHLETE DOCUMENTS VALIDATION ====================
+
+    @GetMapping("/athletes/{athleteId}/medical-certificate")
+    public ResponseEntity<byte[]> downloadAthleteMedicalCertificate(
+            @PathVariable("athleteId") Long athleteId,
+            Authentication authentication) {
+        accreditationService.ensureAccredited(authentication.getName());
+        byte[] data = athleteService.downloadMedicalCertificate(athleteId);
+        String contentType = athleteService.getMedicalCertificateContentType(athleteId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"medical-certificate\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(data);
+    }
+
+    @GetMapping("/athletes/{athleteId}/passport")
+    public ResponseEntity<byte[]> downloadAthletePassport(
+            @PathVariable("athleteId") Long athleteId,
+            Authentication authentication) {
+        accreditationService.ensureAccredited(authentication.getName());
+        byte[] data = athleteService.downloadPassport(athleteId);
+        String contentType = athleteService.getPassportContentType(athleteId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"passport\"")
+                .contentType(MediaType.parseMediaType(contentType))
+                .body(data);
+    }
+
+    @PostMapping("/participations/{participationId}/validate")
+    public ResponseEntity<Void> validateAthleteParticipation(
+            @PathVariable("participationId") Long participationId,
+            Authentication authentication) {
+        accreditationService.ensureAccredited(authentication.getName());
+        participationService.validateParticipation(participationId, true);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/participations/{participationId}/refuse")
+    public ResponseEntity<Void> refuseAthleteParticipation(
+            @PathVariable("participationId") Long participationId,
+            @Valid @RequestBody RefuseParticipationRequest request,
+            Authentication authentication) {
+        accreditationService.ensureAccredited(authentication.getName());
+        participationService.validateParticipation(participationId, false, request.getRejectedDocument(), request.getReason());
+        return ResponseEntity.ok().build();
     }
     
     // ==================== TEAMS ====================
