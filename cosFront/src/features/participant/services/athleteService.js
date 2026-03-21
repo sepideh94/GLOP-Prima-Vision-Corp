@@ -16,7 +16,6 @@ const athleteService = {
     return res.data;
   },
 
-<<<<<<< HEAD
   async downloadMedicalCertificate(athleteId) {
     const res = await api.get(
       `/api/commissioner/athletes/${athleteId}/medical-certificate`,
@@ -44,10 +43,11 @@ const athleteService = {
       `/api/commissioner/participations/${participationId}/refuse`,
       payload
     );
-=======
+    return res.data;
+  },
+
   async getAthleteResults() {
     const res = await api.get("/api/athlete/results");
->>>>>>> 8d4cc31de233b86534806fdd3fbdeb695df27cd3
     return res.data;
   },
 };
