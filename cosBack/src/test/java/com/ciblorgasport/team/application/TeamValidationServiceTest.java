@@ -84,4 +84,5 @@ class TeamValidationServiceTest {
 
         verify(participationRepository).save(teamParticipation);
     }
+    
 }
