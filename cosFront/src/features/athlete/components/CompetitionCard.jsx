@@ -13,8 +13,21 @@ const formatDate = (dateString) => {
 
 export default function CompetitionCard({ competition, onConfirm, isProfileComplete = false }) {
   const navigate = useNavigate();
-  const isConfirmed = competition.status === "CONFIRMED";
-  const showAsConfirmed = isConfirmed || isProfileComplete;
+  const status = competition.status;
+  const isConfirmed = status === "CONFIRMED";
+  const isPendingValidation = status === "PENDING_VALIDATION";
+  const isPending = status === "PENDING" || status === "INVITED";
+  const canConfirm = isPending && isProfileComplete;
+  const statusLabel = isConfirmed
+    ? "Confirmée"
+    : isPendingValidation
+    ? "En attente de validation"
+    : "Participation à confirmer";
+  const statusColor = isConfirmed
+    ? appTheme.colors.green
+    : isPendingValidation
+    ? appTheme.colors.cyan
+    : appTheme.colors.yellow;
 
   return (
     <Card
@@ -121,7 +134,7 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
       >
         {/* Statut */}
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
-          {showAsConfirmed ? (
+          {isConfirmed ? (
             <CheckCircleIcon sx={{ fontSize: 18, color: appTheme.colors.green }} />
           ) : (
             <HourglassBottomIcon sx={{ fontSize: 18, color: appTheme.colors.yellow }} />
@@ -129,18 +142,19 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
           <Typography
             sx={{
               fontSize: 13,
-              color: showAsConfirmed ? appTheme.colors.green : appTheme.colors.yellow,
+              color: statusColor,
               fontWeight: 700,
             }}
           >
-            {showAsConfirmed ? "Confirmée" : "En attente"}
+            {statusLabel}
           </Typography>
         </Box>
 
         {/* Actions */}
-        {!isConfirmed && !isProfileComplete && (
+        {isPending && (
           <Button
             onClick={() => onConfirm(competition)}
+            disabled={!canConfirm}
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -158,11 +172,29 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
               },
             }}
           >
-            Confirmer
+            {isProfileComplete ? "Confirmer" : "Compléter le profil"}
           </Button>
         )}
 
-        {showAsConfirmed && (
+        {isPendingValidation && (
+          <Button
+            disabled
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              fontSize: 13,
+              px: 2.5,
+              py: 0.8,
+              borderRadius: appTheme.radius.pill,
+              color: appTheme.colors.dark,
+              background: "rgba(34,211,238,0.35)",
+            }}
+          >
+            En attente de validation
+          </Button>
+        )}
+
+        {isConfirmed && (
           <Button
             onClick={() => {
               const compId = competition.competitionId || competition.id;

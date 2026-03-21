@@ -6,7 +6,6 @@ import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
 import IncompleteProfileModal from "../components/IncompleteProfileModal";
 import athleteCompetitionService from "../services/athleteCompetitionService";
 import athleteProfileService from "../services/athleteProfileService";
-import { useAuth } from "../../../common/contexts/AuthContext";
 
 export default function AthleteCompetitionsPage() {
   const navigate = useNavigate();
@@ -15,9 +14,6 @@ export default function AthleteCompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [hasAutoConfirmed, setHasAutoConfirmed] = useState(false);
-  const { user } = useAuth();
-
   useEffect(() => {
     const loadData = async () => {
       const data = await athleteCompetitionService.getMyCompetitions();
@@ -50,48 +46,11 @@ export default function AthleteCompetitionsPage() {
     try {
       const profile = await athleteProfileService.getMyProfile();
       setUserProfile(profile);
-      // Réinitialiser le flag pour permettre la confirmation automatique après mise à jour du profil
-      setHasAutoConfirmed(false);
     } catch (err) {
       // Profil non trouvé
       setUserProfile(null);
     }
   };
-
-  // Confirmer automatiquement les participations si le profil est complet et la charte acceptée
-  useEffect(() => {
-    const autoConfirmParticipations = async () => {
-      if (!userProfile || competitions.length === 0 || hasAutoConfirmed) return;
-      
-      if (userProfile.hasAcceptedCharte) {
-        const isComplete = userProfile.nationality && userProfile.birthDate && userProfile.sexe && 
-                          userProfile.passportNumber && userProfile.hasPassport && userProfile.hasMedicalCertificate;
-        
-        if (isComplete) {
-          const unconfirmedCompetitions = competitions.filter(c => c.status !== "CONFIRMED");
-          if (unconfirmedCompetitions.length > 0) {
-            setHasAutoConfirmed(true);
-            for (const competition of unconfirmedCompetitions) {
-              try {
-                await athleteCompetitionService.confirmParticipation(competition.participationId);
-                setCompetitions((prev) =>
-                  prev.map((c) =>
-                    c.participationId === competition.participationId
-                      ? { ...c, status: "CONFIRMED" }
-                      : c
-                  )
-                );
-              } catch (err) {
-                console.error("Erreur lors de la confirmation automatique:", err);
-              }
-            }
-          }
-        }
-      }
-    };
-    
-    autoConfirmParticipations();
-  }, [userProfile, competitions, hasAutoConfirmed]);
 
   const isProfileComplete = () => {
     if (!userProfile) return false;
@@ -119,7 +78,7 @@ export default function AthleteCompetitionsPage() {
         setCompetitions((prev) =>
           prev.map((c) =>
             c.participationId === competition.participationId
-              ? { ...c, status: "CONFIRMED" }
+              ? { ...c, status: "PENDING_VALIDATION" }
               : c
           )
         );
@@ -174,7 +133,7 @@ export default function AthleteCompetitionsPage() {
               setCompetitions((prev) =>
                 prev.map((c) =>
                   c.participationId === selectedCompetition.participationId
-                    ? { ...c, status: "CONFIRMED" }
+                    ? { ...c, status: "PENDING_VALIDATION" }
                     : c
                 )
               );

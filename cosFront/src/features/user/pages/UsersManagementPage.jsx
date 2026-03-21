@@ -35,6 +35,9 @@ import {
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon,
   LockReset as LockResetIcon,
+  Description as DescriptionIcon,
+  TaskAlt as TaskAltIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import userService from "../services/userService";
@@ -55,6 +58,9 @@ export default function UsersManagementPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmActionType, setConfirmActionType] = useState(null);
+  const [openRefuseAccreditationDialog, setOpenRefuseAccreditationDialog] = useState(false);
+  const [refuseReason, setRefuseReason] = useState("");
+  const [accreditationAvailability, setAccreditationAvailability] = useState({});
 
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,9 +87,11 @@ export default function UsersManagementPage() {
       if (Array.isArray(response)) {
         setUsers(response);
         setTotalPages(Math.ceil(response.length / ITEMS_PER_PAGE));
+        await preloadAccreditationAvailability(response);
       } else {
         setUsers([]);
         setTotalPages(1);
+        setAccreditationAvailability({});
       }
     } catch (err) {
       console.error("Erreur lors du chargement des utilisateurs:", err);
@@ -96,6 +104,27 @@ export default function UsersManagementPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const preloadAccreditationAvailability = async (userList) => {
+    const commissioners = (userList || []).filter((u) => isCommissionerRole(u.role));
+    if (commissioners.length === 0) {
+      setAccreditationAvailability({});
+      return;
+    }
+
+    const checks = await Promise.all(
+      commissioners.map(async (u) => {
+        try {
+          await userService.downloadCommissionerAccreditation(u.id);
+          return [u.id, true];
+        } catch {
+          return [u.id, false];
+        }
+      })
+    );
+
+    setAccreditationAvailability(Object.fromEntries(checks));
   };
 
   const handleOpenCreate = () => {
@@ -265,6 +294,87 @@ export default function UsersManagementPage() {
     setOpenSnackbar(false);
     setError(null);
     setSuccessMessage(null);
+  };
+
+  const isCommissionerRole = (role) => {
+    const value = (role || "").toUpperCase();
+    return value === "COMMISSIONER" || value === "ROLE_COMMISSIONER" || value === "COMMISSIONNER" || value === "ROLE_COMMISSIONNER";
+  };
+
+  const openBlob = (blob, filename) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleViewAccreditation = async (user) => {
+    try {
+      const blob = await userService.downloadCommissionerAccreditation(user.id);
+      openBlob(blob, `accreditation-commissioner-${user.id}`);
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: true }));
+    } catch (err) {
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: false }));
+      setError(
+        "Impossible d'ouvrir le document d'accréditation (aucun document soumis pour ce commissaire)."
+      );
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleValidateAccreditation = async (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Validation impossible : aucun document CEN soumis par ce commissaire.");
+      setOpenSnackbar(true);
+      return;
+    }
+    try {
+      await userService.validateCommissionerAccreditation(user.id);
+      setSuccessMessage("Accréditation validée avec succès.");
+      setOpenSnackbar(true);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors de la validation de l'accréditation."
+      );
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleOpenRefuseAccreditation = (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Refus impossible : aucun document CEN soumis par ce commissaire.");
+      setOpenSnackbar(true);
+      return;
+    }
+    setSelectedUser(user);
+    setRefuseReason("");
+    setOpenRefuseAccreditationDialog(true);
+  };
+
+  const handleSubmitRefuseAccreditation = async () => {
+    if (!selectedUser || !refuseReason.trim()) return;
+    try {
+      await userService.refuseCommissionerAccreditation(
+        selectedUser.id,
+        refuseReason.trim()
+      );
+      setSuccessMessage("Accréditation refusée et motif envoyé au commissaire.");
+      setOpenSnackbar(true);
+      setOpenRefuseAccreditationDialog(false);
+      setSelectedUser(null);
+      setRefuseReason("");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors du refus de l'accréditation."
+      );
+      setOpenSnackbar(true);
+    }
   };
 
   const getRoleLabel = (role) => {
@@ -549,7 +659,76 @@ export default function UsersManagementPage() {
                         {getStatusChip(user.isAccountActive)}
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        {isCommissionerRole(user.role) && (
+                          <Typography
+                            sx={{
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              color: accreditationAvailability[user.id] ? "#16a34a" : "#dc2626",
+                              mb: 0.8,
+                            }}
+                          >
+                            {accreditationAvailability[user.id]
+                              ? "Document CEN: Reçu"
+                              : "Document CEN: Non reçu"}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {isCommissionerRole(user.role) && (
+                            <>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Voir document d'accréditation"
+                                    : "Aucun document CEN soumis"
+                                }
+                              >
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewAccreditation(user)}
+                                  sx={{ color: appTheme.colors.cyan }}
+                                >
+                                  <DescriptionIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Valider l'accréditation"
+                                    : "Validation indisponible sans document CEN"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id]}
+                                    onClick={() => handleValidateAccreditation(user)}
+                                    sx={{ color: "#22c55e" }}
+                                  >
+                                    <TaskAltIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Refuser l'accréditation"
+                                    : "Refus indisponible sans document CEN"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id]}
+                                    onClick={() => handleOpenRefuseAccreditation(user)}
+                                    sx={{ color: "#ef4444" }}
+                                  >
+                                    <CancelIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            </>
+                          )}
                           <Tooltip title="Voir les détails (bientôt disponible)">
                             <span>
                               <IconButton
@@ -704,6 +883,47 @@ export default function UsersManagementPage() {
             }}
           >
             Confirmer
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={openRefuseAccreditationDialog}
+        onClose={() => setOpenRefuseAccreditationDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Refuser l'accréditation commissaire</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1.5 }}>
+            Merci d'indiquer le motif qui sera envoyé au commissaire.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Motif du refus"
+            value={refuseReason}
+            onChange={(e) => setRefuseReason(e.target.value)}
+            placeholder="Ex: document illisible, merci d'envoyer une version plus nette."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenRefuseAccreditationDialog(false)}>Annuler</Button>
+          <Button
+            onClick={handleSubmitRefuseAccreditation}
+            disabled={!refuseReason.trim()}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1.1,
+              borderRadius: appTheme.radius.pill,
+              background: "linear-gradient(135deg,#ef4444,#dc2626)",
+              color: "#fff",
+            }}
+          >
+            Confirmer le refus
           </Button>
         </DialogActions>
       </Dialog>

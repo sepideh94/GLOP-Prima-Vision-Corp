@@ -16,6 +16,12 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Alert,
 } from "@mui/material";
 import athleteService from "../services/athleteService";
 import appTheme from "../../../common/theme/appTheme";
@@ -28,6 +34,8 @@ const getStatusChip = (status) => {
       return <Chip label="Invité" color="warning" size="small" />;
     case "PENDING":
       return <Chip label="En attente" color="info" size="small" />;
+    case "PENDING_VALIDATION":
+      return <Chip label="En attente de validation" color="warning" size="small" />;
     case "CANCELLED":
       return <Chip label="Annulé" color="error" size="small" />;
     default:
@@ -39,6 +47,12 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [actionError, setActionError] = useState(null);
+  const [refuseDialogOpen, setRefuseDialogOpen] = useState(false);
+  const [selectedParticipationId, setSelectedParticipationId] = useState(null);
+  const [rejectedDocument, setRejectedDocument] = useState("PASSPORT");
+  const [reason, setReason] = useState("");
 
   useEffect(() => {
     if (open && athlete) {
@@ -60,12 +74,106 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
     }
   };
 
+  const openBlob = (blob, filename) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleOpenMedicalCertificate = async () => {
+    if (!athlete?.id) return;
+    setActionError(null);
+    try {
+      const blob = await athleteService.downloadMedicalCertificate(athlete.id);
+      openBlob(blob, `certificat-medical-${athlete.id}.pdf`);
+    } catch (err) {
+      console.error("Erreur téléchargement certificat médical:", err);
+      setActionError("Impossible d'ouvrir le certificat médical.");
+    }
+  };
+
+  const handleOpenPassport = async () => {
+    if (!athlete?.id) return;
+    setActionError(null);
+    try {
+      const blob = await athleteService.downloadPassport(athlete.id);
+      openBlob(blob, `passeport-${athlete.id}.pdf`);
+    } catch (err) {
+      console.error("Erreur téléchargement passeport:", err);
+      setActionError("Impossible d'ouvrir le passeport.");
+    }
+  };
+
+  const handleValidateParticipation = async (participationId) => {
+    setActionLoadingId(participationId);
+    setActionError(null);
+    try {
+      await athleteService.validateParticipation(participationId);
+      await fetchParticipations();
+    } catch (err) {
+      console.error("Erreur validation participation:", err);
+      setActionError("La validation a échoué. Réessaie dans quelques instants.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleOpenRefuseDialog = (participationId) => {
+    setSelectedParticipationId(participationId);
+    setRejectedDocument("PASSPORT");
+    setReason("");
+    setActionError(null);
+    setRefuseDialogOpen(true);
+  };
+
+  const handleSubmitRefuse = async () => {
+    if (!selectedParticipationId || !reason.trim()) return;
+    setActionLoadingId(selectedParticipationId);
+    setActionError(null);
+    try {
+      await athleteService.refuseParticipation(selectedParticipationId, {
+        rejectedDocument,
+        reason: reason.trim(),
+      });
+      setRefuseDialogOpen(false);
+      setSelectedParticipationId(null);
+      await fetchParticipations();
+    } catch (err) {
+      console.error("Erreur refus participation:", err);
+      setActionError("Le refus a échoué. Vérifie le motif puis réessaie.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         Participations de {athlete?.firstName} {athlete?.lastName}
       </DialogTitle>
       <DialogContent>
+        <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 1, mb: 2 }}>
+          <Button variant="outlined" onClick={handleOpenMedicalCertificate}>
+            Voir certificat médical
+          </Button>
+          <Button variant="outlined" onClick={handleOpenPassport}>
+            Voir passeport / CNI
+          </Button>
+        </Box>
+
+        {actionError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {actionError}
+          </Alert>
+        )}
+
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
             <CircularProgress />
@@ -85,6 +193,7 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
                 <TableRow>
                   <TableCell><strong>Compétition</strong></TableCell>
                   <TableCell><strong>Statut</strong></TableCell>
+                  <TableCell><strong>Actions</strong></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -92,6 +201,28 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
                   <TableRow key={p.participationId}>
                     <TableCell>{p.competitionName}</TableCell>
                     <TableCell>{getStatusChip(p.status)}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="success"
+                          disabled={actionLoadingId === p.participationId}
+                          onClick={() => handleValidateParticipation(p.participationId)}
+                        >
+                          {actionLoadingId === p.participationId ? "..." : "Valider"}
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="error"
+                          disabled={actionLoadingId === p.participationId}
+                          onClick={() => handleOpenRefuseDialog(p.participationId)}
+                        >
+                          Refuser
+                        </Button>
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -119,6 +250,51 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
           Fermer
         </Button>
       </DialogActions>
+
+      <Dialog
+        open={refuseDialogOpen}
+        onClose={() => setRefuseDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Refuser la participation</DialogTitle>
+        <DialogContent>
+          <FormControl fullWidth sx={{ mt: 1, mb: 2 }}>
+            <InputLabel id="rejected-document-label">Document refusé</InputLabel>
+            <Select
+              labelId="rejected-document-label"
+              value={rejectedDocument}
+              label="Document refusé"
+              onChange={(e) => setRejectedDocument(e.target.value)}
+            >
+              <MenuItem value="PASSPORT">Passeport / CNI</MenuItem>
+              <MenuItem value="MEDICAL_CERTIFICATE">Certificat médical</MenuItem>
+              <MenuItem value="BOTH">Les deux</MenuItem>
+            </Select>
+          </FormControl>
+
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Motif"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="Ex: Photo floue, merci d'envoyer un document lisible."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRefuseDialogOpen(false)}>Annuler</Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handleSubmitRefuse}
+            disabled={!reason.trim() || actionLoadingId === selectedParticipationId}
+          >
+            Confirmer le refus
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }
