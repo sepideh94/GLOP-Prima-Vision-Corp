@@ -13,13 +13,16 @@ const adminDashboardService = {
     return res.data;
   },
 
+  /**
+   * POST /api/admin/report-download — PDF décisionnel généré côté serveur.
+   * @param {string[]} chartImagesBase64 — PNG en data URL (ex. data:image/png;base64,...) par graphique capturé.
+   */
   async downloadReport(chartImagesBase64 = []) {
-    const body =
-      chartImagesBase64.length > 0 ? { chartImagesBase64 } : undefined;
-
-    const res = await api.post("/api/admin/report-download", body, {
-      responseType: "blob",
-    });
+    const res = await api.post(
+      "/api/admin/report-download",
+      { chartImagesBase64 },
+      { responseType: "blob" }
+    );
 
     const blob = new Blob([res.data], { type: "application/pdf" });
     const url = window.URL.createObjectURL(blob);

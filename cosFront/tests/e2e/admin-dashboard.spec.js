@@ -40,6 +40,18 @@ function setupMocks(page) {
     page.route('**/api/admin/report-summary', (route) =>
       route.fulfill({ status: 200, contentType: 'text/plain', body: MOCK_SUMMARY })
     ),
+    page.route('**/api/admin/report-download', (route) => {
+      if (route.request().method() !== 'POST') {
+        route.continue();
+        return;
+      }
+      const minimalPdf = '%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF';
+      route.fulfill({
+        status: 200,
+        contentType: 'application/pdf',
+        body: Buffer.from(minimalPdf),
+      });
+    }),
   ]);
 }
 
@@ -60,10 +72,10 @@ test.describe('Admin Dashboard', () => {
     await page.goto('/admin/dashboard');
     await page.waitForLoadState('networkidle');
 
-    await expect(mainContent(page).getByText('Connexions cette semaine')).toBeVisible({ timeout: 10000 });
+    await expect(mainContent(page).getByText('Connexions (7 jours)')).toBeVisible({ timeout: 10000 });
     await expect(mainContent(page).getByText('16', { exact: true })).toBeVisible();
 
-    await expect(mainContent(page).getByText('Incidents cette semaine')).toBeVisible();
+    await expect(mainContent(page).getByText('Incidents (7 jours)')).toBeVisible();
     await expect(mainContent(page).getByText('2', { exact: true })).toBeVisible();
 
     await expect(mainContent(page).getByText('Volontaires inscrits')).toBeVisible();

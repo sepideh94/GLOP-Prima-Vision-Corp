@@ -23,6 +23,8 @@ import {
   Refresh,
   AccessTime,
   VerifiedUser,
+  ArticleOutlined,
+  SpaceDashboardOutlined,
 } from "@mui/icons-material";
 import {
   XAxis,
@@ -40,17 +42,23 @@ import {
   Bar,
 } from "recharts";
 import html2canvas from "html2canvas";
-import { jsPDF } from "jspdf";
 import appTheme from "../../../common/theme/appTheme";
 import adminDashboardService from "../services/adminDashboardService";
+import { saveDashboardPdf } from "../utils/buildDashboardPdf";
 
 const ROLE_COLORS = {
   ADMIN: "#22D3EE",
-  ATHLETE: "#A3E635",
+  ATHLETE: "#F97316",
   VOLONTEER: "#A78BFA",
+  COMMISSIONNER: "#6366F1",
 };
 
-const PIE_COLORS = ["#22D3EE", "#A3E635", "#A78BFA", "#facc15", "#f97316", "#ef4444"];
+const PIE_COLORS = ["#22D3EE", "#F97316", "#A78BFA", "#facc15", "#6366F1", "#ef4444"];
+
+/** Bordures légères (évite le gris #334155 trop dur sur fond sombre) */
+const borderShell = "1px solid rgba(226, 232, 240, 0.14)";
+const borderShellHover = "rgba(203, 213, 225, 0.22)";
+const borderToggle = "rgba(148, 163, 184, 0.28)";
 
 function getIncidentSeverity(count) {
   if (count <= 2) return { label: "Situation normale", color: "#22c55e", bg: "rgba(34,197,94,0.15)" };
@@ -75,7 +83,8 @@ function KpiCard({ title, value, icon, accentColor }) {
       sx={{
         borderRadius: 4,
         background: appTheme.gradients.card,
-        boxShadow: appTheme.shadows.card,
+        boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+        border: borderShell,
         position: "relative",
         overflow: "hidden",
         height: "100%",
@@ -126,7 +135,7 @@ function ChartTooltip({ active, payload, label, suffix }) {
       sx={{
         p: 1.5,
         background: appTheme.colors.dark,
-        border: `1px solid ${appTheme.colors.cyan}55`,
+        border: "1px solid rgba(34, 211, 238, 0.35)",
         borderRadius: 2,
       }}
     >
@@ -138,16 +147,28 @@ function ChartTooltip({ active, payload, label, suffix }) {
   );
 }
 
-function SectionCard({ children, title, icon, refProp }) {
+const chartPanelSx = {
+  bgcolor: "#ffffff",
+  borderRadius: 3,
+  border: "1px solid #e8edf4",
+  boxShadow: "0 4px 22px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04)",
+  p: { xs: 1.5, sm: 2.5 },
+};
+
+const axisMuted = "#64748b";
+const gridLight = "#e2e8f0";
+
+function SectionCard({ children, title, icon, refProp, chartSurface = false }) {
   return (
     <Card
-      ref={refProp}
       sx={{
         borderRadius: 4,
         background: appTheme.gradients.card,
-        boxShadow: appTheme.shadows.card,
+        boxShadow: "0 12px 32px rgba(0,0,0,0.24)",
+        border: borderShell,
         mb: 4,
         p: 3,
+        overflow: "hidden",
       }}
     >
       {title && (
@@ -158,7 +179,13 @@ function SectionCard({ children, title, icon, refProp }) {
           </Typography>
         </Box>
       )}
-      {children}
+      {chartSurface ? (
+        <Box ref={refProp} sx={chartPanelSx}>
+          {children}
+        </Box>
+      ) : (
+        children
+      )}
     </Card>
   );
 }
@@ -184,6 +211,7 @@ export default function AdminDashboardPage() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState(null);
   const [days, setDays] = useState(7);
+  const [refreshing, setRefreshing] = useState(false);
 
   const chartLoginRef = useRef(null);
   const chartTrafficRef = useRef(null);
@@ -191,28 +219,28 @@ export default function AdminDashboardPage() {
   const chartSessionRef = useRef(null);
   const chartSectionsRef = useRef(null);
 
-  const fetchData = useCallback(async (period) => {
+  const fetchData = useCallback(async (period, { silent = false } = {}) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const data = await adminDashboardService.getStats(period);
       setStats(data);
     } catch {
       setError("Impossible de charger les statistiques.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
-  const fetchSummary = useCallback(async () => {
+  const fetchSummary = useCallback(async ({ silent = false } = {}) => {
     try {
-      setSummaryLoading(true);
+      if (!silent) setSummaryLoading(true);
       const text = await adminDashboardService.getReportSummary();
       setSummary(text);
     } catch {
       setSummary("Impossible de charger le résumé du rapport.");
     } finally {
-      setSummaryLoading(false);
+      if (!silent) setSummaryLoading(false);
     }
   }, []);
 
@@ -221,321 +249,57 @@ export default function AdminDashboardPage() {
     fetchSummary();
   }, [fetchData, fetchSummary, days]);
 
-  const handleRefresh = () => {
-    fetchData(days);
-    fetchSummary();
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([fetchData(days, { silent: true }), fetchSummary({ silent: true })]);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handlePeriodChange = (_, newVal) => {
     if (newVal !== null) setDays(newVal);
   };
 
+  /** PDF généré côté client : une page par graphique, lisible et hi-res. */
   const handleDownloadPdf = async () => {
+    if (!stats) return;
     try {
       setPdfLoading(true);
+      setError(null);
 
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const W = doc.internal.pageSize.getWidth();
-      const H = doc.internal.pageSize.getHeight();
-      const M = 15;
-      let y = 0;
+      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 2;
+      const captureScale = Math.min(3, Math.max(2.5, dpr * 1.2));
 
-      const hex = (h) => {
-        const r = parseInt(h.slice(1, 3), 16);
-        const g = parseInt(h.slice(3, 5), 16);
-        const b = parseInt(h.slice(5, 7), 16);
-        return [r, g, b];
+      const html2canvasOpts = {
+        backgroundColor: "#ffffff",
+        scale: captureScale,
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+        imageTimeout: 30000,
+        scrollX: 0,
+        scrollY: 0,
+        foreignObjectRendering: false,
       };
 
-      const ensureSpace = (needed) => {
-        if (y + needed > H - 15) {
-          doc.addPage();
-          y = M;
-        }
-      };
+      const chartRefs = [chartRoleRef, chartTrafficRef, chartLoginRef, chartSessionRef, chartSectionsRef];
+      const chartDataUrls = [];
 
-      const drawSeparator = () => {
-        ensureSpace(8);
-        doc.setDrawColor(...hex("#334155"));
-        doc.setLineWidth(0.3);
-        doc.line(M, y, W - M, y);
-        y += 6;
-      };
+      await new Promise((r) => setTimeout(r, 220));
 
-      const sectionTitle = (text) => {
-        ensureSpace(14);
-        doc.setFillColor(...hex("#0F172A"));
-        doc.roundedRect(M, y, W - 2 * M, 10, 2, 2, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(11);
-        doc.setTextColor(...hex("#22D3EE"));
-        doc.text(text, M + 4, y + 7);
-        y += 14;
-      };
-
-      const labelValue = (label, value, color) => {
-        ensureSpace(7);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(...hex("#94A3B8"));
-        doc.text(label, M + 2, y);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(...hex(color || "#F9FAFB"));
-        doc.text(String(value), M + 90, y);
-        y += 6;
-      };
-
-      doc.setFillColor(...hex("#1E293B"));
-      doc.rect(0, 0, W, 48, "F");
-      doc.setFillColor(...hex("#22D3EE"));
-      doc.rect(0, 48, W, 1.5, "F");
-
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(255, 255, 255);
-      doc.text("Rapport Décisionnel", W / 2, 20, { align: "center" });
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.setTextColor(...hex("#94A3B8"));
-      doc.text("CiblOrgaSport — Dashboard Admin", W / 2, 28, { align: "center" });
-
-      const now = new Date();
-      const dateStr = now.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
-      doc.setFontSize(9);
-      doc.setTextColor(...hex("#64748B"));
-      doc.text(`Généré le ${dateStr} — Période : ${days} jours`, W / 2, 36, { align: "center" });
-
-      y = 56;
-
-      sectionTitle("1. Indicateurs Clés (KPI)");
-
-      const kpiW = (W - 2 * M - 9) / 4;
-      const kpis = [
-        { label: "Connexions", value: stats?.totalLoginsWeek ?? 0, color: "#22D3EE" },
-        { label: "Incidents", value: stats?.totalIncidentsWeek ?? 0, color: getIncidentSeverity(stats?.totalIncidentsWeek ?? 0).color },
-        { label: "Volontaires", value: stats?.totalVolonteers ?? 0, color: "#A3E635" },
-        { label: "Résolution", value: `${resolutionRate}%`, color: resolutionColor },
-      ];
-
-      ensureSpace(28);
-      kpis.forEach((kpi, i) => {
-        const x = M + i * (kpiW + 3);
-        doc.setFillColor(...hex("#0F172A"));
-        doc.roundedRect(x, y, kpiW, 22, 3, 3, "F");
-
-        doc.setFillColor(...hex(kpi.color));
-        doc.roundedRect(x, y, 1.5, 22, 1, 1, "F");
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(8);
-        doc.setTextColor(...hex("#94A3B8"));
-        doc.text(kpi.label, x + 5, y + 8);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(16);
-        doc.setTextColor(...hex(kpi.color));
-        doc.text(String(kpi.value), x + 5, y + 18);
-      });
-      y += 28;
-
-      ensureSpace(16);
-      const sevData = getIncidentSeverity(stats?.totalIncidentsWeek ?? 0);
-      doc.setFillColor(...hex("#0F172A"));
-      doc.roundedRect(M, y, W - 2 * M, 12, 2, 2, "F");
-      doc.setFillColor(...hex(sevData.color));
-      doc.roundedRect(M, y, 1.5, 12, 1, 1, "F");
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.setTextColor(...hex(sevData.color));
-      doc.text(`Sécurité : ${sevData.label}`, M + 5, y + 5);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(8);
-      doc.setTextColor(...hex("#94A3B8"));
-      doc.text(`${stats?.totalIncidentsWeek ?? 0} incident(s) — Taux de résolution : ${resolutionRate}%`, M + 5, y + 10);
-      y += 18;
-
-      drawSeparator();
-
-      sectionTitle("2. Activité & Engagement (Axe 7)");
-
-      labelValue("Connexions totales sur la période", stats?.totalLoginsWeek ?? 0);
-
-      if (stats?.loginsByRole) {
-        ensureSpace(8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(...hex("#94A3B8"));
-        doc.text("Répartition par rôle :", M + 2, y);
-        y += 6;
-        Object.entries(stats.loginsByRole).forEach(([role, val]) => {
-          labelValue(`     ${role}`, `${val} connexions`, ROLE_COLORS[role] || "#F9FAFB");
-        });
-      }
-
-      y += 2;
-      if (stats?.averageSessionByRole) {
-        ensureSpace(8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(...hex("#94A3B8"));
-        doc.text("Durée moyenne de session :", M + 2, y);
-        y += 6;
-
-        const roles = Object.entries(stats.averageSessionByRole);
-        ensureSpace(roles.length * 9 + 10);
-        const tblX = M + 2;
-        const tblW = W - 2 * M - 4;
-        const rowH = 8;
-
-        doc.setFillColor(...hex("#0F172A"));
-        doc.roundedRect(tblX, y, tblW, rowH, 1, 1, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.5);
-        doc.setTextColor(...hex("#22D3EE"));
-        doc.text("Rôle", tblX + 4, y + 5.5);
-        doc.text("Durée moy. (min)", tblX + tblW - 40, y + 5.5);
-        y += rowH;
-
-        roles.forEach(([role, dur], i) => {
-          const bgColor = i % 2 === 0 ? "#1E293B" : "#0F172A";
-          doc.setFillColor(...hex(bgColor));
-          doc.rect(tblX, y, tblW, rowH, "F");
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(9);
-          doc.setTextColor(...hex("#CBD5E1"));
-          doc.text(role, tblX + 4, y + 5.5);
-
-          const valColor = role === "VOLONTEER" && dur < 2 ? "#f97316" : "#F9FAFB";
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(...hex(valColor));
-          doc.text(`${parseFloat(dur).toFixed(1)} min`, tblX + tblW - 40, y + 5.5);
-          y += rowH;
-        });
-        y += 4;
-      }
-
-      drawSeparator();
-
-      sectionTitle("3. Éco-conception & Optimisation (Axe 8)");
-
-      if (stats?.topViewedSections) {
-        ensureSpace(8);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9.5);
-        doc.setTextColor(...hex("#94A3B8"));
-        doc.text("Sections les plus consultées :", M + 2, y);
-        y += 6;
-
-        const sections = Object.entries(stats.topViewedSections);
-        ensureSpace(sections.length * 9 + 10);
-        const tblX2 = M + 2;
-        const tblW2 = W - 2 * M - 4;
-        const rowH2 = 8;
-
-        doc.setFillColor(...hex("#0F172A"));
-        doc.roundedRect(tblX2, y, tblW2, rowH2, 1, 1, "F");
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(8.5);
-        doc.setTextColor(...hex("#22D3EE"));
-        doc.text("Section", tblX2 + 4, y + 5.5);
-        doc.text("Consultations", tblX2 + tblW2 - 35, y + 5.5);
-        y += rowH2;
-
-        const maxViews = Math.max(...sections.map(([, v]) => v), 1);
-        sections.forEach(([name, count], i) => {
-          const bgColor = i % 2 === 0 ? "#1E293B" : "#0F172A";
-          doc.setFillColor(...hex(bgColor));
-          doc.rect(tblX2, y, tblW2, rowH2, "F");
-
-          const barW = ((count / maxViews) * (tblW2 - 8)) * 0.4;
-          doc.setFillColor(...hex(PIE_COLORS[i % PIE_COLORS.length]));
-          doc.roundedRect(tblX2 + 2, y + 1.5, barW, 5, 1, 1, "F");
-
-          doc.setFont("helvetica", "normal");
-          doc.setFontSize(9);
-          doc.setTextColor(...hex("#CBD5E1"));
-          doc.text(name, tblX2 + barW + 6, y + 5.5);
-
-          doc.setFont("helvetica", "bold");
-          doc.setTextColor(...hex("#F9FAFB"));
-          doc.text(`${count}`, tblX2 + tblW2 - 35, y + 5.5);
-          y += rowH2;
-        });
-        y += 4;
-      }
-
-      labelValue("Taux de résolution incidents", `${resolutionRate}%`, resolutionColor);
-      y += 2;
-
-      drawSeparator();
-
-      sectionTitle("4. Visualisations Graphiques");
-
-      const chartConfigs = [
-        { ref: chartRoleRef, title: "Répartition des Acteurs" },
-        { ref: chartTrafficRef, title: "Trafic Horaire" },
-        { ref: chartLoginRef, title: "Connexions par Jour" },
-        { ref: chartSessionRef, title: "Session Moyenne par Rôle" },
-        { ref: chartSectionsRef, title: "Sections Consultées" },
-      ];
-
-      for (const cfg of chartConfigs) {
-        if (cfg.ref.current) {
-          const canvas = await html2canvas(cfg.ref.current, { backgroundColor: "#1E293B", scale: 2 });
-          const imgData = canvas.toDataURL("image/png");
-
-          const imgW = W - 2 * M;
-          const ratio = canvas.height / canvas.width;
-          const imgH = imgW * ratio;
-          const needed = imgH + 14;
-
-          ensureSpace(needed);
-
-          doc.setFont("helvetica", "bold");
-          doc.setFontSize(9);
-          doc.setTextColor(...hex("#CBD5E1"));
-          doc.text(cfg.title, M, y + 4);
-          y += 7;
-
-          doc.setFillColor(...hex("#0F172A"));
-          doc.roundedRect(M - 1, y - 1, imgW + 2, imgH + 2, 2, 2, "F");
-          doc.addImage(imgData, "PNG", M, y, imgW, imgH);
-          y += imgH + 8;
+      for (const ref of chartRefs) {
+        if (ref.current) {
+          await new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          });
+          const canvas = await html2canvas(ref.current, html2canvasOpts);
+          chartDataUrls.push(canvas.toDataURL("image/png", 1));
         }
       }
 
-      if (summary) {
-        drawSeparator();
-        sectionTitle("5. Synthèse du Rapport");
-        ensureSpace(20);
-
-        const lines = doc.splitTextToSize(summary, W - 2 * M - 8);
-        const blockH = lines.length * 4.5 + 8;
-        ensureSpace(blockH);
-
-        doc.setFillColor(...hex("#0F172A"));
-        doc.roundedRect(M, y, W - 2 * M, blockH, 2, 2, "F");
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(...hex("#CBD5E1"));
-        doc.text(lines, M + 4, y + 6);
-        y += blockH + 4;
-      }
-
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let p = 1; p <= pageCount; p++) {
-        doc.setPage(p);
-        doc.setFillColor(...hex("#1E293B"));
-        doc.rect(0, H - 10, W, 10, "F");
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(7);
-        doc.setTextColor(...hex("#64748B"));
-        doc.text("CiblOrgaSport — Rapport confidentiel", M, H - 4);
-        doc.text(`Page ${p}/${pageCount}`, W - M, H - 4, { align: "right" });
-      }
-
-      doc.save(`rapport-admin-${Date.now()}.pdf`);
+      saveDashboardPdf({ stats, days, summary, chartDataUrls });
     } catch {
       setError("Erreur lors de la génération du PDF.");
     } finally {
@@ -577,72 +341,185 @@ export default function AdminDashboardPage() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4, flexWrap: "wrap", gap: 2 }}>
-        <Typography sx={{ fontSize: 32, fontWeight: 900 }}>
-          Dashboard & Reporting
-        </Typography>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
-          <ToggleButtonGroup
-            value={days}
-            exclusive
-            onChange={handlePeriodChange}
-            size="small"
+      <Card
+        sx={{
+          mb: 4,
+          borderRadius: 4,
+          background: appTheme.gradients.card,
+          boxShadow: "0 16px 44px rgba(0,0,0,0.26)",
+          border: borderShell,
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          sx={{
+            height: 3,
+            width: "100%",
+            background: "linear-gradient(90deg, #22D3EE, #3B82F6, #A78BFA)",
+            opacity: 0.9,
+          }}
+        />
+        <CardContent sx={{ py: 2.75, px: { xs: 2, sm: 3 }, "&:last-child": { pb: 2.75 } }}>
+          <Box
             sx={{
-              "& .MuiToggleButton-root": {
-                color: appTheme.colors.textMuted,
-                borderColor: "#334155",
-                textTransform: "none",
-                fontWeight: 700,
-                px: 2,
-                "&.Mui-selected": {
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", lg: "center" },
+              flexDirection: { xs: "column", lg: "row" },
+              gap: 2.5,
+            }}
+          >
+            <Paper
+              elevation={0}
+              sx={{
+                flex: { xs: "1 1 auto", lg: "0 1 420px" },
+                p: { xs: 2, sm: 2.5 },
+                borderRadius: 3,
+                background: "linear-gradient(160deg, rgba(255,255,255,0.11) 0%, rgba(255,255,255,0.04) 55%, rgba(15,23,42,0.2) 100%)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1)",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2.5,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                    background: "linear-gradient(145deg, rgba(34,211,238,0.28), rgba(59,130,246,0.2))",
+                    border: "1px solid rgba(34, 211, 238, 0.35)",
+                    boxShadow: "0 6px 20px rgba(34, 211, 238, 0.12)",
+                  }}
+                >
+                  <SpaceDashboardOutlined sx={{ fontSize: 30, color: appTheme.colors.cyan }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    component="h1"
+                    sx={{
+                      fontSize: { xs: 22, sm: 28 },
+                      fontWeight: 900,
+                      color: "#fff",
+                      letterSpacing: -0.5,
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    Dashboard & Reporting
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: 12,
+                      color: appTheme.colors.textMuted,
+                      mt: 0.5,
+                      fontWeight: 500,
+                      letterSpacing: 0.02,
+                    }}
+                  >
+                    Synthèse visuelle et export PDF
+                  </Typography>
+                </Box>
+              </Box>
+            </Paper>
+
+            <Box sx={{ display: { xs: "none", lg: "block" }, flex: 1, minWidth: 280 }} />
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                flexWrap: "wrap",
+                justifyContent: { xs: "flex-start", lg: "flex-end" },
+              }}
+            >
+              <ToggleButtonGroup
+                value={days}
+                exclusive
+                onChange={handlePeriodChange}
+                size="small"
+                sx={{
+                  "& .MuiToggleButton-root": {
+                    color: appTheme.colors.textMuted,
+                    borderColor: borderToggle,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    px: 2,
+                    "&:hover": {
+                      borderColor: borderShellHover,
+                      background: "rgba(255,255,255,0.04)",
+                    },
+                    "&.Mui-selected": {
+                      background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+                      color: "#fff",
+                      borderColor: "transparent",
+                    },
+                  },
+                }}
+              >
+                <ToggleButton value={7}>7 jours</ToggleButton>
+                <ToggleButton value={30}>30 jours</ToggleButton>
+              </ToggleButtonGroup>
+
+              <Button
+                variant="contained"
+                disableElevation
+                disabled={refreshing}
+                startIcon={
+                  refreshing ? (
+                    <CircularProgress size={18} thickness={5} sx={{ color: "inherit" }} />
+                  ) : (
+                    <Refresh />
+                  )
+                }
+                onClick={handleRefresh}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: appTheme.radius.pill,
+                  px: 2.75,
+                  py: 1,
+                  background: "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(59,130,246,0.15))",
+                  color: "#e0f2fe",
+                  border: "1px solid rgba(34, 211, 238, 0.45)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, rgba(34,211,238,0.32), rgba(59,130,246,0.22))",
+                    borderColor: appTheme.colors.cyan,
+                  },
+                  "&.Mui-disabled": {
+                    color: "rgba(224, 242, 254, 0.65)",
+                    borderColor: "rgba(34, 211, 238, 0.25)",
+                  },
+                }}
+              >
+                {refreshing ? "Actualisation…" : "Rafraîchir"}
+              </Button>
+
+              <Button
+                variant="contained"
+                startIcon={pdfLoading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <PictureAsPdf />}
+                disabled={pdfLoading}
+                onClick={handleDownloadPdf}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: appTheme.radius.pill,
                   background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
                   color: "#fff",
-                  borderColor: "transparent",
-                },
-              },
-            }}
-          >
-            <ToggleButton value={7}>7 jours</ToggleButton>
-            <ToggleButton value={30}>30 jours</ToggleButton>
-          </ToggleButtonGroup>
-
-          <Button
-            variant="outlined"
-            startIcon={<Refresh />}
-            onClick={handleRefresh}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: appTheme.radius.pill,
-              borderColor: "#334155",
-              color: appTheme.colors.textSecondary,
-              "&:hover": { borderColor: appTheme.colors.cyan, color: appTheme.colors.cyan },
-            }}
-          >
-            Rafraîchir
-          </Button>
-
-          <Button
-            variant="contained"
-            startIcon={pdfLoading ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : <PictureAsPdf />}
-            disabled={pdfLoading}
-            onClick={handleDownloadPdf}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              px: 3,
-              py: 1.2,
-              borderRadius: appTheme.radius.pill,
-              background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-              color: "#fff",
-              "&:hover": { background: "linear-gradient(135deg, #06B6D4, #2563EB)" },
-            }}
-          >
-            {pdfLoading ? "Génération…" : "Exporter PDF"}
-          </Button>
-        </Box>
-      </Box>
+                  "&:hover": { background: "linear-gradient(135deg, #06B6D4, #2563EB)" },
+                }}
+              >
+                {pdfLoading ? "Génération…" : "Exporter PDF"}
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>
@@ -651,7 +528,7 @@ export default function AdminDashboardPage() {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard
-            title="Connexions cette semaine"
+            title="Connexions (7 jours)"
             value={stats?.totalLoginsWeek ?? "—"}
             icon={<LoginOutlined sx={{ fontSize: 28, color: appTheme.colors.cyan }} />}
             accentColor={appTheme.colors.cyan}
@@ -659,7 +536,7 @@ export default function AdminDashboardPage() {
         </Grid>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <KpiCard
-            title="Incidents cette semaine"
+            title="Incidents (7 jours)"
             value={stats?.totalIncidentsWeek ?? "—"}
             icon={<ReportProblem sx={{ fontSize: 28, color: severity.color }} />}
             accentColor={severity.color}
@@ -687,7 +564,8 @@ export default function AdminDashboardPage() {
         sx={{
           borderRadius: 4,
           background: appTheme.gradients.card,
-          boxShadow: appTheme.shadows.card,
+          boxShadow: "0 12px 28px rgba(0,0,0,0.22)",
+          border: borderShell,
           mb: 4,
           p: 2.5,
           display: "flex",
@@ -723,6 +601,7 @@ export default function AdminDashboardPage() {
             title="Répartition des Acteurs"
             icon={<LoginOutlined sx={{ color: appTheme.colors.cyan }} />}
             refProp={chartRoleRef}
+            chartSurface
           >
             <Box sx={{ width: "100%", height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -741,13 +620,13 @@ export default function AdminDashboardPage() {
                     ))}
                   </Pie>
                   <Legend
-                    wrapperStyle={{ color: appTheme.colors.textSecondary, fontSize: 13 }}
-                    formatter={(value) => <span style={{ color: appTheme.colors.textSecondary }}>{value}</span>}
+                    wrapperStyle={{ color: axisMuted, fontSize: 13, paddingTop: 16 }}
+                    formatter={(value) => <span style={{ color: "#475569", fontWeight: 600 }}>{value}</span>}
                   />
                   <Tooltip
                     contentStyle={{
                       background: appTheme.colors.dark,
-                      border: `1px solid ${appTheme.colors.cyan}55`,
+                      border: "1px solid rgba(34, 211, 238, 0.35)",
                       borderRadius: 8,
                       color: "#fff",
                     }}
@@ -764,19 +643,20 @@ export default function AdminDashboardPage() {
             title="Pics d'affluence (trafic horaire)"
             icon={<AccessTime sx={{ color: appTheme.colors.cyan }} />}
             refProp={chartTrafficRef}
+            chartSurface
           >
             <Box sx={{ width: "100%", height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.hourlyTraffic ?? []}>
                   <defs>
                     <linearGradient id="gradientViolet" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={appTheme.colors.violet} stopOpacity={0.35} />
-                      <stop offset="100%" stopColor={appTheme.colors.violet} stopOpacity={0} />
+                      <stop offset="0%" stopColor={appTheme.colors.violet} stopOpacity={0.45} />
+                      <stop offset="100%" stopColor={appTheme.colors.violet} stopOpacity={0.06} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="label" stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} />
-                  <YAxis stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridLight} vertical={false} />
+                  <XAxis dataKey="label" stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} />
+                  <YAxis stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} allowDecimals={false} />
                   <Tooltip content={<ChartTooltip suffix="requêtes" />} />
                   <Area
                     type="monotone"
@@ -798,19 +678,20 @@ export default function AdminDashboardPage() {
         title="Fréquentation — Connexions par jour"
         icon={<TrendingUp sx={{ color: appTheme.colors.cyan }} />}
         refProp={chartLoginRef}
+        chartSurface
       >
         <Box sx={{ width: "100%", height: 320 }}>
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={stats?.loginHistory ?? []}>
               <defs>
                 <linearGradient id="gradientCyan" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={appTheme.colors.cyan} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={appTheme.colors.cyan} stopOpacity={0} />
+                  <stop offset="0%" stopColor={appTheme.colors.cyan} stopOpacity={0.45} />
+                  <stop offset="100%" stopColor={appTheme.colors.cyan} stopOpacity={0.06} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-              <XAxis dataKey="label" stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} />
-              <YAxis stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} allowDecimals={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridLight} vertical={false} />
+              <XAxis dataKey="label" stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} />
+              <YAxis stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} allowDecimals={false} />
               <Tooltip content={<ChartTooltip suffix="connexions" />} />
               <Area
                 type="monotone"
@@ -832,17 +713,18 @@ export default function AdminDashboardPage() {
             title="Durée moyenne de session par rôle (min)"
             icon={<AccessTime sx={{ color: appTheme.colors.green }} />}
             refProp={chartSessionRef}
+            chartSurface
           >
             <Box sx={{ width: "100%", height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={sessionData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis type="number" stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} />
-                  <YAxis type="category" dataKey="role" stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} width={90} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={gridLight} horizontal={false} />
+                  <XAxis type="number" stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} />
+                  <YAxis type="category" dataKey="role" stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} width={90} tickLine={{ stroke: gridLight }} />
                   <Tooltip
                     contentStyle={{
                       background: appTheme.colors.dark,
-                      border: `1px solid ${appTheme.colors.cyan}55`,
+                      border: "1px solid rgba(34, 211, 238, 0.35)",
                       borderRadius: 8,
                       color: "#fff",
                     }}
@@ -857,7 +739,7 @@ export default function AdminDashboardPage() {
               </ResponsiveContainer>
             </Box>
             {sessionData.some((d) => d.role === "VOLONTEER" && d.value < 2) && (
-              <Alert severity="warning" sx={{ mt: 2 }}>
+              <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
                 Les volontaires passent moins de 2 min en moyenne — problème d'ergonomie probable.
               </Alert>
             )}
@@ -869,56 +751,66 @@ export default function AdminDashboardPage() {
             title="Sections les plus consultées"
             icon={<TrendingUp sx={{ color: appTheme.colors.green }} />}
             refProp={chartSectionsRef}
+            chartSurface
           >
-            <Box sx={{ width: "100%", height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sectionsData} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis type="number" stroke={appTheme.colors.textMuted} tick={{ fontSize: 12, fill: appTheme.colors.textMuted }} />
-                  <YAxis type="category" dataKey="name" stroke={appTheme.colors.textMuted} tick={{ fontSize: 11, fill: appTheme.colors.textMuted }} width={140} />
-                  <Tooltip
-                    contentStyle={{
-                      background: appTheme.colors.dark,
-                      border: `1px solid ${appTheme.colors.cyan}55`,
-                      borderRadius: 8,
-                      color: "#fff",
-                    }}
-                    formatter={(value) => [`${value} vues`, "Consultations"]}
-                  />
-                  <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                    {sectionsData.map((_, i) => (
-                      <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </Box>
+            {sectionsData.length === 0 ? (
+              <Alert severity="info" sx={{ borderRadius: 2 }}>
+                Aucune consultation enregistrée sur cette période (données « sections les plus consultées » de l&apos;API admin). Quand
+                le serveur alimentera ces compteurs, le graphique apparaîtra ici — utile pour repérer les écrans peu utilisés et limiter la
+                charge inutile (Axe 8).
+              </Alert>
+            ) : (
+              <Box sx={{ width: "100%", height: 300 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={sectionsData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke={gridLight} horizontal={false} />
+                    <XAxis type="number" stroke={axisMuted} tick={{ fontSize: 12, fill: axisMuted }} tickLine={{ stroke: gridLight }} />
+                    <YAxis type="category" dataKey="name" stroke={axisMuted} tick={{ fontSize: 11, fill: axisMuted }} width={140} tickLine={{ stroke: gridLight }} />
+                    <Tooltip
+                      contentStyle={{
+                        background: appTheme.colors.dark,
+                        border: "1px solid rgba(34, 211, 238, 0.35)",
+                        borderRadius: 8,
+                        color: "#fff",
+                      }}
+                      formatter={(value) => [`${value} vues`, "Consultations"]}
+                    />
+                    <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                      {sectionsData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            )}
           </SectionCard>
         </Grid>
       </Grid>
 
-      <SectionCard>
-        <Typography sx={{ fontSize: 16, fontWeight: 700, color: "#fff", mb: 2 }}>
-          Aperçu du rapport
-        </Typography>
-
+      <SectionCard
+        title="Aperçu du rapport"
+        icon={<ArticleOutlined sx={{ color: appTheme.colors.cyan }} />}
+        chartSurface
+      >
         {summaryLoading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress size={28} sx={{ color: appTheme.colors.cyan }} />
           </Box>
         ) : (
           <Paper
+            elevation={0}
             sx={{
               p: 2.5,
-              background: "rgba(15,23,42,0.6)",
-              borderRadius: 3,
-              border: "1px solid #334155",
+              background: "#fafbfc",
+              borderRadius: 2,
+              border: "1px solid #eef2f7",
             }}
           >
             <Typography
               sx={{
                 fontSize: 14,
-                color: appTheme.colors.textSecondary,
+                color: "#334155",
                 whiteSpace: "pre-wrap",
                 lineHeight: 1.75,
               }}
