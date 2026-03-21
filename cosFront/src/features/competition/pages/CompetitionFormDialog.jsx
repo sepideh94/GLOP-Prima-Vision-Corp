@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import EventIcon from "@mui/icons-material/Event";
 import appTheme from "../../../common/theme/appTheme";
+import WysiwygEditor from "../../../common/components/WysiwygEditor";
 
 export default function CompetitionFormDialog({
   open,
@@ -67,7 +68,8 @@ export default function CompetitionFormDialog({
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim()) newErrors.name = "Nom obligatoire";
-    if (!form.description.trim())
+    const descriptionText = form.description.replace(/<[^>]*>/g, "").trim();
+    if (!descriptionText)
       newErrors.description = "Description obligatoire";
     if (!form.startDate) newErrors.startDate = "Date obligatoire";
     if (!form.endDate) newErrors.endDate = "Date de fin obligatoire";
@@ -158,17 +160,18 @@ export default function CompetitionFormDialog({
             error={Boolean(errors.name)}
             helperText={errors.name}
           />
-          <TextField
-            label="Description"
-            name="description"
-            value={form.description}
-            onChange={handleChange}
-            fullWidth
-            multiline
-            minRows={3}
-            error={Boolean(errors.description)}
-            helperText={errors.description}
-          />
+          <Box>
+            <WysiwygEditor
+              label="Description *"
+              value={form.description}
+              onChange={(html) => setForm({ ...form, description: html })}
+            />
+            {errors.description && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                {errors.description}
+              </Typography>
+            )}
+          </Box>
           <DatePickerForm
             label="Date de début"
             name="startDate"

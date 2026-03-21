@@ -20,6 +20,7 @@ import { useAuth } from "../../../common/contexts/AuthContext";
 import EventCard from "../components/EventCard";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import appTheme from "../../../common/theme/appTheme";
+import WysiwygEditor from "../../../common/components/WysiwygEditor";
 
 export default function EventsList() {
   const navigate = useNavigate();
@@ -246,14 +247,10 @@ export default function EventsList() {
               required
             />
 
-            <TextField
+            <WysiwygEditor
               label="Description"
-              multiline
-              rows={3}
               value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
+              onChange={(html) => setFormData({ ...formData, description: html })}
             />
 
             <DatePickerForm

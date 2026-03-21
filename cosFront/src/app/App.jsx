@@ -1,4 +1,5 @@
 import AuthProvider from "../common/contexts/AuthContext";
+import GoogleMapsProvider from "../common/components/GoogleMapsProvider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PrivateRoute from "../common/components/PrivateRoute.jsx";
 
@@ -45,10 +46,13 @@ import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSched
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
+import AthleteMapPage from "../features/map/pages/AthleteMapPage.jsx";
+import SpectatorMapPage from "../features/map/pages/SpectatorMapPage.jsx";
 
 
 export default function App() {
   return (
+    <GoogleMapsProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -125,6 +129,10 @@ export default function App() {
                 path="/athlete/schedule/:competitionId"
                 element={<AthleteSchedulePage />}
               />
+              <Route
+                path="/athlete/map"
+                element={<AthleteMapPage />}
+              />
 
               {/* SPECTATOR */}
               <Route
@@ -139,6 +147,10 @@ export default function App() {
                 path="/spectator/profile"
                 element={<SpectatorProfilePage />}
               />
+              <Route
+                path="/spectator/map"
+                element={<SpectatorMapPage />}
+              />
 
             </Route>
           </Route>
@@ -148,5 +160,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </GoogleMapsProvider>
   );
 }
