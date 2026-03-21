@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ciblorgasport.athlete.application.AthleteService;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
@@ -39,7 +38,17 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     private final AthleteRepository athleteRepository;
     private final TeamRepository teamRepository;
     private final ParticipationRepository participationRepository;
-    private final AthleteService athleteService;
+
+    private boolean isAthleteEligible(Athlete athlete) {
+        return athlete != null && athlete.isActive() && athlete.isProfileComplete();
+    }
+
+    private boolean isTeamEligible(Team team) {
+        if (team == null || team.getMembers() == null || team.getMembers().isEmpty()) {
+            return false;
+        }
+        return team.getMembers().stream().allMatch(this::isAthleteEligible);
+    }
 
     @Transactional
     @Override
@@ -64,11 +73,27 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                             + uniqueAthleteIds.size() + ".");
         }
 
+        RoundName currentRound = trial.getRound().getName();
+        List<Long> qualifiedCompetitorIds = null;
+        if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
+            RoundName previousRound = (currentRound == RoundName.FINALE)
+                    ? RoundName.DEMI_FINALE
+                    : RoundName.QUALIFICATION_HEAT;
+            qualifiedCompetitorIds = trialParticipantRepository.findQualifiedCompetitorIds(
+                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound);
+        }
+
         List<TrialParticipant> newParticipants = new ArrayList<>();
 
         for (Long athleteId : uniqueAthleteIds) {
             Athlete athlete = athleteRepository.findById(athleteId)
                     .orElseThrow(() -> new RuntimeException("Athlète introuvable: " + athleteId));
+
+            if (!isAthleteEligible(athlete)) {
+                throw new IllegalArgumentException(
+                        "L'athlète " + athlete.getDisplayName()
+                                + " n'est pas éligible : compte non activé, profil incomplet ou charte non acceptée.");
+            }
 
             strategy.validateParticipant(toParticipant(athlete));
 
@@ -83,6 +108,11 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 throw new IllegalStateException(
                         "L'athlète " + athlete.getDisplayName()
                                 + " n'a pas de participation CONFIRMED à la compétition.");
+            }
+
+            if (qualifiedCompetitorIds != null && !qualifiedCompetitorIds.contains(athleteId)) {
+                throw new IllegalArgumentException(
+                        "L'athlète " + athlete.getDisplayName() + " n'est pas qualifié pour cette phase.");
             }
 
             if (trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
@@ -105,6 +135,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<TrialParticipantResponse> getByTrialId(Long trialId) {
         if (!trialRepository.existsById(trialId)) {
@@ -119,8 +150,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Transactional
     @Override
     public List<TrialParticipantResponse> getByAthleteId(Long athleteId) {
-        return trialParticipantRepository.findByAthleteId(athleteId).stream()
-                .map(TrialParticipantResponse::fromEntity)
+        return trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
@@ -145,21 +176,69 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Transactional
     @Override
     public void declareForfeit(Long trialParticipantId, Long athleteId) {
-        TrialParticipant trialParticipant = trialParticipantRepository
-                .findByIdAndAthleteId(trialParticipantId, athleteId)
+        TrialParticipant participant = trialParticipantRepository
+                .findAccessibleByIdForAthlete(trialParticipantId, athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
 
-        trialParticipant.declareForfeit();
-        trialParticipantRepository.save(trialParticipant);
+        participant.declareForfeit();
+        trialParticipantRepository.save(participant);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     @Override
     public List<AthleteResponse> getEligibleAthletes(Long trialId) {
         Trial trial = trialRepository.findById(trialId)
                 .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
 
-        return athleteService.getAthletesByCompetition(trial.getCompetition().getId());
+        RoundName currentRound = trial.getRound().getName();
+
+        if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
+            RoundName previousRound = (currentRound == RoundName.FINALE)
+                    ? RoundName.DEMI_FINALE
+                    : RoundName.QUALIFICATION_HEAT;
+            List<Long> qualifiedIds = new ArrayList<>(trialParticipantRepository.findQualifiedCompetitorIds(
+                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound));
+
+            List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId).stream()
+                    .filter(tp -> tp.getCompetitorType() == CompetitorType.ATHLETE)
+                    .map(TrialParticipant::getCompetitorId)
+                    .collect(Collectors.toList());
+
+            qualifiedIds.removeAll(alreadyAssignedIds);
+
+            if (qualifiedIds.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            return athleteRepository.findAllById(qualifiedIds).stream()
+                    .filter(this::isAthleteEligible)
+                    .map(AthleteResponse::fromEntity)
+                    .collect(Collectors.toList());
+        }
+
+        List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId).stream()
+                .filter(tp -> tp.getCompetitorType() == CompetitorType.ATHLETE)
+                .map(TrialParticipant::getCompetitorId)
+                .collect(Collectors.toList());
+
+        List<Long> eligibleIds = participationRepository.findByCompetition_Id(trial.getCompetition().getId())
+                .stream()
+                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
+                .map(p -> p.getCompetitorId())
+                .filter(id -> !alreadyAssignedIds.contains(id))
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (eligibleIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        return athleteRepository.findAllById(eligibleIds).stream()
+                .filter(this::isAthleteEligible)
+                .map(AthleteResponse::fromEntity)
+                .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
+                .collect(Collectors.toList());
     }
 
     private TrialParticipantResponse mapToResponse(TrialParticipant tp) {
@@ -251,11 +330,27 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             throw new IllegalArgumentException("Nombre maximum d'équipes par série dépassé.");
         }
 
+        RoundName currentRound = trial.getRound().getName();
+        List<Long> qualifiedCompetitorIds = null;
+        if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
+            RoundName previousRound = (currentRound == RoundName.FINALE)
+                    ? RoundName.DEMI_FINALE
+                    : RoundName.QUALIFICATION_HEAT;
+            qualifiedCompetitorIds = trialParticipantRepository.findQualifiedCompetitorIds(
+                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound);
+        }
+
         List<TrialParticipant> newParticipants = new ArrayList<>();
 
         for (Long teamId : uniqueTeamIds) {
             Team team = teamRepository.findById(teamId)
                     .orElseThrow(() -> new RuntimeException("Équipe introuvable avec l'ID: " + teamId));
+
+            if (!isTeamEligible(team)) {
+                throw new IllegalArgumentException(
+                        "L'équipe " + team.getName()
+                                + " n'est pas éligible : tous les membres doivent avoir un compte activé, un profil complété et la charte acceptée.");
+            }
 
             strategy.validateParticipant(toParticipant(team));
 
@@ -269,6 +364,11 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             if (!hasConfirmedParticipation) {
                 throw new IllegalArgumentException(
                         "L'équipe " + team.getName() + " n'est pas confirmée pour cette compétition.");
+            }
+
+            if (qualifiedCompetitorIds != null && !qualifiedCompetitorIds.contains(teamId)) {
+                throw new IllegalArgumentException(
+                        "L'équipe " + team.getName() + " n'est pas qualifiée pour cette phase.");
             }
 
             if (trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
@@ -314,16 +414,26 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         Trial trial = trialRepository.findById(trialId)
                 .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
 
-        List<Long> confirmedTeamIds = participationRepository
-                .findByCompetition_Id(trial.getCompetition().getId())
-                .stream()
-                .filter(p -> p.getCompetitorType() == CompetitorType.TEAM && p.getStatus() == ParticipationStatus.CONFIRMED)
-                .map(p -> p.getCompetitorId())
-                .collect(Collectors.toList());
+        RoundName currentRound = trial.getRound().getName();
 
-        List<Long> alreadyAssignedIds = trialParticipantRepository
-                .findByTrialId(trialId)
-                .stream()
+        List<Long> confirmedTeamIds;
+        if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
+            RoundName previousRound = (currentRound == RoundName.FINALE)
+                    ? RoundName.DEMI_FINALE
+                    : RoundName.QUALIFICATION_HEAT;
+            confirmedTeamIds = new ArrayList<>(trialParticipantRepository.findQualifiedCompetitorIds(
+                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound));
+        } else {
+            confirmedTeamIds = participationRepository
+                    .findByCompetition_Id(trial.getCompetition().getId())
+                    .stream()
+                    .filter(p -> p.getCompetitorType() == CompetitorType.TEAM
+                            && p.getStatus() == ParticipationStatus.CONFIRMED)
+                    .map(p -> p.getCompetitorId())
+                    .collect(Collectors.toList());
+        }
+
+        List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(tp -> tp.getCompetitorType() == CompetitorType.TEAM)
                 .map(TrialParticipant::getCompetitorId)
                 .collect(Collectors.toList());
@@ -334,7 +444,9 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             return new ArrayList<>();
         }
 
-        List<Team> eligibleTeams = teamRepository.findAllById(confirmedTeamIds);
+        List<Team> eligibleTeams = teamRepository.findAllById(confirmedTeamIds).stream()
+                .filter(this::isTeamEligible)
+                .collect(Collectors.toList());
 
         return eligibleTeams.stream().map(team -> {
             List<AthleteSummary> members = team.getMembers().stream()
@@ -370,5 +482,10 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 return CompetitorType.TEAM;
             }
         };
+    }
+
+    @Override
+    public TrialParticipantResponse toResponse(TrialParticipant tp) {
+        return mapToResponse(tp);
     }
 }

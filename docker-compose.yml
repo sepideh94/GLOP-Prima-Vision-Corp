@@ -55,7 +55,9 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-ciblorgasport-documents}
       S3_REGION: ${S3_REGION:-eu-north-1}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      # Le profil `local` configure MinIO (endpoint + credentials) et,
+      # depuis la modif de `application-local.properties`, la DB utilise aussi DB_HOST.
+      SPRING_PROFILES_ACTIVE: local
 
     ports:
       - "8083:8083"

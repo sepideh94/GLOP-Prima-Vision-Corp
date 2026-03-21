@@ -20,6 +20,7 @@ import com.ciblorgasport.competition.application.exceptions.CompetitionDateInteg
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
 import com.ciblorgasport.common.exception.TrialNotFoundException;
 import com.ciblorgasport.common.exception.TrialNotCompletedException;
+import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -91,7 +92,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(TrialNotFoundException.class)
     public ResponseEntity<ApiError> handleTrialNotFoundException(
-            TrialNotFoundException ex, HttpServletRequest request) {
+            TrialNotFoundException ex,
+            HttpServletRequest request
+    ) {
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.NOT_FOUND.value())
@@ -99,12 +102,15 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
+
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
     @ExceptionHandler(TrialNotCompletedException.class)
     public ResponseEntity<ApiError> handleTrialNotCompletedException(
-            TrialNotCompletedException ex, HttpServletRequest request) {
+            TrialNotCompletedException ex,
+            HttpServletRequest request
+    ) {
         ApiError error = ApiError.builder()
                 .timestamp(LocalDateTime.now())
                 .status(HttpStatus.CONFLICT.value())
@@ -112,7 +118,24 @@ public class GlobalExceptionHandler {
                 .message(ex.getMessage())
                 .path(request.getRequestURI())
                 .build();
+
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
+    @ExceptionHandler(ResultModificationNotAllowedException.class)
+    public ResponseEntity<ApiError> handleResultModificationNotAllowed(
+            ResultModificationNotAllowedException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Modification non autorisee")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(CompetitionDateIntegrityException.class)

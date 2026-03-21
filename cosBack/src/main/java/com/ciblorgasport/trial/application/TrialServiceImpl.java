@@ -159,7 +159,7 @@ public class TrialServiceImpl implements TrialService {
         if (roundName == RoundName.QUALIFICATION_HEAT) {
             // Auto-generate roundNumber: MAX(existing) + 1, starting at 1
             Integer maxRoundNumber = trialRepository.findMaxRoundNumber(
-                competition, request.getTrialName(), request.getCategoryGender(), round);
+                competition, request.getTrialName(), request.getCategoryGender(), request.getMode(), round);
             roundNumber = (maxRoundNumber != null) ? maxRoundNumber + 1 : 1;
 
         } else if (roundName == RoundName.DEMI_FINALE) {
