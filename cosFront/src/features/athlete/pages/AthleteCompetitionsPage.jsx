@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Grid, Typography, Box } from "@mui/material";
+import { Grid, Typography, Box, Alert } from "@mui/material";
 import CompetitionCard from "../components/CompetitionCard";
 import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
 import IncompleteProfileModal from "../components/IncompleteProfileModal";
@@ -14,6 +14,7 @@ export default function AthleteCompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [confirmError, setConfirmError] = useState("");
   useEffect(() => {
     const loadData = async () => {
       const data = await athleteCompetitionService.getMyCompetitions();
@@ -65,6 +66,7 @@ export default function AthleteCompetitionsPage() {
   };
 
   const handleConfirmClick = async (competition) => {
+    setConfirmError("");
     if (!isProfileComplete()) {
       // Afficher la modale pour informer qu'il faut compléter le profil
       setShowIncompleteProfileModal(true);
@@ -83,10 +85,12 @@ export default function AthleteCompetitionsPage() {
           )
         );
       } catch (err) {
-        // L'erreur est déjà gérée par l'intercepteur axios si c'est une 401
-        // On affiche juste un message d'erreur pour les autres erreurs
         if (err.response?.status !== 401) {
           console.error("Erreur lors de la confirmation:", err);
+          setConfirmError(
+            err.response?.data?.message ||
+              "Impossible de confirmer la participation pour le moment."
+          );
         }
       }
       return;
@@ -110,6 +114,12 @@ export default function AthleteCompetitionsPage() {
         Retrouvez ici les compétitions auxquelles vous êtes invité(e) et confirmez votre participation si nécessaire.
       </Typography>
 
+      {confirmError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {confirmError}
+        </Alert>
+      )}
+
       <Grid container spacing={4}>
         {competitions.map((competition) => (
           <Grid key={competition.participationId} item xs={12} md={4}>
@@ -129,6 +139,7 @@ export default function AthleteCompetitionsPage() {
           onClose={() => setSelectedCompetition(null)}
           onConfirm={async () => {
             try {
+              setConfirmError("");
               await athleteCompetitionService.confirmParticipation(selectedCompetition.participationId);
               setCompetitions((prev) =>
                 prev.map((c) =>
@@ -139,10 +150,12 @@ export default function AthleteCompetitionsPage() {
               );
               setSelectedCompetition(null);
             } catch (err) {
-              // L'erreur est déjà gérée par l'intercepteur axios si c'est une 401
-              // On affiche juste un message d'erreur pour les autres erreurs
               if (err.response?.status !== 401) {
                 console.error("Erreur lors de la confirmation de participation:", err);
+                setConfirmError(
+                  err.response?.data?.message ||
+                    "Impossible de confirmer la participation pour le moment."
+                );
               }
             }
           }}

@@ -92,7 +92,10 @@ export default function AthleteSchedulePage() {
       if (err.response?.status === 404) {
         setError("Compétition non trouvée");
       } else if (err.response?.status === 403) {
-        setError("Vous n'avez pas accès à ce planning");
+        setError(
+          err.response?.data?.message ||
+            "Votre participation est en attente de validation par le commissaire. Vous ne pouvez pas encore consulter votre planning."
+        );
       } else {
         setError(
           err.response?.data?.message || "Erreur lors du chargement du planning"

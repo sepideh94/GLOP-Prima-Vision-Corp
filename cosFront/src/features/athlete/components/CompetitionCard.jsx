@@ -17,12 +17,11 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
   const isConfirmed = status === "CONFIRMED";
   const isPendingValidation = status === "PENDING_VALIDATION";
   const isPending = status === "PENDING" || status === "INVITED";
-  const canConfirm = isPending && isProfileComplete;
   const statusLabel = isConfirmed
     ? "Confirmée"
     : isPendingValidation
     ? "En attente de validation"
-    : "Participation à confirmer";
+    : "Confirmer sa participation";
   const statusColor = isConfirmed
     ? appTheme.colors.green
     : isPendingValidation
@@ -154,7 +153,8 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
         {isPending && (
           <Button
             onClick={() => onConfirm(competition)}
-            disabled={!canConfirm}
+            disabled={false}
+            variant="contained"
             sx={{
               textTransform: "none",
               fontWeight: 700,
@@ -169,6 +169,11 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
                 background: appTheme.gradients.navbar,
                 transform: "translateY(-1px)",
                 boxShadow: "0 4px 15px rgba(34, 211, 238, 0.3)",
+              },
+              "&.Mui-disabled": {
+                background: appTheme.gradients.navbar,
+                color: appTheme.colors.dark,
+                opacity: 1,
               },
             }}
           >
@@ -223,7 +228,7 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
               },
             }}
           >
-            Mon planning
+            Voir le planning
           </Button>
         )}
       </Box>
