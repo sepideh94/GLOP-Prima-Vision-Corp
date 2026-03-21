@@ -31,4 +31,28 @@ public class EmailServiceTestImpl implements EmailService {
     @Override
     public void sendIncidentNotificationEmail(String to, String firstName, String subject, String message, String link){
     }
+
+    @Override
+    public void sendAccreditationValidatedEmail(String to, String firstName) {
+    }
+
+    @Override
+    public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
+    }
+
+    @Override
+    public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName, String commissionnerName) {
+    }
+
+    @Override
+    public void sendCommissionerParticipationSubmittedEmail(String toEmail, String commissionnerName, String athleteName) {
+    }
+
+    @Override
+    public void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName) {
+    }
+
+    @Override
+    public void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument, String reason) {
+    }
 }

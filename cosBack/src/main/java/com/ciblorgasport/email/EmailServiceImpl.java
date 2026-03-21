@@ -1,12 +1,11 @@
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            package com.ciblorgasport.email;
+package com.ciblorgasport.email;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Service;
 import org.springframework.scheduling.annotation.Async;
-
+import org.springframework.stereotype.Service;
 
 @Service
 @Profile("!test")
@@ -45,17 +44,17 @@ public class EmailServiceImpl implements EmailService {
         String link = apiBaseUrl + "/api/auth/activate?token=" + token;
 
         sendEmail(
-            to,
-            "Validez votre inscription - CiblOrgaSport",
-            hello(firstName) +
-            "Bienvenue sur CiblOrgaSport !\n\n" +
-            "Merci pour votre inscription. Cliquez sur ce lien pour activer votre compte :\n" +
-            link + "\n\n" +
-            "Une fois votre compte activé, vous pourrez vous connecter avec votre identifiant (votre email) et votre mot de passe.\n\n" +
-            "Ce lien expirera après 24 heures.\n\n" +
-            "À bientôt,\n" +
-            "L’équipe CiblOrgaSport"
-        );
+                to,
+                "Validez votre inscription - CiblOrgaSport",
+                hello(firstName) +
+                        "Bienvenue sur CiblOrgaSport !\n\n" +
+                        "Merci pour votre inscription. Cliquez sur ce lien pour activer votre compte :\n" +
+                        link + "\n\n" +
+                        "Une fois votre compte activé, vous pourrez vous connecter avec votre identifiant (votre email) et votre mot de passe.\n\n"
+                        +
+                        "Ce lien expirera après 24 heures.\n\n" +
+                        "À bientôt,\n" +
+                        "L’équipe CiblOrgaSport");
     }
 
     @Override
@@ -63,17 +62,16 @@ public class EmailServiceImpl implements EmailService {
         String link = appBaseUrl + "/reset-password?token=" + token;
 
         sendEmail(
-            to,
-            "Réinitialisation de mot de passe - CiblOrgaSport",
-            hello(firstName) +
-            "Vous avez demandé la réinitialisation de votre mot de passe.\n\n" +
-            "Cliquez sur ce lien pour définir un nouveau mot de passe :\n" +
-            link + "\n\n" +
-            "Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.\n\n" +
-            "Ce lien expirera après 30 minutes.\n\n" +
-            "À bientôt,\n" +
-            "L’équipe CiblOrgaSport"
-        );
+                to,
+                "Réinitialisation de mot de passe - CiblOrgaSport",
+                hello(firstName) +
+                        "Vous avez demandé la réinitialisation de votre mot de passe.\n\n" +
+                        "Cliquez sur ce lien pour définir un nouveau mot de passe :\n" +
+                        link + "\n\n" +
+                        "Si vous n’êtes pas à l’origine de cette demande, ignorez cet email.\n\n" +
+                        "Ce lien expirera après 30 minutes.\n\n" +
+                        "À bientôt,\n" +
+                        "L’équipe CiblOrgaSport");
     }
 
     @Override
@@ -81,17 +79,16 @@ public class EmailServiceImpl implements EmailService {
         String link = appBaseUrl + "/reset-password?token=" + token;
 
         sendEmail(
-            to,
-            "Invitation - Définissez votre mot de passe (CiblOrgaSport)",
-            hello(firstName) +
-            "Un administrateur vous a créé un compte Commissaire sur CiblOrgaSport.\n\n" +
-            "Pour activer votre compte et définir votre mot de passe, cliquez sur ce lien :\n" +
-            link + "\n\n" +
-            "Ce lien expirera après 24 heures.\n\n" +
-            "Si vous n’êtes pas concerné, vous pouvez ignorer cet email.\n\n" +
-            "À bientôt,\n" +
-            "L’équipe CiblOrgaSport"
-        );
+                to,
+                "Invitation - Définissez votre mot de passe (CiblOrgaSport)",
+                hello(firstName) +
+                        "Un administrateur vous a créé un compte Commissaire sur CiblOrgaSport.\n\n" +
+                        "Pour activer votre compte et définir votre mot de passe, cliquez sur ce lien :\n" +
+                        link + "\n\n" +
+                        "Ce lien expirera après 24 heures.\n\n" +
+                        "Si vous n’êtes pas concerné, vous pouvez ignorer cet email.\n\n" +
+                        "À bientôt,\n" +
+                        "L’équipe CiblOrgaSport");
     }
 
     @Override
@@ -100,68 +97,203 @@ public class EmailServiceImpl implements EmailService {
         String competitionsLink = appBaseUrl + "/auth/athlete-invite?next=/athlete/competitions";
 
         sendEmail(
-            to,
-            "Invitation à une compétition - CiblOrgaSport",
-            hello(firstName) +
-            "Nous sommes ravis de vous inviter à rejoindre CiblOrgaSport en tant qu’athlète.\n\n" +
-            "En tant qu'athlète invité(e), votre présence serait un atout majeur pour cet événement.\n\n" +
-            "Pour accéder aux détails (horaires, règlements) et valider votre inscription, veuillez cliquer sur le lien ci-dessous :\n\n" +
-            "👉 Accéder à l'événement :\n" +
-            competitionsLink + "\n\n" +
-            "Première connexion ou mot de passe oublié ?\n\n" +
-            "Si vous n'avez pas encore activé votre compte athlète ou si vous ne vous souvenez plus de vos identifiants, vous devez définir votre mot de passe pour pouvoir vous connecter.\n\n" +
-            "Cela ne prend qu'une minute :\n\n" +
-            "🔐 Activer mon compte / Réinitialiser mon mot de passe :\n" +
-            resetLink + "\n\n" +
-            "Nous avons hâte de vous voir en action !\n\n" +
-            "Sportivement,\n" +
-            "L’équipe CiblOrgaSport"
-        );
+                to,
+                "Invitation à une compétition - CiblOrgaSport",
+                hello(firstName) +
+                        "Nous sommes ravis de vous inviter à rejoindre CiblOrgaSport en tant qu’athlète.\n\n" +
+                        "En tant qu'athlète invité(e), votre présence serait un atout majeur pour cet événement.\n\n" +
+                        "Pour accéder aux détails (horaires, règlements) et valider votre inscription, veuillez cliquer sur le lien ci-dessous :\n\n"
+                        +
+                        "👉 Accéder à l'événement :\n" +
+                        competitionsLink + "\n\n" +
+                        "Première connexion ou mot de passe oublié ?\n\n" +
+                        "Si vous n'avez pas encore activé votre compte athlète ou si vous ne vous souvenez plus de vos identifiants, vous devez définir votre mot de passe pour pouvoir vous connecter.\n\n"
+                        +
+                        "Cela ne prend qu'une minute :\n\n" +
+                        "🔐 Activer mon compte / Réinitialiser mon mot de passe :\n" +
+                        resetLink + "\n\n" +
+                        "Nous avons hâte de vous voir en action !\n\n" +
+                        "Sportivement,\n" +
+                        "L’équipe CiblOrgaSport");
     }
 
-@Override
-public void sendVolonteerInviteEmail(String to, String firstName, String token) {
-    String resetLink = appBaseUrl + "/reset-password?token=" + token;
+    @Override
+    public void sendVolonteerInviteEmail(String to, String firstName, String token) {
+        String resetLink = appBaseUrl + "/reset-password?token=" + token;
 
-    String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
+        String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
 
-    SimpleMailMessage msg = new SimpleMailMessage();
-    msg.setFrom(from);
-    msg.setTo(to);
-    msg.setSubject("Invitation : Devenez volontaire - CiblOrgaSport");
-    msg.setText(
-        "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
-        "Vous avez été invité(e) à rejoindre l'équipe des volontaires sur CiblOrgaSport.\n\n" +
-        "Votre aide est précieuse pour la réussite de nos compétitions.\n\n" +
-        "👉 Accéder à mon espace volontaire :\n" +
-        volonteerLink + "\n\n" +
-        "🔐 Activer mon compte / Définir mon mot de passe :\n" +
-        resetLink + "\n\n" +
-        "Ce lien est nécessaire pour votre première connexion.\n\n" +
-        "Sportivement,\n" +
-        "L’équipe CiblOrgaSport"
-    );
+        SimpleMailMessage msg = new SimpleMailMessage();
+        msg.setFrom(from);
+        msg.setTo(to);
+        msg.setSubject("Invitation : Devenez volontaire - CiblOrgaSport");
+        msg.setText(
+                "Bonjour " + (firstName != null ? firstName : "") + ",\n\n" +
+                        "Vous avez été invité(e) à rejoindre l'équipe des volontaires sur CiblOrgaSport.\n\n" +
+                        "Votre aide est précieuse pour la réussite de nos compétitions.\n\n" +
+                        "👉 Accéder à mon espace volontaire :\n" +
+                        volonteerLink + "\n\n" +
+                        "🔐 Activer mon compte / Définir mon mot de passe :\n" +
+                        resetLink + "\n\n" +
+                        "Ce lien est nécessaire pour votre première connexion.\n\n" +
+                        "Sportivement,\n" +
+                        "L’équipe CiblOrgaSport");
 
-    mailSender.send(msg);
-}
+        mailSender.send(msg);
+    }
 
-@Override
-@Async("mailExecutor")
-public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message, String link) {
-    String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
+    @Override
+    @Async("mailExecutor")
+    public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message,
+            String link) {
+        String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
 
-    String body = """
-            Bonjour %s,
+        String body = """
+                Bonjour %s,
 
-            %s
+                %s
 
-            Pour consulter les détails, veuillez vous connecter à votre espace :
-            %s
+                Pour consulter les détails, veuillez vous connecter à votre espace :
+                %s
 
-            Cordialement,
-            L'équipe CiblOrgaSport
-            """.formatted(safeDisplayName, message, link);
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(safeDisplayName, message, link);
 
-    sendEmail(to, subject, body);
-}
+        sendEmail(to, subject, body);
+    }
+
+    @Override
+    public void sendAccreditationValidatedEmail(String to, String firstName) {
+        String loginLink = appBaseUrl + "/login";
+
+        String body = """
+                Bonjour %s,
+
+                Nous avons le plaisir de vous informer que votre accréditation a été validée par un administrateur.
+                Vous avez désormais accès à l'ensemble des fonctionnalités de votre espace commissaire.
+
+                Connectez-vous pour commencer :
+                %s
+
+                Sportivement,
+                L'équipe CiblOrgaSport
+                """.formatted(firstName != null ? firstName : "", loginLink);
+
+        sendEmail(to, "Votre accréditation a été validée - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
+        String loginLink = appBaseUrl + "/login";
+
+        String body = """
+                Bonjour %s,
+
+                Votre accréditation a été refusée par un administrateur pour le motif suivant :
+                "%s"
+
+                Veuillez vous connecter à votre espace commissaire pour soumettre un nouveau document valide :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(firstName != null ? firstName : "", reason != null ? reason : "Non spécifié", loginLink);
+
+        sendEmail(to, "Votre accréditation a été refusée - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName,
+            String commissionnerName) {
+        String loginLink = appBaseUrl + "/login";
+
+        String body = """
+                Bonjour %s,
+
+                Le commissaire %s vient de soumettre son document d'accréditation.
+                Veuillez vous connecter à la plateforme pour l'examiner et statuer (Validation ou Refus).
+
+                Lien de connexion :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(adminFirstName != null ? adminFirstName : "Administrateur",
+                commissionnerName != null ? commissionnerName : "Inconnu", loginLink);
+
+        sendEmail(toAdminEmail, "Nouvelle soumission d'accréditation - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendCommissionerParticipationSubmittedEmail(String toEmail, String commissionnerName,
+            String athleteName) {
+        String link = appBaseUrl + "/commissioner/participations";
+
+        String body = """
+                Bonjour %s,
+
+                L'athlète %s vient de soumettre ses documents justificatifs (certificat médical, passeport) et a signé la charte.
+                Veuillez vous connecter à la plateforme pour les vérifier.
+
+                Lien de connexion :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """
+                .formatted(commissionnerName != null ? commissionnerName : "Commissaire",
+                        athleteName != null ? athleteName : "Inconnu", link);
+
+        sendEmail(toEmail, "Nouvelles pièces justificatives reçues - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName) {
+        String link = appBaseUrl + "/athlete/competitions";
+
+        String body = """
+                Bonjour %s,
+
+                Nous avons le plaisir de vous informer que vos documents justificatifs ont été validés par un commissaire.
+                Votre participation est désormais confirmée !
+
+                Vous pouvez consulter le détail de vos compétitions :
+                %s
+
+                Sportivement,
+                L'équipe CiblOrgaSport
+                """
+                .formatted(athleteName != null ? athleteName : "", link);
+
+        sendEmail(toEmail, "Vos documents ont été validés - CiblOrgaSport", body);
+    }
+
+    @Override
+    public void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument,
+            String reason) {
+        String link = appBaseUrl + "/athlete/profile";
+
+        String body = """
+                Bonjour %s,
+
+                Un commissaire a examiné vos documents justificatifs et a dû en refuser le contenu.
+
+                Document concerné : %s
+                Motif du refus : "%s"
+
+                Veuillez vous connecter à votre profil pour soumettre de nouveaux documents valides.
+
+                Lien vers votre profil :
+                %s
+
+                Cordialement,
+                L'équipe CiblOrgaSport
+                """.formatted(athleteName != null ? athleteName : "",
+                rejectedDocument != null ? rejectedDocument : "Inconnu",
+                reason != null ? reason : "Veuillez vérifier votre profil.",
+                link);
+
+        sendEmail(toEmail, "Vos documents ont été refusés - CiblOrgaSport", body);
+    }
 }
