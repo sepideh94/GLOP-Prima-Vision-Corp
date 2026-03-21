@@ -23,6 +23,9 @@ import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.notification.domain.NotificationType;
+import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.dto.TrialParticipantResponse;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -41,6 +44,7 @@ public class AthleteService {
     private final EmailService emailService;
     private final NotificationService notificationService;
     private final UserAccountRepository userAccountRepository;
+    private final TrialParticipantRepository trialParticipantRepository;
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -162,6 +166,22 @@ public class AthleteService {
                 }
             }
         }
+    }
+
+    @Transactional
+    public TrialParticipantResponse declareTrialForfeit(Long athleteId, Long participationId) {
+        athleteRepository.findById(athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
+
+        TrialParticipant participant = trialParticipantRepository
+                .findAccessibleByIdForAthlete(participationId, athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
+
+        participant.declareForfeit();
+
+        TrialParticipant saved = trialParticipantRepository.save(participant);
+
+        return TrialParticipantResponse.fromEntity(saved);
     }
 
     @Transactional

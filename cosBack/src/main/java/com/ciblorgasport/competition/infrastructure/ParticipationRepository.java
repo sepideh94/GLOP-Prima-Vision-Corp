@@ -26,6 +26,9 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     boolean existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
             Long competitionId, Long competitorId, CompetitorType competitorType, ParticipationStatus status);
 
+    boolean existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatusIn(
+            Long competitionId, Long competitorId, CompetitorType competitorType, List<ParticipationStatus> statuses);
+
     @Query("SELECT DISTINCT p.competition FROM Participation p " +
     	       "WHERE (p.competitorId = :athleteId AND p.competitorType = 'ATHLETE') " +
     	       "OR (p.competitorType = 'TEAM' AND p.competitorId IN " +

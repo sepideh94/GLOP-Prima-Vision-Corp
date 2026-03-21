@@ -21,6 +21,13 @@ import lombok.experimental.SuperBuilder;
 public class Volonteer extends UserAccount {
 	
 	@Override
+	public boolean isEnabled() {
+		// Le front utilise `isEnabled()` pour afficher `isAccountActive`.
+		// Donc on doit refléter le champ métier `isActive`.
+		return isActive();
+	}
+	
+	@Override
 	public String getRoleName() {
 		
 		return "ROLE_VOLONTEER";
