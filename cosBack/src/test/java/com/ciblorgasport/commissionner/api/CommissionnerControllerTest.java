@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -78,6 +79,15 @@ class CommissionnerControllerTest {
     private Round testRound;
     private Trial testTrial;
     private Commissionner testCommissioner;
+
+    @MockBean
+    private com.ciblorgasport.email.EmailService emailService;
+    
+    @MockBean
+    private com.ciblorgasport.storage.application.StorageService storageService;
+    
+    @MockBean
+    private com.ciblorgasport.notification.application.NotificationService notificationService;
 
     @BeforeEach
     void setUp() {
@@ -413,6 +423,56 @@ class CommissionnerControllerTest {
 
             mockMvc.perform(patch("/api/commissioner/trials/" + testTrial.getId() + "/cancel"))
                     .andExpect(status().isBadRequest());
+        }
+    } // close previous class
+
+    // ==================== TESTS REFUSE PARTICIPATION ====================
+
+    @Nested
+    @DisplayName("POST /api/commissioner/participations/{id}/refuse")
+    class RefuseParticipationTests {
+
+        @Autowired
+        private com.ciblorgasport.athlete.infrastructure.AthleteRepository athleteRepository;
+        
+        @Autowired
+        private com.ciblorgasport.competition.infrastructure.ParticipationRepository participationRepository;
+
+        @Test
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
+        @DisplayName("Doit refuser une participation avec un document cible et un motif")
+        void refuseParticipation_WithValidPayload_ShouldReturnOk() throws Exception {
+            // Créer un athlète
+            com.ciblorgasport.athlete.domain.Athlete athlete = new com.ciblorgasport.athlete.domain.Athlete();
+            athlete.setFirstName("Refused");
+            athlete.setLastName("Athlete");
+            athlete.setEmail("refused@example.com");
+            athlete.setPassword("password123");
+            athlete = athleteRepository.save(athlete);
+
+            // Créer une participation
+            com.ciblorgasport.competition.domain.Participation participation = new com.ciblorgasport.competition.domain.Participation();
+            participation.setCompetitorId(athlete.getId());
+            participation.setCompetitorType(com.ciblorgasport.competition.domain.CompetitorType.ATHLETE);
+            participation.setCompetition(testCompetition);
+            participation.setStatus(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING_VALIDATION);
+            participation = participationRepository.save(participation);
+
+            String payload = """
+                {
+                    "rejectedDocument": "PASSPORT",
+                    "reason": "Document expiré depuis 2023"
+                }
+                """;
+
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/commissioner/participations/" + participation.getId() + "/refuse")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .content(payload))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+
+            // Check if status changed
+            com.ciblorgasport.competition.domain.Participation updated = participationRepository.findById(participation.getId()).orElseThrow();
+            assertEquals(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING, updated.getStatus());
         }
     }
 }
