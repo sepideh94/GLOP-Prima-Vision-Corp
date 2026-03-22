@@ -14,8 +14,9 @@ import {
   Schedule,
   ReportProblem,
   Assessment,
+  Stadium,
+  Map,
 } from "@mui/icons-material";
-import { Event, EmojiEvents, People, VolunteerActivism, Schedule, ReportProblem, Stadium, Map } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 

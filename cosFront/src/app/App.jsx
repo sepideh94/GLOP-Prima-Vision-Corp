@@ -115,6 +115,8 @@ export default function App() {
               <Route
                 path="/admin/dashboard"
                 element={<AdminDashboardPage />}
+              />
+              <Route
                 path="/admin/fan-zones"
                 element={<AdminFanZonePage />}
               />
