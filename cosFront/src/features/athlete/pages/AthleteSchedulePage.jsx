@@ -208,26 +208,10 @@ export default function AthleteSchedulePage() {
         pb: 6,
       }}
     >
-      <Button
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/athlete/competitions")}
-        sx={{
-          mb: 2.5,
-          textTransform: "none",
-          fontWeight: 700,
-          px: 3,
-          py: 1.1,
-          borderRadius: appTheme.radius.pill,
-          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-          color: appTheme.colors.dark,
-        }}
-      >
-        Retour aux compétitions
-      </Button>
       <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/athlete")}
+          onClick={() => navigate("/athlete/competitions")}
           sx={{
             textTransform: "none",
             fontWeight: 700,
