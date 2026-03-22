@@ -65,8 +65,10 @@ export default function AthleteSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [athleteResults, setAthleteResults] = useState(null);
+  const [competitorResults, setCompetitorResults] = useState(null);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [resultsError, setResultsError] = useState(null);
+  const [competitorsLoadError, setCompetitorsLoadError] = useState(null);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [openResultsDialog, setOpenResultsDialog] = useState(false);
 
@@ -133,34 +135,54 @@ export default function AthleteSchedulePage() {
     }
   };
 
-  const loadAthleteResults = async () => {
-    try {
-      setResultsLoading(true);
-      setResultsError(null);
-      const data = await athleteService.getAthleteResults();
-      setAthleteResults(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Erreur lors du chargement des résultats athlète:", err);
-      if (err.response?.status === 401) {
+  const loadAthleteResultsData = async () => {
+    setResultsLoading(true);
+    setResultsError(null);
+    setCompetitorsLoadError(null);
+    const [aRes, cRes] = await Promise.allSettled([
+      athleteService.getAthleteResults(),
+      athleteService.getAthleteCompetitorsResults(),
+    ]);
+
+    if (aRes.status === "fulfilled") {
+      setAthleteResults(Array.isArray(aRes.value) ? aRes.value : []);
+    } else {
+      setAthleteResults([]);
+      const err = aRes.reason;
+      console.error("Erreur chargement résultats athlète:", err);
+      if (err?.response?.status === 401) {
         setResultsError("Session expirée. Veuillez vous reconnecter.");
-      } else if (err.response?.status === 403) {
-        setResultsError("Vous n'avez pas accès aux résultats.");
+      } else if (err?.response?.status === 403) {
+        setResultsError("Vous n'avez pas accès à vos résultats.");
       } else {
         setResultsError(
-          err.response?.data?.message ||
-            "Erreur lors du chargement de vos résultats"
+          err?.response?.data?.message || "Erreur lors du chargement de vos résultats."
         );
       }
-    } finally {
-      setResultsLoading(false);
     }
+
+    if (cRes.status === "fulfilled") {
+      setCompetitorResults(Array.isArray(cRes.value) ? cRes.value : []);
+    } else {
+      setCompetitorResults([]);
+      if (aRes.status === "fulfilled") {
+        const err = cRes.reason;
+        console.warn("Erreur chargement résultats concurrents:", err);
+        setCompetitorsLoadError(
+          err?.response?.data?.message ||
+            "Les résultats des autres concurrents ne sont pas disponibles pour le moment."
+        );
+      }
+    }
+
+    setResultsLoading(false);
   };
 
   const handleOpenResultsDialog = async (trial) => {
     setSelectedTrial(trial);
     setOpenResultsDialog(true);
-    if (athleteResults === null) {
-      await loadAthleteResults();
+    if (athleteResults === null || competitorResults === null) {
+      await loadAthleteResultsData();
     }
   };
 
@@ -168,14 +190,19 @@ export default function AthleteSchedulePage() {
     setOpenResultsDialog(false);
     setSelectedTrial(null);
     setResultsError(null);
+    setCompetitorsLoadError(null);
   };
 
   const resultsForSelectedTrial = useMemo(() => {
     if (!selectedTrial || !Array.isArray(athleteResults)) return [];
-    return athleteResults.filter(
-      (r) => r.trialId === selectedTrial.trialId
-    );
+    return athleteResults.filter((r) => r.trialId === selectedTrial.trialId);
   }, [selectedTrial, athleteResults]);
+
+  const competitorsForSelectedTrial = useMemo(() => {
+    if (!selectedTrial || !Array.isArray(competitorResults)) return [];
+    const rows = competitorResults.filter((r) => r.trialId === selectedTrial.trialId);
+    return [...rows].sort((a, b) => (a.rank ?? 999) - (b.rank ?? 999));
+  }, [selectedTrial, competitorResults]);
 
   return (
     <Box
@@ -418,7 +445,7 @@ export default function AthleteSchedulePage() {
                             },
                           }}
                         >
-                          Voir mes résultats
+                          Voir les résultats
                         </Button>
                       </Box>
                     )}
@@ -459,7 +486,9 @@ export default function AthleteSchedulePage() {
         trial={selectedTrial}
         loading={resultsLoading}
         error={resultsError}
+        competitorsError={competitorsLoadError}
         results={resultsForSelectedTrial}
+        competitorResults={competitorsForSelectedTrial}
       />
     </Box>
   );

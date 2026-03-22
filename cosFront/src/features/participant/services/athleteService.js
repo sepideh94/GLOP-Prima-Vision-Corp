@@ -20,6 +20,12 @@ const athleteService = {
     const res = await api.get("/api/athlete/results");
     return res.data;
   },
+
+  /** Résultats des autres participants aux mêmes épreuves (hors soi-même). Voir doc API athlète. */
+  async getAthleteCompetitorsResults() {
+    const res = await api.get("/api/athlete/results/competitors");
+    return res.data;
+  },
 };
 
 export default athleteService;
