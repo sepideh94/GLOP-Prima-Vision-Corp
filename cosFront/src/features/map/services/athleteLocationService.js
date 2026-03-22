@@ -6,8 +6,9 @@ const athleteLocationService = {
     return res.data;
   },
 
-  getMeetingInfo: async (athleteId) => {
-    const res = await api.get(`/api/athletes/${athleteId}/meeting-info`);
+  getMeetingInfo: async (athleteId, competitionId = null) => {
+    const params = competitionId ? { competitionId } : {};
+    const res = await api.get(`/api/athletes/${athleteId}/meeting-info`, { params });
     return res.data;
   },
 };

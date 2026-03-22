@@ -120,8 +120,8 @@ public class AuthenticationService {
 
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
-        
-        return JwtAuthenticationResponse.builder().token(jwt).role(role).build();
+
+        return JwtAuthenticationResponse.builder().token(jwt).role(role).userId(user.getId()).build();
     }
 
     public String forgotPassword(String email) {

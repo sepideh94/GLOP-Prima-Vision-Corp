@@ -6,7 +6,6 @@ import ConfirmParticipationModal from "../components/ConfirmParticipationModal";
 import IncompleteProfileModal from "../components/IncompleteProfileModal";
 import athleteCompetitionService from "../services/athleteCompetitionService";
 import athleteProfileService from "../services/athleteProfileService";
-import { useAuth } from "../../../common/contexts/AuthContext";
 
 export default function AthleteCompetitionsPage() {
   const navigate = useNavigate();
@@ -16,7 +15,6 @@ export default function AthleteCompetitionsPage() {
   const [showIncompleteProfileModal, setShowIncompleteProfileModal] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [hasAutoConfirmed, setHasAutoConfirmed] = useState(false);
-  const { user } = useAuth();
 
   useEffect(() => {
     const loadData = async () => {
@@ -197,6 +195,7 @@ export default function AthleteCompetitionsPage() {
           loadProfile(); // Recharger le profil après fermeture de la modale
         }}
       />
+
     </Box>
   );
 }

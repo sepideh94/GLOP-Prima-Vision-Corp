@@ -72,7 +72,7 @@ class AthleteLocationControllerTest {
         @DisplayName("200 — retourne les informations de rendez-vous de l'athlète")
         void shouldReturnMeetingInfo() throws Exception {
             List<AthleteMeetingInfoResponse> info = List.of(buildMeetingInfo(1L));
-            given(getAthleteMeetingInfoUseCase.execute(1L)).willReturn(info);
+            given(getAthleteMeetingInfoUseCase.execute(1L, null)).willReturn(info);
 
             mockMvc.perform(get("/api/athletes/{id}/meeting-info", 1L))
                     .andExpect(status().isOk())
@@ -85,7 +85,7 @@ class AthleteLocationControllerTest {
         @Test
         @DisplayName("200 — liste vide si l'athlète n'a pas d'épreuves à venir")
         void shouldReturnEmptyListWhenNoUpcomingTrials() throws Exception {
-            given(getAthleteMeetingInfoUseCase.execute(2L)).willReturn(List.of());
+            given(getAthleteMeetingInfoUseCase.execute(2L, null)).willReturn(List.of());
 
             mockMvc.perform(get("/api/athletes/{id}/meeting-info", 2L))
                     .andExpect(status().isOk())

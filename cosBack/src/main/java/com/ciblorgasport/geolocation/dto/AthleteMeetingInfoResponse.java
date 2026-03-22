@@ -12,6 +12,7 @@ public class AthleteMeetingInfoResponse {
     private String trialName;
     private LocalDate startDate;
     private LocalTime startHour;
+    private Long competitionId;
     private Long siteId;
     private String siteAddress;
     private double latitude;

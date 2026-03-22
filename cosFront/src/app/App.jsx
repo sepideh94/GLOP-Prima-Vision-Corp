@@ -46,7 +46,6 @@ import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSched
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
-import AthleteMapPage from "../features/map/pages/AthleteMapPage.jsx";
 import SpectatorMapPage from "../features/map/pages/SpectatorMapPage.jsx";
 
 
@@ -129,11 +128,6 @@ export default function App() {
                 path="/athlete/schedule/:competitionId"
                 element={<AthleteSchedulePage />}
               />
-              <Route
-                path="/athlete/map"
-                element={<AthleteMapPage />}
-              />
-
               {/* SPECTATOR */}
               <Route
                 path="/spectator/events/:eventId"

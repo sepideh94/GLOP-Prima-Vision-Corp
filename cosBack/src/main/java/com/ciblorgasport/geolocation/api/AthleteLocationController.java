@@ -32,7 +32,9 @@ public class AthleteLocationController {
 
     @GetMapping("/{athleteId}/meeting-info")
     @PreAuthorize("hasRole('ATHLETE') or hasRole('ADMIN')")
-    public ResponseEntity<List<AthleteMeetingInfoResponse>> getMeetingInfo(@PathVariable Long athleteId) {
-        return ResponseEntity.ok(getAthleteMeetingInfoUseCase.execute(athleteId));
+    public ResponseEntity<List<AthleteMeetingInfoResponse>> getMeetingInfo(
+            @PathVariable Long athleteId,
+            @RequestParam(required = false) Long competitionId) {
+        return ResponseEntity.ok(getAthleteMeetingInfoUseCase.execute(athleteId, competitionId));
     }
 }

@@ -668,6 +668,10 @@ useEffect(() => {
         {/* ── ONGLET 1 : Participants ───────────────────── */}
         {tab === 1 && showParticipantsTab && (
           <Box>
+            {participantsError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{participantsError}</Alert>
+            )}
+
             {/* Compteur + chips */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: "#555" }}>
@@ -745,7 +749,9 @@ useEffect(() => {
                     {filteredTeams.length === 0 ? (
                       <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
                         {competitionTeams.length === 0
-                          ? "Aucune équipe éligible pour cette épreuve."
+                          ? (form.roundName === "DEMI_FINALE" || form.roundName === "FINALE"
+                              ? "Aucune équipe qualifiée pour cette phase. Les résultats de la phase précédente doivent être enregistrés."
+                              : "Aucune équipe éligible pour cette épreuve.")
                           : "Aucune équipe ne correspond à la recherche."}
                       </Box>
                     ) : (
@@ -831,7 +837,9 @@ useEffect(() => {
                     {filteredAthletes.length === 0 ? (
                       <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
                         {competitionAthletes.length === 0
-                          ? "Aucun athlète importé pour cette compétition."
+                          ? (form.roundName === "DEMI_FINALE" || form.roundName === "FINALE"
+                              ? "Aucun athlète qualifié pour cette phase. Les résultats de la phase précédente doivent être enregistrés."
+                              : "Aucun athlète confirmé pour cette compétition.")
                           : "Aucun athlète ne correspond à la recherche."}
                       </Box>
                     ) : (

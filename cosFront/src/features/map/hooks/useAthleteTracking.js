@@ -3,6 +3,9 @@ import athleteLocationService from "../services/athleteLocationService";
 
 const TRACKING_INTERVAL_MS = 30_000;
 
+// Position simulée utilisée uniquement en développement quand le GPS est indisponible
+const DEV_FALLBACK_POSITION = { lat: 50.604457, lng: 3.136702 }; // J43P+VG Villeneuve-d'Ascq
+
 export default function useAthleteTracking(athleteId) {
   const [tracking, setTracking] = useState(false);
   const [position, setPosition] = useState(null);
@@ -16,16 +19,32 @@ export default function useAthleteTracking(athleteId) {
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
-      setError("Géolocalisation non supportée");
+      setError("Géolocalisation non supportée par ce navigateur");
       return;
     }
-    setTracking(true);
+    setError(null);
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
+        setTracking(true);
         setPosition({ lat: coords.latitude, lng: coords.longitude });
         sendLocation(coords.latitude, coords.longitude);
       },
-      () => setError("Impossible d'obtenir la position")
+      (err) => {
+        if (err.code === 2 && import.meta.env.DEV) {
+          console.warn("[dev] GPS indisponible, position simulée utilisée (Paris).");
+          setTracking(true);
+          setPosition(DEV_FALLBACK_POSITION);
+          sendLocation(DEV_FALLBACK_POSITION.lat, DEV_FALLBACK_POSITION.lng);
+          return;
+        }
+        if (err.code === 1)
+          setError("Permission refusée. Autorisez la géolocalisation dans les paramètres de votre navigateur.");
+        else if (err.code === 2)
+          setError("Position indisponible. Vérifiez que la géolocalisation est activée sur votre appareil.");
+        else
+          setError("La récupération de la position a expiré. Réessayez.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
     );
     intervalRef.current = setInterval(() => {
       navigator.geolocation.getCurrentPosition(

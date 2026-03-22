@@ -19,8 +19,11 @@ import com.ciblorgasport.trial.domain.Participant;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialModeStrategy;
 import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.domain.result.Performance;
+import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.dto.AthleteSummary;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
+import com.ciblorgasport.trial.infrastructure.ResultRepository;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import com.ciblorgasport.trial.round.domain.RoundName;
@@ -32,11 +35,15 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TrialParticipantServiceImpl implements TrialParticipantService {
 
+    private static final int DEMI_FINALE_SPOTS = 16;
+    private static final int FINALE_SPOTS = 8;
+
     private final TrialRepository trialRepository;
     private final TrialParticipantRepository trialParticipantRepository;
     private final AthleteRepository athleteRepository;
     private final TeamRepository teamRepository;
     private final ParticipationRepository participationRepository;
+    private final ResultRepository resultRepository;
 
     private boolean isAthleteEligible(Athlete athlete) {
         // Règles métier : compte activé + profil complété + charte acceptée.
@@ -71,14 +78,14 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             throw new IllegalArgumentException("Nombre maximum de participants dépassé.");
         }
 
-        // Pour DEMI_FINALE/FINALE : préparer la liste des qualifiés du tour précédent
+        // Pour DEMI_FINALE/FINALE : calculer les qualifiés par meilleure performance inter-séries
         RoundName currentRound = trial.getRound().getName();
         List<Long> qualifiedCompetitorIds = null;
         if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
             RoundName previousRound = (currentRound == RoundName.FINALE)
                     ? RoundName.DEMI_FINALE : RoundName.QUALIFICATION_HEAT;
-            qualifiedCompetitorIds = trialParticipantRepository.findQualifiedCompetitorIds(
-                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound);
+            int topN = (currentRound == RoundName.FINALE) ? FINALE_SPOTS : DEMI_FINALE_SPOTS;
+            qualifiedCompetitorIds = computeQualifiedIds(trial, previousRound, topN, true);
         }
 
         List<TrialParticipant> newParticipants = new ArrayList<>();
@@ -165,8 +172,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
             RoundName previousRound = (currentRound == RoundName.FINALE)
                     ? RoundName.DEMI_FINALE : RoundName.QUALIFICATION_HEAT;
-            List<Long> qualifiedIds = new ArrayList<>(trialParticipantRepository.findQualifiedCompetitorIds(
-                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound));
+            int topN = (currentRound == RoundName.FINALE) ? FINALE_SPOTS : DEMI_FINALE_SPOTS;
+            List<Long> qualifiedIds = new ArrayList<>(computeQualifiedIds(trial, previousRound, topN, false));
 
             List<Long> alreadyAssignedIds = trialParticipantRepository.findByTrialId(trialId).stream()
                     .filter(tp -> tp.getCompetitorType() == CompetitorType.ATHLETE)
@@ -238,6 +245,54 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         }
     }
 
+    /**
+     * Calcule les IDs qualifiés depuis le round précédent en triant par meilleure
+     * performance globale (toutes séries confondues) et en retenant les {@code topN} premiers.
+     *
+     * <p>En mode strict (assignation), une égalité exacte à la limite lève une exception
+     * pour signaler qu'un swim-off est nécessaire. En mode non-strict (affichage), tous les
+     * ex aequo à la limite sont inclus afin que l'admin voie les athlètes concernés.
+     *
+     * @param trial        l'épreuve cible (pour récupérer compétition/trialName/catégorie)
+     * @param previousRound le round dont on lit les résultats
+     * @param topN          nombre de places à distribuer
+     * @param strictOnTie   {@code true} pour lever une exception en cas d'égalité à la limite
+     */
+    private List<Long> computeQualifiedIds(Trial trial, RoundName previousRound, int topN, boolean strictOnTie) {
+        List<Result> results = resultRepository.findResultsForRound(
+                trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound);
+
+        if (results.isEmpty()) return List.of();
+
+        List<Result> sorted = results.stream()
+                .sorted((a, b) -> a.getPerformance().compareTo(b.getPerformance()))
+                .toList();
+
+        // Moins de résultats que de places disponibles : tous qualifiés
+        if (sorted.size() <= topN) {
+            return sorted.stream()
+                    .map(r -> r.getTrialParticipant().getCompetitorId())
+                    .distinct()
+                    .toList();
+        }
+
+        Performance cutoff = sorted.get(topN - 1).getPerformance();
+        boolean tieAtBoundary = cutoff.compareTo(sorted.get(topN).getPerformance()) == 0;
+
+        if (tieAtBoundary && strictOnTie) {
+            throw new IllegalStateException(
+                    "Égalité à la limite de qualification (position " + topN
+                    + "). Un swim-off est requis avant de pouvoir assigner des participants.");
+        }
+
+        // Retourne les topN premiers + tous les ex aequo à la limite (en mode non-strict)
+        return sorted.stream()
+                .filter(r -> r.getPerformance().compareTo(cutoff) <= 0)
+                .map(r -> r.getTrialParticipant().getCompetitorId())
+                .distinct()
+                .toList();
+    }
+
     private void validateTrialStateForAssignment(Trial trial) {
         if (trial.isCancelled() || trial.hasStarted()) {
             throw new IllegalStateException("État de l'épreuve invalide pour l'assignation.");
@@ -271,14 +326,14 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
             throw new IllegalArgumentException("Nombre maximum d'équipes par série dépassé.");
         }
 
-        // Pour DEMI_FINALE/FINALE : préparer la liste des qualifiés du tour précédent
+        // Pour DEMI_FINALE/FINALE : calculer les qualifiés par meilleure performance inter-séries
         RoundName currentRound = trial.getRound().getName();
         List<Long> qualifiedCompetitorIds = null;
         if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
             RoundName previousRound = (currentRound == RoundName.FINALE)
                     ? RoundName.DEMI_FINALE : RoundName.QUALIFICATION_HEAT;
-            qualifiedCompetitorIds = trialParticipantRepository.findQualifiedCompetitorIds(
-                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound);
+            int topN = (currentRound == RoundName.FINALE) ? FINALE_SPOTS : DEMI_FINALE_SPOTS;
+            qualifiedCompetitorIds = computeQualifiedIds(trial, previousRound, topN, true);
         }
 
         List<TrialParticipant> newParticipants = new ArrayList<>();
@@ -361,8 +416,8 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
             RoundName previousRound = (currentRound == RoundName.FINALE)
                     ? RoundName.DEMI_FINALE : RoundName.QUALIFICATION_HEAT;
-            confirmedTeamIds = new ArrayList<>(trialParticipantRepository.findQualifiedCompetitorIds(
-                    trial.getCompetition(), trial.getTrialName(), trial.getCategoryGender(), previousRound));
+            int topN = (currentRound == RoundName.FINALE) ? FINALE_SPOTS : DEMI_FINALE_SPOTS;
+            confirmedTeamIds = new ArrayList<>(computeQualifiedIds(trial, previousRound, topN, false));
         } else {
             confirmedTeamIds = participationRepository
                     .findByCompetition_Id(trial.getCompetition().getId())

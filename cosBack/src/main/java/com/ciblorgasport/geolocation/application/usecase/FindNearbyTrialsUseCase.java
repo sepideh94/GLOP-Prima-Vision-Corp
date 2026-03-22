@@ -6,8 +6,8 @@ import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +20,7 @@ public class FindNearbyTrialsUseCase {
 
         return trialRepository.findAll().stream()
                 .filter(trial -> !trial.isCancelled())
+                .filter(trial -> trial.getEndDate() == null || !trial.getEndDate().isBefore(LocalDate.now()))
                 .filter(trial -> trial.getSite() != null)
                 .filter(trial -> {
                     GeoPoint sitePoint = new GeoPoint(
@@ -45,6 +46,6 @@ public class FindNearbyTrialsUseCase {
                         )))
                         .build())
                 .sorted(java.util.Comparator.comparingDouble(TrialWithLocationDto::getDistanceKm))
-                .collect(Collectors.toList());
+                .toList();
     }
 }
