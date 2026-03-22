@@ -3,6 +3,7 @@ package com.ciblorgasport.trial.application;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 
@@ -19,6 +20,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ciblorgasport.competition.domain.Competition;
+import com.ciblorgasport.notification.application.CompetitionResultsNotificationService;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
@@ -41,6 +44,7 @@ class RecordTrialResultsUseCaseTest {
     @Mock private ResultRepository           resultRepository;
     @Mock private RankingService             rankingService;
     @Mock private ResultInputStrategy        inputStrategy;
+    @Mock private CompetitionResultsNotificationService competitionResultsNotificationService;
 
     @InjectMocks
     private RecordTrialResultsUseCase useCase;
@@ -57,6 +61,7 @@ class RecordTrialResultsUseCaseTest {
         List<Result> rankedResults = List.of(buildRankedResult("10.01", 1), buildRankedResult("10.05", 2));
 
         when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+        when(resultRepository.countByTrial_Id(1L)).thenReturn(0L);
         when(inputStrategy.collect(trial)).thenReturn(rawResults);
         when(rankingService.rank(rawResults)).thenReturn(rankedResults);
         when(resultRepository.saveAll(rankedResults)).thenReturn(rankedResults);
@@ -69,6 +74,7 @@ class RecordTrialResultsUseCaseTest {
         verify(inputStrategy).collect(trial);
         verify(rankingService).rank(rawResults);
         verify(resultRepository).saveAll(rankedResults);
+        verify(competitionResultsNotificationService).notifyFollowers(eq(trial), eq(false));
     }
 
     @Test
@@ -120,6 +126,7 @@ class RecordTrialResultsUseCaseTest {
 
         when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
         when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp1, tp2));
+        when(resultRepository.countByTrial_Id(1L)).thenReturn(0L);
         when(rankingService.rank(anyList())).thenReturn(rankedResults);
         when(resultRepository.saveAll(rankedResults)).thenReturn(rankedResults);
 
@@ -129,6 +136,33 @@ class RecordTrialResultsUseCaseTest {
         verify(trialParticipantRepository).findByTrialId(1L);
         verify(rankingService).rank(anyList());
         verify(resultRepository).saveAll(rankedResults);
+        verify(competitionResultsNotificationService).notifyFollowers(eq(trial), eq(false));
+    }
+
+    @Test
+    @DisplayName("recordManual : avec compétition → notifie les abonnés (première publication)")
+    void testRecordManual_WithCompetition_NotifiesFollowersFirstPublication() {
+        Competition competition = new Competition();
+        competition.setId(42L);
+        competition.setName("Coupe test");
+
+        Trial trial = buildCompletedTrial(1L);
+        trial.setCompetition(competition);
+        trial.setName("100m");
+
+        TrialParticipant tp1 = buildParticipant(10L);
+        List<ResultInputDto> inputs = List.of(new ResultInputDto(10L, new BigDecimal("10.01")));
+        List<Result> rankedResults = List.of(buildRankedResult("10.01", 1));
+
+        when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+        when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp1));
+        when(resultRepository.countByTrial_Id(1L)).thenReturn(0L);
+        when(rankingService.rank(anyList())).thenReturn(rankedResults);
+        when(resultRepository.saveAll(rankedResults)).thenReturn(rankedResults);
+
+        useCase.recordManual(1L, inputs, PerformanceType.TIME);
+
+        verify(competitionResultsNotificationService).notifyFollowers(eq(trial), eq(false));
     }
 
     @Test
@@ -181,6 +215,7 @@ class RecordTrialResultsUseCaseTest {
         verify(resultRepository).deleteAllByTrialId(1L);
         verify(rankingService).rank(anyList());
         verify(resultRepository).saveAll(anyList());
+        verify(competitionResultsNotificationService).notifyFollowers(eq(trial), eq(true));
         saved.forEach(r -> {
             assertEquals("Jean Dupont", r.getUpdatedBy());
             assertNotNull(r.getUpdatedAt());
