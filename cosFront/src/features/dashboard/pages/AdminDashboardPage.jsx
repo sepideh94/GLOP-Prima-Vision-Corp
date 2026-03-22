@@ -632,8 +632,10 @@ export default function AdminDashboardPage() {
                       background: appTheme.colors.dark,
                       border: "1px solid rgba(34, 211, 238, 0.35)",
                       borderRadius: 8,
-                      color: "#fff",
+                      color: "#f8fafc",
                     }}
+                    labelStyle={{ color: "#f8fafc", fontWeight: 700 }}
+                    itemStyle={{ color: "#e2e8f0" }}
                     formatter={(value, name) => [`${value} connexions`, name]}
                   />
                 </PieChart>
@@ -730,9 +732,11 @@ export default function AdminDashboardPage() {
                       background: appTheme.colors.dark,
                       border: "1px solid rgba(34, 211, 238, 0.35)",
                       borderRadius: 8,
-                      color: "#fff",
+                      color: "#f8fafc",
                     }}
-                    formatter={(value) => [`${value} min`, "Durée moy."]}
+                    labelStyle={{ color: "#f8fafc", fontWeight: 700 }}
+                    itemStyle={{ color: "#e2e8f0" }}
+                    formatter={(value) => [`${Number(value).toFixed(1)} min`, "Durée moy."]}
                   />
                   <Bar dataKey="value" radius={[0, 6, 6, 0]}>
                     {sessionData.map((entry) => (
@@ -775,8 +779,10 @@ export default function AdminDashboardPage() {
                         background: appTheme.colors.dark,
                         border: "1px solid rgba(34, 211, 238, 0.35)",
                         borderRadius: 8,
-                        color: "#fff",
+                        color: "#f8fafc",
                       }}
+                      labelStyle={{ color: "#f8fafc", fontWeight: 700 }}
+                      itemStyle={{ color: "#e2e8f0" }}
                       formatter={(value) => [`${value} vues`, "Consultations"]}
                     />
                     <Bar dataKey="value" radius={[0, 6, 6, 0]}>
