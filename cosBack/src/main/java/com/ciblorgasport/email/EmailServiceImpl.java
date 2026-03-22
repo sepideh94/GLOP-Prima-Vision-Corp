@@ -296,4 +296,26 @@ public class EmailServiceImpl implements EmailService {
 
         sendEmail(toEmail, "Vos documents ont été refusés - CiblOrgaSport", body);
     }
+
+    @Override
+    public void sendTeamParticipationValidatedEmail(String toEmail, String athleteName, String teamName) {
+        String link = appBaseUrl + "/athlete/competitions";
+
+        String body = """
+                Bonjour %s,
+
+                Bonne nouvelle ! Le dossier de votre équipe %s a été entièrement validé par un commissaire.
+                La participation de votre équipe est désormais confirmée !
+
+                Vous pouvez dès à présent consulter le planning de votre compétition :
+                %s
+
+                Sportivement,
+                L'équipe CiblOrgaSport
+                """
+                .formatted(athleteName != null ? athleteName : "",
+                        teamName != null ? teamName : "votre équipe", link);
+
+        sendEmail(toEmail, "Participation de votre équipe confirmée - CiblOrgaSport", body);
+    }
 }
