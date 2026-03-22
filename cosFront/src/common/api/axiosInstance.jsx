@@ -12,6 +12,14 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData && config.headers) {
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      } else {
+        delete config.headers["Content-Type"];
+      }
+    }
+
     // Ne pas ajouter le token pour les routes publiques
     const publicRoutes = ["/api/auth/signin", "/api/auth/signup", "/api/auth/forgot-password", "/api/auth/forgot-password/complete", "/api/countries"];
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
