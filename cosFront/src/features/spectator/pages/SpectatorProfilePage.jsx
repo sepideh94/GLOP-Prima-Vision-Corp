@@ -76,20 +76,46 @@ export default function SpectatorProfilePage() {
   };
 
   return (
-    <Box sx={{ p: { xs: 3, md: 4 } }}>
+    <Box
+      sx={{
+        flex: 1,
+        width: "100%",
+        maxWidth: "100%",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 2, sm: 2.5, md: 3 },
+        boxSizing: "border-box",
+      }}
+    >
+    <Box
+      sx={{
+        flex: 1,
+        width: "100%",
+        p: { xs: 2, sm: 2.5, md: 4 },
+        background: "rgba(15, 23, 42, 0.42)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        borderRadius: { xs: 2, md: 3 },
+        boxShadow: "0 8px 32px rgba(2, 6, 23, 0.35)",
+        border: "1px solid rgba(255, 255, 255, 0.14)",
+        boxSizing: "border-box",
+      }}
+    >
       <Typography
         variant="h4"
         sx={{
           fontWeight: 800,
           mb: 1,
-          color: appTheme.colors.dark,
+          color: "#f8fafc",
         }}
       >
         Mon Profil
       </Typography>
       <Typography
         sx={{
-          color: appTheme.colors.darkSoft,
+          color: "rgba(226, 232, 240, 0.88)",
           fontSize: "1.1rem",
           mb: 4,
         }}
@@ -124,7 +150,7 @@ export default function SpectatorProfilePage() {
             sx={{
               fontWeight: 700,
               mb: 3,
-              color: appTheme.colors.dark,
+              color: appTheme.colors.textPrimary,
             }}
           >
             Changer le mot de passe
@@ -261,6 +287,7 @@ export default function SpectatorProfilePage() {
           </Button>
         </CardContent>
       </Card>
+    </Box>
     </Box>
   );
 }

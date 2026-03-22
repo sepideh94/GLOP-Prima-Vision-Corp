@@ -34,6 +34,10 @@ import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
 import appTheme from "../../../common/theme/appTheme";
 import TrialResultsViewDialog from "../../trial/pages/TrialResultsViewDialog";
+import {
+  competitionStatusColor,
+  competitionStatusLabel,
+} from "../utils/competitionStatus";
 
 export default function CompetitionResultsPage() {
   const { competitionId } = useParams();
@@ -88,32 +92,6 @@ export default function CompetitionResultsPage() {
       console.error(err);
     } finally {
       setResultsLoading(false);
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status?.toUpperCase()) {
-      case "UPCOMING":
-        return appTheme.colors.cyan;
-      case "ONGOING":
-        return appTheme.colors.green;
-      case "COMPLETED":
-        return appTheme.colors.violet;
-      default:
-        return appTheme.colors.textMuted;
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status?.toUpperCase()) {
-      case "UPCOMING":
-        return "À venir";
-      case "ONGOING":
-        return "En cours";
-      case "COMPLETED":
-        return "Terminé";
-      default:
-        return status || "Non défini";
     }
   };
 
@@ -313,9 +291,41 @@ export default function CompetitionResultsPage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 3, md: 4 } }}>
+    <Box
+      sx={{
+        flex: 1,
+        width: "100%",
+        maxWidth: "100%",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 2, sm: 2.5, md: 3 },
+        boxSizing: "border-box",
+      }}
+    >
+      <Box
+        sx={{
+          flex: 1,
+          width: "100%",
+          p: { xs: 2, sm: 2.5, md: 4 },
+          background: "rgba(15, 23, 42, 0.42)",
+          backdropFilter: "blur(18px)",
+          WebkitBackdropFilter: "blur(18px)",
+          borderRadius: { xs: 2, md: 3 },
+          boxShadow: "0 8px 32px rgba(2, 6, 23, 0.35)",
+          border: "1px solid rgba(255, 255, 255, 0.14)",
+          boxSizing: "border-box",
+        }}
+      >
       {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }} separator="›">
+      <Breadcrumbs
+        sx={{
+          mb: 3,
+          "& .MuiBreadcrumbs-separator": { color: appTheme.colors.textMuted },
+        }}
+        separator="›"
+      >
         <Link
           component="button"
           variant="body1"
@@ -328,21 +338,9 @@ export default function CompetitionResultsPage() {
         >
           Événements
         </Link>
-        {competition.parentEventId && (
-          <Link
-            component="button"
-            variant="body1"
-            onClick={() => navigate(`/spectator/events/${competition.parentEventId}`)}
-            sx={{
-              color: appTheme.colors.cyan,
-              textDecoration: "none",
-              "&:hover": { textDecoration: "underline" },
-            }}
-          >
-            Événement
-          </Link>
-        )}
-        <Typography color="text.primary">{competition.name}</Typography>
+        <Typography sx={{ color: appTheme.colors.textPrimary, fontWeight: 600 }}>
+          {competition.name}
+        </Typography>
       </Breadcrumbs>
 
       {/* Header */}
@@ -369,7 +367,7 @@ export default function CompetitionResultsPage() {
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: appTheme.colors.dark,
+                color: appTheme.colors.textPrimary,
               }}
             >
               {competition.name}
@@ -380,6 +378,7 @@ export default function CompetitionResultsPage() {
                   color: appTheme.colors.textSecondary,
                   fontSize: "1.1rem",
                   mb: 2,
+                  maxWidth: "65ch",
                 }}
               >
                 {competition.description}
@@ -387,12 +386,12 @@ export default function CompetitionResultsPage() {
             )}
           </Box>
           <Chip
-            label={getStatusLabel(competition.status)}
+            label={competitionStatusLabel(competition.status, competition.statusLabel)}
             sx={{
-              background: `${getStatusColor(competition.status)}20`,
-              color: getStatusColor(competition.status),
+              background: `${competitionStatusColor(competition.status)}20`,
+              color: competitionStatusColor(competition.status),
               fontWeight: 600,
-              border: `1px solid ${getStatusColor(competition.status)}40`,
+              border: `1px solid ${competitionStatusColor(competition.status)}40`,
             }}
           />
         </Box>
@@ -454,7 +453,7 @@ export default function CompetitionResultsPage() {
               sx={{
                 fontWeight: 700,
                 mb: 3,
-                color: appTheme.colors.dark,
+                color: appTheme.colors.textPrimary,
               }}
             >
               Épreuves ({trials.length})
@@ -481,7 +480,7 @@ export default function CompetitionResultsPage() {
                   sx={{
                     fontWeight: 700,
                     mb: 2,
-                    color: appTheme.colors.dark,
+                    color: appTheme.colors.textPrimary,
                   }}
                 >
                   {roundName}
@@ -642,7 +641,7 @@ export default function CompetitionResultsPage() {
             sx={{
               fontWeight: 700,
               mb: 3,
-              color: appTheme.colors.dark,
+              color: appTheme.colors.textPrimary,
             }}
           >
             Classements
@@ -683,7 +682,7 @@ export default function CompetitionResultsPage() {
                     sx={{
                       fontWeight: 800,
                       mb: 1.6,
-                      color: appTheme.colors.dark,
+                      color: appTheme.colors.textPrimary,
                     }}
                   >
                     {roundName}
@@ -978,13 +977,7 @@ export default function CompetitionResultsPage() {
       <Box sx={{ mt: 4 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => {
-            if (competition.parentEventId) {
-              navigate(`/spectator/events/${competition.parentEventId}`);
-            } else {
-              navigate("/spectator");
-            }
-          }}
+          onClick={() => navigate("/spectator")}
           sx={{
             color: appTheme.colors.cyan,
             "&:hover": {
@@ -994,6 +987,8 @@ export default function CompetitionResultsPage() {
         >
           Retour
         </Button>
+      </Box>
+
       </Box>
 
       <TrialResultsViewDialog
