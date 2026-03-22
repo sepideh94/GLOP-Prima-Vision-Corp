@@ -117,6 +117,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/schedule/volunteer/**").hasRole("VOLONTEER")
                 .requestMatchers("/api/schedule/athlete/**").hasRole("ATHLETE")
                 
+                // Résultats publics (classement)
+                .requestMatchers(HttpMethod.GET, "/api/public/trials/**/results").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/competitions/**/results").permitAll()
                 .requestMatchers("/api/public/participation").permitAll()
                 .anyRequest().authenticated()
             )

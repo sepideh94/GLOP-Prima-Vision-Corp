@@ -23,6 +23,7 @@ import TrialListPage from "../features/trial/pages/TrialListPage.jsx";
 import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx";
 import VolunteerSchedulePage from "../features/user/pages/VolunteerSchedulePage.jsx";
 import IncidentsPage from "../features/incident/pages/IncidentsPage.jsx";
+import NotificationsPage from "../features/notification/pages/NotificationsPage.jsx";
 
 import CommissionerCompetitionListPage from
   "../features/competition/pages/CommissionerCompetitionListPage.jsx";
@@ -91,6 +92,10 @@ export default function App() {
                path="/admin/incidents"
                element={<IncidentsPage />}
               />
+              <Route
+                path="/notifications"
+                element={<NotificationsPage />}
+              />
               
               <Route
                 path="/admin/users"
@@ -154,6 +159,10 @@ export default function App() {
               <Route
                 path="/spectator/map"
                 element={<SpectatorMapPage />}
+              />
+              <Route
+                path="/spectator/notifications"
+                element={<NotificationsPage />}
               />
 
             </Route>

@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import scheduleService from "../../schedule/services/scheduleService";
+import athleteTrialService from "../services/athleteTrialService";
 import athleteService from "../../participant/services/athleteService";
 import AthleteTrialResultsDialog from "../components/AthleteTrialResultsDialog";
 
@@ -41,6 +42,11 @@ const STATUS_COLORS = {
   IN_PROGRESS: "#22d3ee",
   COMPLETED: "#16a34a",
   CANCELLED: "#ef4444",
+};
+
+const PARTICIPANT_STATUS_LABELS = {
+  ACTIVE: "Inscrit",
+  FORFEIT: "Forfait déclaré",
 };
 
 const formatDateTime = (dateTimeString) => {
@@ -80,10 +86,11 @@ export default function AthleteSchedulePage() {
       setLoading(true);
       setError(null);
       const data = await scheduleService.getAthleteSchedule(competitionId);
-      // Trier par date de début
-      const sorted = data.sort(
+
+      const sorted = [...data].sort(
         (a, b) => new Date(a.startTime) - new Date(b.startTime)
       );
+
       setSchedule(sorted);
     } catch (err) {
       console.error("Erreur lors du chargement du planning:", err);
@@ -98,6 +105,36 @@ export default function AthleteSchedulePage() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeclareForfeit = async (trialParticipantId) => {
+    try {
+      setError(null);
+      await athleteTrialService.declareForfeit(trialParticipantId);
+
+      setSchedule((prev) =>
+        prev.map((trial) =>
+          trial.trialParticipantId === trialParticipantId
+            ? { ...trial, participantStatus: "FORFEIT" }
+            : trial
+        )
+      );
+    } catch (err) {
+      console.error("Erreur lors de la déclaration de forfait:", err);
+
+      if (err.response?.status === 400) {
+        setError(
+          err.response?.data?.message ||
+            "Impossible de déclarer le forfait pour cette épreuve"
+        );
+      } else if (err.response?.status === 403) {
+        setError("Vous n'êtes pas autorisé à déclarer ce forfait");
+      } else if (err.response?.status === 404) {
+        setError("Participation à l'épreuve introuvable");
+      } else {
+        setError("Erreur lors de la déclaration de forfait");
+      }
     }
   };
 
@@ -241,24 +278,32 @@ export default function AthleteSchedulePage() {
             gap: 3,
           }}
         >
-          {schedule.map((trial) => (
-            <Card
-              key={trial.trialId}
-              sx={{
-                width: 400,
-                minWidth: 400,
-                display: "flex",
-                flexDirection: "column",
-                borderRadius: appTheme.radius.lg,
-                boxShadow: appTheme.shadows.card,
-                transition: "transform 0.2s, box-shadow 0.2s",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                  boxShadow: appTheme.shadows.cardHover,
-                },
-              }}
-            >
-                <CardContent sx={{ p: 3, display: "flex", flexDirection: "column", flex: 1 }}>
+          {schedule.map((trial, index) => {
+            const canDeclareForfeit =
+              trial.trialParticipantId &&
+              trial.trialStatus === "UPCOMING" &&
+              trial.participantStatus !== "FORFEIT";
+
+            return (
+              <Card
+                key={trial.trialParticipantId || trial.trialId || index}
+                sx={{
+                  width: 400,
+                  minWidth: 400,
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: appTheme.radius.lg,
+                  boxShadow: appTheme.shadows.card,
+                  transition: "transform 0.2s, box-shadow 0.2s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: appTheme.shadows.cardHover,
+                  },
+                }}
+              >
+                <CardContent
+                  sx={{ p: 3, display: "flex", flexDirection: "column", flex: 1 }}
+                >
                   <Box
                     sx={{
                       display: "flex",
@@ -277,11 +322,14 @@ export default function AthleteSchedulePage() {
                     >
                       {trial.trialName}
                     </Typography>
+
                     <Chip
                       label={STATUS_LABELS[trial.trialStatus] || trial.trialStatus}
                       size="small"
                       sx={{
-                        backgroundColor: `${STATUS_COLORS[trial.trialStatus] || "#6b7280"}20`,
+                        backgroundColor: `${
+                          STATUS_COLORS[trial.trialStatus] || "#6b7280"
+                        }20`,
                         color: STATUS_COLORS[trial.trialStatus] || "#6b7280",
                         fontWeight: 700,
                         ml: 1,
@@ -289,22 +337,49 @@ export default function AthleteSchedulePage() {
                     />
                   </Box>
 
-                  <Chip
-                    label={PHASE_LABELS[trial.phase] || trial.phase}
-                    size="small"
+                  <Box
                     sx={{
-                      backgroundColor: "rgba(34, 211, 238, 0.15)",
-                      color: appTheme.colors.dark,
-                      fontWeight: 600,
+                      display: "flex",
+                      gap: 1,
+                      flexWrap: "wrap",
                       mb: 2,
                     }}
-                  />
+                  >
+                    <Chip
+                      label={PHASE_LABELS[trial.phase] || trial.phase}
+                      size="small"
+                      sx={{
+                        backgroundColor: "rgba(34, 211, 238, 0.15)",
+                        color: appTheme.colors.dark,
+                        fontWeight: 600,
+                      }}
+                    />
+
+                    {trial.participantStatus && (
+                      <Chip
+                        label={
+                          PARTICIPANT_STATUS_LABELS[trial.participantStatus] ||
+                          trial.participantStatus
+                        }
+                        size="small"
+                        sx={{
+                          backgroundColor:
+                            trial.participantStatus === "FORFEIT"
+                              ? "rgba(239, 68, 68, 0.15)"
+                              : "rgba(34, 197, 94, 0.15)",
+                          color:
+                            trial.participantStatus === "FORFEIT"
+                              ? "#ef4444"
+                              : "#16a34a",
+                          fontWeight: 700,
+                        }}
+                      />
+                    )}
+                  </Box>
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon
-                        sx={{ fontSize: 18, color: "#000000" }}
-                      />
+                      <AccessTimeIcon sx={{ fontSize: 18, color: "#000000" }} />
                       <Typography
                         sx={{
                           fontSize: 14,
@@ -316,9 +391,7 @@ export default function AthleteSchedulePage() {
                     </Box>
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon
-                        sx={{ fontSize: 18, color: "#000000" }}
-                      />
+                      <AccessTimeIcon sx={{ fontSize: 18, color: "#000000" }} />
                       <Typography
                         sx={{
                           fontSize: 14,
@@ -329,7 +402,9 @@ export default function AthleteSchedulePage() {
                       </Typography>
                     </Box>
 
-                    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}>
+                    <Box
+                      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+                    >
                       <LocationOnIcon
                         sx={{ fontSize: 18, color: "#000000", mt: 0.5 }}
                       />
@@ -370,9 +445,33 @@ export default function AthleteSchedulePage() {
                       </Box>
                     )}
                   </Box>
+
+                  <Box sx={{ mt: 3 }}>
+                    {trial.participantStatus === "FORFEIT" ? (
+                      <Alert severity="warning">
+                        Vous avez déclaré forfait pour cette épreuve.
+                      </Alert>
+                    ) : canDeclareForfeit ? (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() =>
+                          handleDeclareForfeit(trial.trialParticipantId)
+                        }
+                        sx={{
+                          textTransform: "none",
+                          fontWeight: 700,
+                          borderRadius: appTheme.radius.pill,
+                        }}
+                      >
+                        Déclarer forfait
+                      </Button>
+                    ) : null}
+                  </Box>
                 </CardContent>
               </Card>
-          ))}
+            );
+          })}
         </Box>
       )}
 

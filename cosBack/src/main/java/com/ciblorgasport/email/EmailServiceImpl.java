@@ -1,10 +1,11 @@
-package com.ciblorgasport.email;
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            package com.ciblorgasport.email;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Async;
 
 
 @Service
@@ -142,5 +143,25 @@ public void sendVolonteerInviteEmail(String to, String firstName, String token) 
     );
 
     mailSender.send(msg);
+}
+
+@Override
+@Async("mailExecutor")
+public void sendIncidentNotificationEmail(String to, String displayName, String subject, String message, String link) {
+    String safeDisplayName = (displayName == null || displayName.isBlank()) ? "utilisateur" : displayName;
+
+    String body = """
+            Bonjour %s,
+
+            %s
+
+            Pour consulter les détails, veuillez vous connecter à votre espace :
+            %s
+
+            Cordialement,
+            L'équipe CiblOrgaSport
+            """.formatted(safeDisplayName, message, link);
+
+    sendEmail(to, subject, body);
 }
 }
