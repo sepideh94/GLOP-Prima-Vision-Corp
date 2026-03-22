@@ -33,6 +33,7 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import spectatorService from "../../spectator/services/spectatorService";
 import spectatorProfileService from "../../spectator/services/spectatorProfileService";
 import appTheme from "../../../common/theme/appTheme";
+import { stripHtmlTags } from "../../../common/utils/htmlUtils";
 
 export default function Spectator() {
   const navigate = useNavigate();
@@ -90,7 +91,7 @@ export default function Spectator() {
       filtered = filtered.filter(
         (event) =>
           event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          event.description?.toLowerCase().includes(searchQuery.toLowerCase())
+          stripHtmlTags(event.description).toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 

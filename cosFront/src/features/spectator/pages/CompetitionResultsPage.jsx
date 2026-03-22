@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
 import appTheme from "../../../common/theme/appTheme";
+import HtmlContent from "../../../common/components/HtmlContent";
 import TrialResultsViewDialog from "../../trial/pages/TrialResultsViewDialog";
 
 export default function CompetitionResultsPage() {
@@ -375,15 +376,14 @@ export default function CompetitionResultsPage() {
               {competition.name}
             </Typography>
             {competition.description && (
-              <Typography
+              <HtmlContent
+                html={competition.description}
                 sx={{
                   color: appTheme.colors.textSecondary,
                   fontSize: "1.1rem",
                   mb: 2,
                 }}
-              >
-                {competition.description}
-              </Typography>
+              />
             )}
           </Box>
           <Chip
@@ -537,15 +537,14 @@ export default function CompetitionResultsPage() {
                           </Typography>
 
                           {trial.description && (
-                            <Typography
+                            <HtmlContent
+                              html={trial.description}
                               sx={{
                                 color: appTheme.colors.textSecondary,
                                 fontSize: "0.875rem",
                                 mb: 2,
                               }}
-                            >
-                              {trial.description}
-                            </Typography>
+                            />
                           )}
 
                           {trial.startDate && (
