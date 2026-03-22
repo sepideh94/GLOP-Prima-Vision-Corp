@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
@@ -39,6 +40,8 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final ActivationTokenRepository activationTokenRepository;
 
+    private final AnalyticsService analyticsService;
+    
     @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")
     private String appBaseUrl;
 
@@ -117,7 +120,10 @@ public class AuthenticationService {
 
         var user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
-
+        
+        //log suivi des indicateurs
+        analyticsService.logAction(user.getEmail(), "LOGIN", "Connexion réussie");
+        
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
 

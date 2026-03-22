@@ -43,6 +43,7 @@ import AthleteCompetitionsPage from
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
 import AthleteSchedulePage from "../features/athlete/pages/AthleteSchedulePage.jsx";
 import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSchedulePage.jsx";
+import AdminDashboardPage from "../features/dashboard/pages/AdminDashboardPage.jsx";
 import AdminFanZonePage from "../features/map/pages/AdminFanZonePage.jsx";
 import AdminMapPage from "../features/map/pages/AdminMapPage.jsx";
 
@@ -112,6 +113,8 @@ export default function App() {
                 element={<AdminCreateSchedulePage />}
               />
               <Route
+                path="/admin/dashboard"
+                element={<AdminDashboardPage />}
                 path="/admin/fan-zones"
                 element={<AdminFanZonePage />}
               />
