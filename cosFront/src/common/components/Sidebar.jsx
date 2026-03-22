@@ -8,12 +8,15 @@ import {
   Box,
   Typography,
   Divider,
+  Badge,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import sidebarConfig from "./sidebarConfig";
 import appTheme from "../theme/appTheme";
+import { useEffect, useMemo, useState } from "react";
+import notificationService from "../../features/notification/services/notificationService";
 
 const drawerWidth = 240;
 
@@ -21,6 +24,30 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role || "GUEST";
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const canHaveNotifications = useMemo(() => role !== "GUEST", [role]);
+
+  useEffect(() => {
+    if (!canHaveNotifications) return undefined;
+
+    let mounted = true;
+    const loadUnread = async () => {
+      try {
+        const count = await notificationService.getUnreadCount();
+        if (mounted) setUnreadCount(count);
+      } catch {
+        if (mounted) setUnreadCount(0);
+      }
+    };
+
+    loadUnread();
+    const timer = setInterval(loadUnread, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [canHaveNotifications]);
 
   // Générer les initiales du nom
   const getInitials = () => {
@@ -63,6 +90,7 @@ export default function Sidebar() {
       {/* Menu de navigation */}
       <List sx={{ mt: 2, flex: 1 }}>
         {(sidebarConfig[role] || []).map((item) => (
+          // Add unread badge on notifications entry.
           <ListItemButton
             key={item.label}
             onClick={() => navigate(item.path)}
@@ -75,7 +103,13 @@ export default function Sidebar() {
             }}
           >
             <ListItemIcon sx={{ color: appTheme.colors.green }}>
-              <item.icon />
+              {item.path?.includes("notifications") ? (
+                <Badge badgeContent={unreadCount > 99 ? "99+" : unreadCount} color="error">
+                  <item.icon />
+                </Badge>
+              ) : (
+                <item.icon />
+              )}
             </ListItemIcon>
             <ListItemText primary={item.label} />
           </ListItemButton>

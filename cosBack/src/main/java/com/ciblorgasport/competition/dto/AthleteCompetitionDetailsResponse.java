@@ -18,6 +18,8 @@ public class AthleteCompetitionDetailsResponse {
     private LocalDateTime startDate;
     private LocalDateTime endDate;
     private ParticipationStatus status; 
+    private ParticipationStatus teamStatus;
+    private Boolean isTeamParticipation;
 
     public static AthleteCompetitionDetailsResponse fromEntity(Participation p) {
         return AthleteCompetitionDetailsResponse.builder()
@@ -28,6 +30,8 @@ public class AthleteCompetitionDetailsResponse {
                 .startDate(p.getCompetition().getStartDate())
                 .endDate(p.getCompetition().getEndDate())
                 .status(p.getStatus()) 
+                .teamStatus(null)
+                .isTeamParticipation(false)
                 .build();
     }
 }

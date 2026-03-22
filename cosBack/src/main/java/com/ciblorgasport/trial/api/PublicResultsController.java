@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ciblorgasport.trial.application.TrialResultService;
 import com.ciblorgasport.trial.dto.CompetitionResultsResponse;
+import com.ciblorgasport.trial.dto.PublicCompetitionSummaryResponse;
 import com.ciblorgasport.trial.dto.ResultResponse;
 
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,14 @@ public class PublicResultsController {
     public ResponseEntity<List<CompetitionResultsResponse>> getResultsByCompetition(
             @PathVariable("id") Long competitionId) {
         return ResponseEntity.ok(trialResultService.getResultsByCompetitionId(competitionId));
+    }
+
+    /**
+     * Liste les competitions qui disposent deja de resultats publics.
+     */
+    @GetMapping("/competitions/with-results")
+    public ResponseEntity<List<PublicCompetitionSummaryResponse>> getCompetitionsWithResults() {
+        return ResponseEntity.ok(trialResultService.getPublicCompetitionsWithResults());
     }
 }
 

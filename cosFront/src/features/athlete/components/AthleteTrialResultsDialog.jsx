@@ -41,6 +41,11 @@ export default function AthleteTrialResultsDialog({
       ? "Points"
       : null;
 
+  const hasTeamResults =
+    Array.isArray(results) &&
+    results.some((r) => r?.participant?.competitorType === "TEAM");
+  const modeLabel = trial?.mode === "TEAM" || hasTeamResults ? "Équipe" : "Individuel";
+
   return (
     <Dialog
       open={open}
@@ -85,15 +90,40 @@ export default function AthleteTrialResultsDialog({
           </Box>
         </Box>
 
-        {performanceLabel && (
+        {performanceLabel ? (
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Chip
+              label={`Performance : ${performanceLabel}`}
+              size="small"
+              sx={{
+                fontWeight: 800,
+                borderRadius: appTheme.radius.pill,
+                background: "rgba(34, 211, 238, 0.14)",
+                border: "1px solid rgba(34, 211, 238, 0.35)",
+              }}
+            />
+            <Chip
+              label={modeLabel}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                borderRadius: appTheme.radius.pill,
+                background: "rgba(167, 139, 250, 0.17)",
+                color: "#DDD6FE",
+                border: "1px solid rgba(167, 139, 250, 0.42)",
+              }}
+            />
+          </Box>
+        ) : (
           <Chip
-            label={`Performance : ${performanceLabel}`}
+            label={modeLabel}
             size="small"
             sx={{
-              fontWeight: 800,
+              fontWeight: 700,
               borderRadius: appTheme.radius.pill,
-              background: "rgba(34, 211, 238, 0.14)",
-              border: "1px solid rgba(34, 211, 238, 0.35)",
+              background: "rgba(167, 139, 250, 0.17)",
+              color: "#DDD6FE",
+              border: "1px solid rgba(167, 139, 250, 0.42)",
             }}
           />
         )}

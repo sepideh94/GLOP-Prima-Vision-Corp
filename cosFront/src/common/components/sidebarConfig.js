@@ -2,6 +2,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
+import PersonIcon from "@mui/icons-material/Person";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
@@ -77,15 +78,16 @@ const sidebarConfig = {
   ATHLETE: [
     { label: "Tableau de bord", icon: HomeIcon, path: "/athlete" },
     {
-      label: "Compétitions",
+      label: "Mes compétitions",
       icon: EmojiEventsIcon,
       path: "/athlete/competitions",
     },
     {
-      label: "Notifications",
+      label: "Mes notifications",
       icon: NotificationsIcon,
       path: "/notifications",
     },
+    { label: "Mon profil", icon: PersonIcon, path: "/athlete/profile" },
   ],
 
   VOLONTEER: [

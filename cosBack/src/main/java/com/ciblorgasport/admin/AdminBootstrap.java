@@ -20,9 +20,9 @@ public class AdminBootstrap {
     @Bean
     CommandLineRunner initAdmin() {
         return args -> {
-            String adminEmail = "admin@cos.com";
+            String adminEmail = "admincos@yopmail.com";
             if (userRepo.findByEmail(adminEmail).isEmpty()) {
-                Admin admin = Admin.builder() 
+                Admin admin = Admin.builder()
                         .firstName("Root")
                         .lastName("Admin")
                         .email(adminEmail)

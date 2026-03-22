@@ -1,9 +1,13 @@
 package com.ciblorgasport.commissionner;
 
+import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.user.domain.UserAccount;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,5 +37,11 @@ public class Commissionner extends UserAccount {
 	public boolean isCommissionner(){
 		return true;
 	}
+	
+	@OneToOne(cascade = CascadeType.ALL)
+	@JoinColumn(name = "accreditation_doc_id")
+	private Document accreditationDocument;
+
+	private boolean isAccredited = false;
 
 }

@@ -1,7 +1,7 @@
 package com.ciblorgasport.trial.application;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,10 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.dto.CompetitionResultsResponse;
+import com.ciblorgasport.trial.dto.PublicCompetitionSummaryResponse;
 import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.infrastructure.ResultRepository;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
+import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +35,7 @@ public class TrialResultServiceImpl implements TrialResultService {
     private final TrialParticipantService trialParticipantService;
     private final TrialParticipantRepository trialParticipantRepository;
     private final TrialRepository trialRepository;
+    private final CompetitionRepository competitionRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -86,12 +89,53 @@ public class TrialResultServiceImpl implements TrialResultService {
                 .map(trial -> {
                     List<ResultResponse> results = getResultsByTrialId(trial.getId());
                     return CompetitionResultsResponse.builder()
+                            .competitionId(competitionId)
+                            .competitionName(
+                                    trial.getCompetition() != null ? trial.getCompetition().getName() : null
+                            )
                             .trialId(trial.getId())
                             .trialName(trial.getTrialName() != null ? trial.getTrialName().name() : null)
                             .categoryGender(trial.getCategoryGender() != null ? trial.getCategoryGender().name() : null)
                             .roundName(trial.getRound() != null ? trial.getRound().getName().name() : null)
                             .results(results)
                             .build();
+                })
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PublicCompetitionSummaryResponse> getPublicCompetitionsWithResults() {
+        return competitionRepository.findAll().stream()
+                .map(competition -> {
+                    List<CompetitionResultsResponse> grouped = getResultsByCompetitionId(competition.getId());
+                    var allResults = grouped.stream()
+                            .flatMap(g -> g.getResults().stream())
+                            .toList();
+
+                    if (allResults.isEmpty()) {
+                        return null;
+                    }
+
+                    var latest = allResults.stream()
+                            .map(ResultResponse::getUpdatedAt)
+                            .filter(java.util.Objects::nonNull)
+                            .max(Comparator.naturalOrder())
+                            .orElse(null);
+
+                    return PublicCompetitionSummaryResponse.builder()
+                            .competitionId(competition.getId())
+                            .competitionName(competition.getName())
+                            .lastUpdatedAt(latest)
+                            .trialGroups(grouped)
+                            .build();
+                })
+                .filter(java.util.Objects::nonNull)
+                .sorted((a, b) -> {
+                    if (a.getLastUpdatedAt() == null && b.getLastUpdatedAt() == null) return 0;
+                    if (a.getLastUpdatedAt() == null) return 1;
+                    if (b.getLastUpdatedAt() == null) return -1;
+                    return b.getLastUpdatedAt().compareTo(a.getLastUpdatedAt());
                 })
                 .toList();
     }

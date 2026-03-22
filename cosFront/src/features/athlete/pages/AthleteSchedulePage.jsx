@@ -11,7 +11,9 @@ import {
   Chip,
   CircularProgress,
   Alert,
+  Stack,
 } from "@mui/material";
+import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import {
   ArrowBack as ArrowBackIcon,
   AccessTime as AccessTimeIcon,
@@ -61,6 +63,15 @@ const formatDateTime = (dateTimeString) => {
   });
 };
 
+const DEFAULT_ACCESS_DENIED =
+  "Votre participation est en attente de validation par le commissaire. Vous ne pouvez pas encore consulter votre planning.";
+
+const PAGE_BG =
+  "linear-gradient(165deg, #ecfeff 0%, #fef9c3 28%, #fff7ed 55%, #e0f2fe 100%)";
+
+const HEADER_IMAGE =
+  "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1600&q=75";
+
 export default function AthleteSchedulePage() {
   const navigate = useNavigate();
   const { competitionId } = useParams();
@@ -87,7 +98,7 @@ export default function AthleteSchedulePage() {
       setError(null);
       const data = await scheduleService.getAthleteSchedule(competitionId);
 
-      const sorted = [...data].sort(
+      const sorted = [...(data || [])].sort(
         (a, b) => new Date(a.startTime) - new Date(b.startTime)
       );
 
@@ -97,7 +108,7 @@ export default function AthleteSchedulePage() {
       if (err.response?.status === 404) {
         setError("Compétition non trouvée");
       } else if (err.response?.status === 403) {
-        setError("Vous n'avez pas accès à ce planning");
+        setError(err.response?.data?.message || DEFAULT_ACCESS_DENIED);
       } else {
         setError(
           err.response?.data?.message || "Erreur lors du chargement du planning"
@@ -182,14 +193,37 @@ export default function AthleteSchedulePage() {
     );
   }, [selectedTrial, athleteResults]);
 
+  const competitionHeading = schedule[0]?.competitionName || "";
+
   return (
     <Box
       sx={{
-        p: 4,
-        background: appTheme.gradients.page,
-        minHeight: "100vh",
+        width: "100%",
+        minHeight: "100%",
+        background: PAGE_BG,
+        mx: { xs: -3, sm: -4, md: -6 },
+        mt: { xs: -2, sm: -3 },
+        px: { xs: 2, sm: 3, md: 4 },
+        pt: { xs: 2, sm: 3 },
+        pb: 6,
       }}
     >
+      <Button
+        startIcon={<ArrowBackIcon />}
+        onClick={() => navigate("/athlete/competitions")}
+        sx={{
+          mb: 2.5,
+          textTransform: "none",
+          fontWeight: 700,
+          px: 3,
+          py: 1.1,
+          borderRadius: appTheme.radius.pill,
+          background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+          color: appTheme.colors.dark,
+        }}
+      >
+        Retour aux compétitions
+      </Button>
       <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
         <Button
           startIcon={<ArrowBackIcon />}
@@ -225,29 +259,94 @@ export default function AthleteSchedulePage() {
         </Button>
       </Box>
 
-      <Typography
+      <Box
         sx={{
-          fontSize: 32,
-          fontWeight: 900,
-          color: appTheme.colors.dark,
-          letterSpacing: "-0.5px",
-          mb: 1,
+          position: "relative",
+          borderRadius: 3,
+          overflow: "hidden",
+          mb: 4,
+          border: "1px solid rgba(15, 39, 68, 0.1)",
+          boxShadow: "0 12px 40px rgba(15, 39, 68, 0.1)",
         }}
       >
-        Mon Planning
-      </Typography>
-
-      {schedule.length > 0 && (
-        <Typography
+        <Box
           sx={{
-            fontSize: 15,
-            color: appTheme.colors.textMuted,
-            mb: 4,
+            position: "absolute",
+            inset: 0,
+            backgroundImage: `url(${HEADER_IMAGE})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center 45%",
+            transform: "scale(1.05)",
+            filter: "blur(4px)",
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background:
+              "linear-gradient(115deg, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0.72) 50%, rgba(234,88,12,0.35) 100%)",
+          }}
+        />
+        <Box
+          sx={{
+            position: "relative",
+            p: { xs: 2.5, md: 3.5 },
           }}
         >
-          {schedule[0]?.competitionName}
-        </Typography>
-      )}
+          <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ mb: 2 }}>
+            <Chip
+              icon={<ScheduleOutlinedIcon sx={{ fontSize: 18, color: "#fef08a !important" }} />}
+              label="Planning compétition"
+              size="small"
+              sx={{
+                fontWeight: 800,
+                backgroundColor: "rgba(255,255,255,0.15)",
+                color: "#fff",
+                border: "1px solid rgba(255,255,255,0.35)",
+              }}
+            />
+          </Stack>
+          <Typography
+            component="h1"
+            sx={{
+              fontSize: { xs: "1.75rem", md: "2.15rem" },
+              fontWeight: 900,
+              color: "#fff",
+              letterSpacing: "-0.03em",
+              lineHeight: 1.15,
+              mb: 1.5,
+              textShadow: "0 2px 14px rgba(0,0,0,0.35)",
+            }}
+          >
+            Mon planning
+            {competitionHeading ? (
+              <>
+                <Box component="span" sx={{ color: "rgba(255,255,255,0.75)", fontWeight: 700 }}>
+                  {" "}
+                  —{" "}
+                </Box>
+                <Box component="span" sx={{ color: "#fde047" }}>{competitionHeading}</Box>
+              </>
+            ) : null}
+          </Typography>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              maxWidth: 640,
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.25)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            <Typography sx={{ fontSize: 15, color: "rgba(255,255,255,0.95)", lineHeight: 1.65 }}>
+              Horaires, phases et lieux de vos épreuves. Vous pouvez déclarer forfait selon les règles de
+              la compétition (tant que l&apos;épreuve n&apos;a pas réellement commencé côté organisation).
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
@@ -261,12 +360,13 @@ export default function AthleteSchedulePage() {
         <Box
           sx={{
             p: 4,
-            borderRadius: appTheme.radius.lg,
-            background: appTheme.colors.darkSoft,
+            borderRadius: 3,
+            background: "rgba(255,255,255,0.75)",
+            border: "1px dashed rgba(14, 165, 233, 0.35)",
             textAlign: "center",
           }}
         >
-          <Typography color={appTheme.colors.textMuted}>
+          <Typography sx={{ color: "#64748b", fontWeight: 600 }}>
             Aucune épreuve trouvée pour cette compétition
           </Typography>
         </Box>
@@ -276,20 +376,23 @@ export default function AthleteSchedulePage() {
             display: "flex",
             flexWrap: "wrap",
             gap: 3,
+            justifyContent: "flex-start",
           }}
         >
           {schedule.map((trial, index) => {
             const canDeclareForfeit =
               trial.trialParticipantId &&
-              trial.trialStatus === "UPCOMING" &&
-              trial.participantStatus !== "FORFEIT";
+              trial.participantStatus !== "FORFEIT" &&
+              trial.trialStatus !== "COMPLETED" &&
+              trial.trialStatus !== "CANCELLED";
 
             return (
               <Card
                 key={trial.trialParticipantId || trial.trialId || index}
                 sx={{
                   width: 400,
-                  minWidth: 400,
+                  maxWidth: "100%",
+                  minWidth: { xs: "100%", sm: 360 },
                   display: "flex",
                   flexDirection: "column",
                   borderRadius: appTheme.radius.lg,
@@ -446,9 +549,16 @@ export default function AthleteSchedulePage() {
                     )}
                   </Box>
 
-                  <Box sx={{ mt: 3 }}>
+                  <Box
+                    sx={{
+                      mt: 3,
+                      display: "flex",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
                     {trial.participantStatus === "FORFEIT" ? (
-                      <Alert severity="warning">
+                      <Alert severity="warning" sx={{ width: "100%" }}>
                         Vous avez déclaré forfait pour cette épreuve.
                       </Alert>
                     ) : canDeclareForfeit ? (
