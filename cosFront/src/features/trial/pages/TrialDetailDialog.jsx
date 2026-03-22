@@ -21,6 +21,7 @@ import {
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
+import HtmlContent from "../../../common/components/HtmlContent";
 
 const TRIAL_NAME_OPTIONS = [
   { value: "FIFTY_M_FREESTYLE", label: "50m nage libre" },
@@ -53,12 +54,6 @@ const CATEGORY_OPTIONS = [
   { value: "FEMALE", label: "Femme" },
   { value: "MIXTE", label: "Mixte" },
 ];
-
-const SITE_OPTIONS = [
-  { value: 1, label: "Site 1 - Piscine principale" },
-  { value: 2, label: "Site 2 - Piscine secondaire" },
-];
-
 
 const getLabelFromEnum = (value, options) => {
   const option = options.find((opt) => opt.value === value);
@@ -175,8 +170,8 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
               <DetailRow label="Type d'épreuve" value={getLabelFromEnum(trial.trialName, TRIAL_NAME_OPTIONS)} />
               <DetailRow label="Mode" value={getLabelFromEnum(trial.mode, MODE_OPTIONS)} />
               <DetailRow label="Catégorie" value={getLabelFromEnum(trial.categoryGender, CATEGORY_OPTIONS)} />
-              <DetailRow label="Site" value={getLabelFromEnum(trial.siteId, SITE_OPTIONS)} />
-              <DetailRow label="Round" value={trial.roundDisplayName || "-"} />
+              <DetailRow label="Site" value={trial.siteAddress || "-"} />
+              <DetailRow label="Phase" value={trial.roundDisplayName || "-"} />
             </Grid>
             <Grid item xs={12} md={6}>
               <DetailRow label="Date" value={formatDate(trial.startDate)} />
@@ -190,18 +185,20 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
           {(trial.description || trial.rules) && (
             <>
               <Divider sx={{ my: 2 }} />
-              {trial.description && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography sx={{ fontWeight: 600, color: "#555", mb: 1 }}>Description</Typography>
-                  <Typography sx={{ whiteSpace: "pre-wrap" }}>{trial.description}</Typography>
-                </Box>
-              )}
-              {trial.rules && (
-                <Box>
-                  <Typography sx={{ fontWeight: 600, color: "#555", mb: 1 }}>Règles</Typography>
-                  <Typography sx={{ whiteSpace: "pre-wrap" }}>{trial.rules}</Typography>
-                </Box>
-              )}
+              <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {trial.description && (
+                  <Box sx={{ flex: "1 1 45%" }}>
+                    <Typography sx={{ fontWeight: 600, color: "#555", mb: 1 }}>Description</Typography>
+                    <HtmlContent html={trial.description} />
+                  </Box>
+                )}
+                {trial.rules && (
+                  <Box sx={{ flex: "1 1 45%" }}>
+                    <Typography sx={{ fontWeight: 600, color: "#555", mb: 1 }}>Règles</Typography>
+                    <HtmlContent html={trial.rules} />
+                  </Box>
+                )}
+              </Box>
             </>
           )}
         </Box>}
@@ -221,18 +218,18 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Nom</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Prénom</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Participant</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {participants.map((p, i) => (
                     <TableRow key={p.id}>
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell>{p.athleteLastName}</TableCell>
-                      <TableCell>{p.athleteFirstName}</TableCell>
-                      <TableCell>{p.athleteEmail}</TableCell>
+                      <TableCell>{p.displayName}</TableCell>
+                      <TableCell>
+                        {p.competitorType === "TEAM" ? "Équipe" : "Athlète"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

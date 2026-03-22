@@ -5,8 +5,10 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
@@ -29,8 +31,8 @@ import com.ciblorgasport.trial.round.infrastructure.RoundRepository;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -159,7 +161,7 @@ public class TrialServiceImpl implements TrialService {
         if (roundName == RoundName.QUALIFICATION_HEAT) {
             // Auto-generate roundNumber: MAX(existing) + 1, starting at 1
             Integer maxRoundNumber = trialRepository.findMaxRoundNumber(
-                competition, request.getTrialName(), request.getCategoryGender(), round);
+                competition, request.getTrialName(), request.getCategoryGender(), request.getMode(), round);
             roundNumber = (maxRoundNumber != null) ? maxRoundNumber + 1 : 1;
 
         } else if (roundName == RoundName.DEMI_FINALE) {
@@ -246,28 +248,36 @@ public class TrialServiceImpl implements TrialService {
         return TrialResponse.fromEntity(updatedTrial);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public TrialResponse getById(Long id) {
-        return TrialResponse.fromEntity(getTrialByIdOrThrow(id));
+        Trial trial = trialRepository.findOneWithAssociationsById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Épreuve introuvable avec l'ID: " + id));
+        return TrialResponse.fromEntity(trial);
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<TrialResponse> getAll() {
-        return trialRepository.findAll().stream()
+        return trialRepository.findAllWithAssociations().stream()
                 .map(TrialResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<TrialResponse> getByCompetitionId(Long competitionId) {
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + competitionId));
-
-        return trialRepository.findByCompetition(competition).stream()
+        if (!competitionRepository.existsById(competitionId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Compétition introuvable avec l'ID: " + competitionId);
+        }
+        return trialRepository.findByCompetitionId(competitionId).stream()
                 .map(TrialResponse::fromEntity)
                 .collect(Collectors.toList());
     }
-    
+
+    @Transactional(readOnly = true)
     @Override
     public List<TrialResponse> getTrialsForAthlete(Long competitionId, Long athleteId) {
         Participation participation = participationRepository
@@ -315,6 +325,8 @@ public class TrialServiceImpl implements TrialService {
         Trial cancelledTrial = trialRepository.save(trial);
         return TrialResponse.fromEntity(cancelledTrial);
     }
+
+    @Transactional(readOnly = true)
     @Override
     public List<TrialResponse> getTrialsBySiteAndPeriod(Long siteId, LocalDateTime start, LocalDateTime end) {
         return trialRepository.findBySiteAndPeriod(

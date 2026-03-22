@@ -1,5 +1,7 @@
 package com.ciblorgasport.trial.domain;
 
+import org.springframework.stereotype.Component;
+
 import com.ciblorgasport.competition.domain.CompetitorType;
 
 /**
@@ -8,6 +10,7 @@ import com.ciblorgasport.competition.domain.CompetitorType;
  * Seuls les athlètes ({@link CompetitorType#ATHLETE}) peuvent s'inscrire.
  * Le nombre maximum par série est fixé à {@value #MAX_PER_HEAT}.
  */
+@Component
 public class IndividualTrialModeStrategy implements TrialModeStrategy {
 
     private static final int MAX_PER_HEAT = 8;

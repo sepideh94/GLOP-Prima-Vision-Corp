@@ -23,6 +23,8 @@ import com.ciblorgasport.incident.dto.IncidentCreateRequest;
 import com.ciblorgasport.incident.dto.IncidentResponse;
 import com.ciblorgasport.incident.dto.IncidentUpdateRequest;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
+import com.ciblorgasport.notification.application.IncidentNotificationService;
+import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.domain.Trial;
@@ -42,6 +44,8 @@ public class IncidentServiceImpl implements IncidentService {
     private final SiteRepository siteRepository;
     private final TrialRepository trialRepository;
     private final AnalyticsService analyticsService;
+    private final IncidentNotificationService incidentNotificationService;
+    private final NotificationService notificationService;
 
     @Override
     public IncidentResponse create(UserAccount actor, IncidentCreateRequest req) {
@@ -70,6 +74,7 @@ public class IncidentServiceImpl implements IncidentService {
         Incident saved = incidentRepository.saveAndFlush(incident);
         System.out.println("=== TRACKING INCIDENT ===");
         analyticsService.logAction(actor.getEmail(), "INCIDENT_CREATED", "Titre: " + req.getTitle());
+        incidentNotificationService.notifyIncidentCreated(saved);
         return toResponse(saved);
     }
 
@@ -97,6 +102,7 @@ public class IncidentServiceImpl implements IncidentService {
         incident.setTrial(trial);
 
         Incident saved = incidentRepository.saveAndFlush(incident);
+        incidentNotificationService.notifyIncidentUpdated(saved);
         return toResponse(saved);
     }
 
@@ -108,7 +114,13 @@ public class IncidentServiceImpl implements IncidentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable."));
 
         incident.setStatus(status);
-        return toResponse(incidentRepository.saveAndFlush(incident));
+        Incident saved = incidentRepository.saveAndFlush(incident);
+
+        if (status == IncidentStatus.RESOLU) {
+            incidentNotificationService.notifyIncidentResolved(saved);
+        }
+
+        return toResponse(saved);
     }
 
     @Override
@@ -118,6 +130,10 @@ public class IncidentServiceImpl implements IncidentService {
         if (!incidentRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Incident introuvable.");
         }
+
+        // Suppression des notifications liées avant de supprimer l'incident
+        // pour éviter les violations de clé étrangère (notification.incident_id -> incident.id).
+        notificationService.deleteByIncidentId(id);
         incidentRepository.deleteById(id);
     }
 

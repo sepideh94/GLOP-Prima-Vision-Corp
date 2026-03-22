@@ -288,10 +288,25 @@ export default function IncidentFormDialog({
 
       console.error(err);
 
-      setError(
-        err.response?.data?.message ||
-        "Une erreur interne est survenue."
-      );
+      const apiMessage = err?.response?.data?.message;
+      const fallback = "Une erreur interne est survenue.";
+      const message = typeof apiMessage === "string" ? apiMessage : "";
+      const lower = message.toLowerCase();
+
+      // Message métier déjà présent côté backend, rendu plus actionnable côté UI.
+      if (
+        lower.includes("compétition terminée") ||
+        lower.includes("competition terminee") ||
+        lower.includes("competition terminée") ||
+        lower.includes("compétition terminée")
+      ) {
+        setError(
+          "Impossible de déclarer cet incident sur une compétition terminée. Choisissez une compétition en cours (ou retirez le lien vers la compétition)."
+        );
+        return;
+      }
+
+      setError(message || fallback);
 
     }
 

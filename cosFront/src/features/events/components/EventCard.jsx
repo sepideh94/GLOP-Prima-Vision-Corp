@@ -1,6 +1,7 @@
 import { Box, Typography, Button } from "@mui/material";
 import { CalendarToday, Edit } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import HtmlContent from "../../../common/components/HtmlContent";
 
 export default function EventCard({ event, isAdmin, onEdit }) {
   const navigate = useNavigate();
@@ -63,14 +64,19 @@ export default function EventCard({ event, isAdmin, onEdit }) {
           </Typography>
 
           {event.description && (
-            <Typography
-              variant="body2"
-              sx={{ color: "#cbd5f5", mt: 0.5 }}
-            >
-              {event.description.length > 250
-                ? `${event.description.substring(0, 250)}...`
-                : event.description}
-            </Typography>
+            <HtmlContent
+              html={event.description}
+              sx={{
+                color: "#cbd5f5",
+                mt: 0.5,
+                fontSize: "0.875rem",
+                display: "-webkit-box",
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                "& p:last-child": { marginBottom: 0 },
+              }}
+            />
           )}
 
           <Box sx={{ display: "flex", gap: 3, mt: 1 }}>

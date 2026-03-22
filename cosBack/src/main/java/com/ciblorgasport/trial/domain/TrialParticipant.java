@@ -2,10 +2,12 @@ package com.ciblorgasport.trial.domain;
 
 import java.time.LocalDateTime;
 
-import com.ciblorgasport.athlete.domain.Athlete;
+import com.ciblorgasport.competition.domain.CompetitorType;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,7 +23,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "trial_participant", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"trial_id", "athlete_id"})
+    @UniqueConstraint(columnNames = {"trial_id", "competitor_id", "competitor_type"})
 })
 @Data
 @NoArgsConstructor
@@ -37,11 +39,35 @@ public class TrialParticipant {
     @JoinColumn(name = "trial_id", nullable = false)
     private Trial trial;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "athlete_id", nullable = false)
-    private Athlete athlete;
+    @Column(name = "competitor_id", nullable = false)
+    private Long competitorId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "competitor_type", nullable = false)
+    private CompetitorType competitorType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    @Builder.Default
+    private TrialParticipantStatus status = TrialParticipantStatus.ACTIVE;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    public void declareForfeit() {
+        if (this.trial != null && this.trial.hasStarted()) {
+            throw new IllegalStateException("L'épreuve a déjà commencé.");
+        }
+
+        if (this.status == TrialParticipantStatus.FORFEIT) {
+            throw new IllegalStateException("Le forfait a déjà été déclaré pour cette épreuve.");
+        }
+
+        this.status = TrialParticipantStatus.FORFEIT;
+        this.updatedAt = LocalDateTime.now();
+    }
 }

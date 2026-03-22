@@ -17,7 +17,17 @@ import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.storage.application.StorageService;
 import com.ciblorgasport.storage.domain.Document;
+import com.ciblorgasport.team.application.TeamValidationService;
+import com.ciblorgasport.commissionner.CommissionerRepository;
+import com.ciblorgasport.commissionner.Commissionner;
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+import com.ciblorgasport.notification.domain.NotificationType;
+import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.dto.TrialParticipantResponse;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 
+import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +39,12 @@ public class AthleteService {
     private final AthleteRepository athleteRepository;
     private final ParticipationRepository participationRepository;
     private final StorageService storageService;
+    private final TeamValidationService teamValidationService;
+    private final CommissionerRepository commissionerRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
+    private final UserAccountRepository userAccountRepository;
+    private final TrialParticipantRepository trialParticipantRepository;
 
     @Transactional
     public List<AthleteResponse> getAllAthletes() {
@@ -88,41 +104,84 @@ public class AthleteService {
         Athlete athlete = athleteRepository.findById(athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
 
-        boolean wasCharterAcceptedBefore = athlete.isHasAcceptedCharte();
-
         if (request.getNationality() != null) athlete.setNationality(request.getNationality());
         if (request.getBirthDate() != null) athlete.setBirthDate(request.getBirthDate());
         if (request.getSexe() != null) athlete.setSexe(request.getSexe());
         if (request.getPassportNumber() != null) athlete.setPassportNumber(request.getPassportNumber());
 
         if (request.getHasAcceptedCharte() != null) {
-            athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
-
-            if (request.getHasAcceptedCharte() && !wasCharterAcceptedBefore) {
+            if (request.getHasAcceptedCharte() && !athlete.isHasAcceptedCharte()) {
                 athlete.setCharterAcceptedAt(LocalDateTime.now());
             }
+            athlete.setHasAcceptedCharte(request.getHasAcceptedCharte());
         }
 
         Athlete saved = athleteRepository.save(athlete);
-        checkAndConfirmParticipations(saved);
+
+        this.checkAndConfirmParticipations(saved);
 
         return AthleteResponse.fromEntity(saved);
     }
 
     private void checkAndConfirmParticipations(Athlete athlete) {
-        if (!athlete.isProfileComplete()) {
-            return;
+        if (athlete.isProfileComplete() && athlete.isHasAcceptedCharte()) {
+            List<Participation> participations = participationRepository
+                    .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
+
+            boolean newlySubmitted = false;
+
+            for (Participation p : participations) {
+                if (p.getStatus() == ParticipationStatus.PENDING) {
+                    p.setStatus(ParticipationStatus.PENDING_VALIDATION);
+                    newlySubmitted = true;
+                } else if (p.getStatus() != ParticipationStatus.CONFIRMED && p.getStatus() != ParticipationStatus.PENDING_VALIDATION) {
+                    p.setStatus(ParticipationStatus.PENDING_VALIDATION);
+                    newlySubmitted = true;
+                } else if (p.getStatus() == ParticipationStatus.PENDING_VALIDATION) {
+                    // Already pending validation, no newly submitted state change
+                }
+
+                p.setCharterAccepted(true);
+                p.setCharterAcceptedAt(athlete.getCharterAcceptedAt());
+
+                participationRepository.saveAndFlush(p);
+
+                teamValidationService.validateTeamStatus(athlete.getId(), p.getCompetition().getId());
+            }
+
+            if (newlySubmitted) {
+                List<Commissionner> commissionners = commissionerRepository.findAll();
+                String athleteName = athlete.getFirstName() + " " + athlete.getLastName();
+                for (Commissionner c : commissionners) {
+                    userAccountRepository.findById(c.getId()).ifPresent(user -> {
+                        emailService.sendCommissionerParticipationSubmittedEmail(user.getEmail(), user.getFirstName(), athleteName);
+                        notificationService.createSystemNotification(
+                            user, 
+                            NotificationType.PARTICIPATION_SUBMITTED, 
+                            "Nouveaux documents", 
+                            "L'athlète " + athleteName + " a soumis ses documents justificatifs.", 
+                            "/commissioner/participations"
+                        );
+                    });
+                }
+            }
         }
+    }
 
-        List<Participation> participations = participationRepository
-                .findByCompetitorIdAndCompetitorType(athlete.getId(), CompetitorType.ATHLETE);
+    @Transactional
+    public TrialParticipantResponse declareTrialForfeit(Long athleteId, Long participationId) {
+        athleteRepository.findById(athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
 
-        participations.stream()
-                .filter(p -> p.getStatus() == ParticipationStatus.INVITED
-                        || p.getStatus() == ParticipationStatus.PENDING)
-                .forEach(p -> p.setStatus(ParticipationStatus.CONFIRMED));
+        TrialParticipant participant = trialParticipantRepository
+                .findAccessibleByIdForAthlete(participationId, athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
 
-        participationRepository.saveAll(participations);
+        participant.declareForfeit();
+
+        TrialParticipant saved = trialParticipantRepository.save(participant);
+
+        return TrialParticipantResponse.fromEntity(saved);
     }
 
     @Transactional

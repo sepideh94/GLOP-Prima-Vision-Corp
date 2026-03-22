@@ -3,3 +3,13 @@ nul
 
 # Dependencies
 node_modules/
+
+# Local AI/tooling folders
+.claude/
+
+# Error and runtime logs
+*.log
+logs/
+
+hs_err_pid*
+replay_pid*

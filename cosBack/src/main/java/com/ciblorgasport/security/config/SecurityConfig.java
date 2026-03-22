@@ -117,7 +117,20 @@ public class SecurityConfig {
                 .requestMatchers("/api/schedule/volunteer/**").hasRole("VOLONTEER")
                 .requestMatchers("/api/schedule/athlete/**").hasRole("ATHLETE")
                 
+                // Résultats publics (classement)
+                .requestMatchers(HttpMethod.GET, "/api/public/trials/{id}/results").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/competitions/{id}/results").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/competitions/with-results").permitAll()
+                // Résultats publics (classement) — un segment d’id (PathPattern : pas de suite après **)
+                .requestMatchers(HttpMethod.GET, "/api/public/trials/*/results").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/public/competitions/*/results").permitAll()
                 .requestMatchers("/api/public/participation").permitAll()
+
+                // Carte spectateur / lieux proches (sans JWT)
+                .requestMatchers(HttpMethod.GET, "/api/fan-zones/nearby").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/trials/nearby").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/directions").permitAll()
+
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authenticationProvider())

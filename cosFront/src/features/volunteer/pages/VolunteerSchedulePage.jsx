@@ -15,6 +15,7 @@ import {
   Assignment as AssignmentIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
+import HtmlContent from "../../../common/components/HtmlContent";
 import scheduleService from "../../schedule/services/scheduleService";
 
 const STATUS_LABELS = {
@@ -170,15 +171,14 @@ export default function VolunteerSchedulePage() {
                   </Box>
 
                   {mission.description && (
-                    <Typography
+                    <HtmlContent
+                      html={mission.description}
                       sx={{
                         fontSize: 14,
                         color: appTheme.colors.textMuted,
                         mb: 2,
                       }}
-                    >
-                      {mission.description}
-                    </Typography>
+                    />
                   )}
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>

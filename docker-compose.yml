@@ -55,7 +55,9 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY:-minioadmin}
       S3_BUCKET_NAME: ${S3_BUCKET_NAME:-ciblorgasport-documents}
       S3_REGION: ${S3_REGION:-eu-north-1}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      # Le profil `local` configure MinIO (endpoint + credentials) et,
+      # depuis la modif de `application-local.properties`, la DB utilise aussi DB_HOST.
+      SPRING_PROFILES_ACTIVE: local
 
     ports:
       - "8083:8083"
@@ -74,6 +76,9 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8083}
+        VITE_GOOGLE_MAPS_API_KEY: ${VITE_GOOGLE_MAPS_API_KEY}
+        # Sans cela, le build prod (Docker) a import.meta.env.DEV === false : le fallback GPS ne s’active jamais
+        VITE_GEO_FALLBACK: ${VITE_GEO_FALLBACK:-true}
     container_name: ciblorgasport-frontend
     ports:
       - "3000:80"

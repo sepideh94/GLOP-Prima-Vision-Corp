@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -79,6 +80,15 @@ class CommissionnerControllerTest {
     private Trial testTrial;
     private Commissionner testCommissioner;
 
+    @MockBean
+    private com.ciblorgasport.email.EmailService emailService;
+    
+    @MockBean
+    private com.ciblorgasport.storage.application.StorageService storageService;
+    
+    @MockBean
+    private com.ciblorgasport.notification.application.NotificationService notificationService;
+
     @BeforeEach
     void setUp() {
         // Créer un commissioner pour les tests d'annulation
@@ -87,6 +97,7 @@ class CommissionnerControllerTest {
         testCommissioner.setFirstName("Test");
         testCommissioner.setLastName("Commissioner");
         testCommissioner.setPassword("password123");
+        testCommissioner.setAccredited(true);
         testCommissioner = userAccountRepository.save(testCommissioner);
 
         // Créer un événement
@@ -165,7 +176,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Accès commissioner aux endpoints doit être autorisé")
         void commissionerAccess_ShouldBeAllowed() throws Exception {
             mockMvc.perform(get("/api/commissioner/events/" + testEvent.getId() + "/competitions"))
@@ -180,7 +191,7 @@ class CommissionnerControllerTest {
     class GetCompetitionsByEventTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner la liste des compétitions pour un événement existant")
         void getCompetitionsByEvent_WithExistingEvent_ShouldReturnCompetitions() throws Exception {
             mockMvc.perform(get("/api/commissioner/events/" + testEvent.getId() + "/competitions"))
@@ -191,7 +202,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner une liste vide pour un événement sans compétitions")
         void getCompetitionsByEvent_WithNoCompetitions_ShouldReturnEmptyList() throws Exception {
             // Créer un nouvel événement sans compétitions
@@ -207,7 +218,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner plusieurs compétitions si elles existent")
         void getCompetitionsByEvent_WithMultipleCompetitions_ShouldReturnAll() throws Exception {
             // Ajouter une deuxième compétition
@@ -231,7 +242,7 @@ class CommissionnerControllerTest {
     class GetTrialsByCompetitionTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner la liste des épreuves pour une compétition existante")
         void getTrialsByCompetition_WithExistingCompetition_ShouldReturnTrials() throws Exception {
             mockMvc.perform(get("/api/commissioner/competitions/" + testCompetition.getId() + "/trials"))
@@ -242,7 +253,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner une liste vide pour une compétition sans épreuves")
         void getTrialsByCompetition_WithNoTrials_ShouldReturnEmptyList() throws Exception {
             // Créer une nouvelle compétition sans épreuves
@@ -259,7 +270,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner plusieurs épreuves si elles existent")
         void getTrialsByCompetition_WithMultipleTrials_ShouldReturnAll() throws Exception {
             // Ajouter une deuxième épreuve
@@ -289,7 +300,7 @@ class CommissionnerControllerTest {
     class UpdateTrialTests {
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit mettre à jour une épreuve avec des données valides")
         void updateTrial_WithValidData_ShouldReturnUpdatedTrial() throws Exception {
             String updateJson = String.format("""
@@ -330,7 +341,7 @@ class CommissionnerControllerTest {
         }
 
         @Test
-        @WithMockUser(roles = "COMMISSIONNER")
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
         @DisplayName("Doit retourner 400 avec des données invalides")
         void updateTrial_WithInvalidData_ShouldReturnBadRequest() throws Exception {
             // Missing required fields
@@ -412,6 +423,56 @@ class CommissionnerControllerTest {
 
             mockMvc.perform(patch("/api/commissioner/trials/" + testTrial.getId() + "/cancel"))
                     .andExpect(status().isBadRequest());
+        }
+    } // close previous class
+
+    // ==================== TESTS REFUSE PARTICIPATION ====================
+
+    @Nested
+    @DisplayName("POST /api/commissioner/participations/{id}/refuse")
+    class RefuseParticipationTests {
+
+        @Autowired
+        private com.ciblorgasport.athlete.infrastructure.AthleteRepository athleteRepository;
+        
+        @Autowired
+        private com.ciblorgasport.competition.infrastructure.ParticipationRepository participationRepository;
+
+        @Test
+        @WithMockUser(username = "commissioner@test.com", roles = "COMMISSIONNER")
+        @DisplayName("Doit refuser une participation avec un document cible et un motif")
+        void refuseParticipation_WithValidPayload_ShouldReturnOk() throws Exception {
+            // Créer un athlète
+            com.ciblorgasport.athlete.domain.Athlete athlete = new com.ciblorgasport.athlete.domain.Athlete();
+            athlete.setFirstName("Refused");
+            athlete.setLastName("Athlete");
+            athlete.setEmail("refused@example.com");
+            athlete.setPassword("password123");
+            athlete = athleteRepository.save(athlete);
+
+            // Créer une participation
+            com.ciblorgasport.competition.domain.Participation participation = new com.ciblorgasport.competition.domain.Participation();
+            participation.setCompetitorId(athlete.getId());
+            participation.setCompetitorType(com.ciblorgasport.competition.domain.CompetitorType.ATHLETE);
+            participation.setCompetition(testCompetition);
+            participation.setStatus(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING_VALIDATION);
+            participation = participationRepository.save(participation);
+
+            String payload = """
+                {
+                    "rejectedDocument": "PASSPORT",
+                    "reason": "Document expiré depuis 2023"
+                }
+                """;
+
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/commissioner/participations/" + participation.getId() + "/refuse")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .content(payload))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk());
+
+            // Check if status changed
+            com.ciblorgasport.competition.domain.Participation updated = participationRepository.findById(participation.getId()).orElseThrow();
+            assertEquals(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING, updated.getStatus());
         }
     }
 }

@@ -35,6 +35,9 @@ import {
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon,
   LockReset as LockResetIcon,
+  Description as DescriptionIcon,
+  TaskAlt as TaskAltIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import userService from "../services/userService";
@@ -55,6 +58,9 @@ export default function UsersManagementPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmActionType, setConfirmActionType] = useState(null);
+  const [openRefuseAccreditationDialog, setOpenRefuseAccreditationDialog] = useState(false);
+  const [refuseReason, setRefuseReason] = useState("");
+  const [accreditationAvailability, setAccreditationAvailability] = useState({});
 
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState("");
@@ -76,26 +82,49 @@ export default function UsersManagementPage() {
     try {
       setLoading(true);
       const response = await userService.getUsers();
-      
+
       // L'endpoint retourne une liste simple d'utilisateurs (List<UserResponse>)
       if (Array.isArray(response)) {
         setUsers(response);
         setTotalPages(Math.ceil(response.length / ITEMS_PER_PAGE));
+        await preloadAccreditationAvailability(response);
       } else {
         setUsers([]);
         setTotalPages(1);
+        setAccreditationAvailability({});
       }
     } catch (err) {
       console.error("Erreur lors du chargement des utilisateurs:", err);
       setError(
         err.response?.data?.message ||
-          "Erreur lors du chargement des utilisateurs"
+          "Erreur lors du chargement des utilisateurs",
       );
       setOpenSnackbar(true);
       setUsers([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const preloadAccreditationAvailability = async (userList) => {
+    const commissioners = (userList || []).filter((u) => isCommissionerRole(u.role));
+    if (commissioners.length === 0) {
+      setAccreditationAvailability({});
+      return;
+    }
+
+    const checks = await Promise.all(
+      commissioners.map(async (u) => {
+        try {
+          await userService.downloadCommissionerAccreditation(u.id);
+          return [u.id, true];
+        } catch {
+          return [u.id, false];
+        }
+      })
+    );
+
+    setAccreditationAvailability(Object.fromEntries(checks));
   };
 
   const handleOpenCreate = () => {
@@ -126,47 +155,55 @@ export default function UsersManagementPage() {
       }
 
       console.log("Payload envoyé:", payload);
-      
+
       const result = await userService.createCommissioner(payload);
       console.log("Commissaire créé avec succès:", result);
-      
+
       // Afficher un message de succès indiquant qu'un email a été envoyé
       setSuccessMessage(
-        `Commissaire créé avec succès. Un email d'invitation a été envoyé à ${result.email || payload.email}.`
+        `Commissaire créé avec succès. Un email d'invitation a été envoyé à ${result.email || payload.email}.`,
       );
       setOpenSnackbar(true);
       setOpenForm(false);
-      
+
       // Recharger la liste des utilisateurs
       loadUsers();
     } catch (err) {
       console.error("Erreur complète:", err);
       console.error("Response status:", err.response?.status);
-      console.error("Response data:", JSON.stringify(err.response?.data, null, 2));
-      
+      console.error(
+        "Response data:",
+        JSON.stringify(err.response?.data, null, 2),
+      );
+
       // Extraire le message d'erreur du backend (format ApiError)
       let errorMsg = "Erreur lors de la création du commissaire";
-      
+
       if (err.response?.data) {
         const data = err.response.data;
-        
+
         // Format ApiError du backend
         if (data.message) {
           errorMsg = data.message;
-          
+
           // Si il y a des erreurs de validation, les ajouter
-          if (data.validationErrors && Object.keys(data.validationErrors).length > 0) {
-            const validationMsgs = Object.values(data.validationErrors).join(', ');
+          if (
+            data.validationErrors &&
+            Object.keys(data.validationErrors).length > 0
+          ) {
+            const validationMsgs = Object.values(data.validationErrors).join(
+              ", ",
+            );
             errorMsg += ` : ${validationMsgs}`;
           }
         }
         // Si c'est une string
-        else if (typeof data === 'string') {
+        else if (typeof data === "string") {
           errorMsg = data;
         }
         // Si c'est un tableau d'erreurs
         else if (Array.isArray(data)) {
-          errorMsg = data.map(e => e.message || e).join(', ');
+          errorMsg = data.map((e) => e.message || e).join(", ");
         }
         // Si c'est un objet avec une erreur
         else if (data.error) {
@@ -175,7 +212,7 @@ export default function UsersManagementPage() {
       } else if (err.message) {
         errorMsg = err.message;
       }
-      
+
       throw new Error(errorMsg);
     }
   };
@@ -187,8 +224,7 @@ export default function UsersManagementPage() {
       setOpenDetailsDialog(true);
     } catch (err) {
       setError(
-        err.response?.data?.message ||
-          "Erreur lors du chargement des détails"
+        err.response?.data?.message || "Erreur lors du chargement des détails",
       );
       setOpenSnackbar(true);
     }
@@ -205,19 +241,19 @@ export default function UsersManagementPage() {
     setConfirmActionType("toggle");
     setConfirmAction(() => async () => {
       try {
-        const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+        const isActive = user.isAccountActive;
         await userService.toggleUserStatus(user.id, !isActive);
         setSuccessMessage(
           isActive
             ? "Utilisateur désactivé avec succès"
-            : "Utilisateur activé avec succès"
+            : "Utilisateur activé avec succès",
         );
         setOpenSnackbar(true);
         loadUsers();
       } catch (err) {
         setError(
           err.response?.data?.message ||
-            "Erreur lors de la modification du statut"
+            "Erreur lors de la modification du statut",
         );
         setOpenSnackbar(true);
       }
@@ -236,7 +272,7 @@ export default function UsersManagementPage() {
       } catch (err) {
         setError(
           err.response?.data?.message ||
-            "Erreur lors de la réinitialisation du mot de passe"
+            "Erreur lors de la réinitialisation du mot de passe",
         );
         setOpenSnackbar(true);
       }
@@ -260,6 +296,87 @@ export default function UsersManagementPage() {
     setSuccessMessage(null);
   };
 
+  const isCommissionerRole = (role) => {
+    const value = (role || "").toUpperCase();
+    return value === "COMMISSIONER" || value === "ROLE_COMMISSIONER" || value === "COMMISSIONNER" || value === "ROLE_COMMISSIONNER";
+  };
+
+  const openBlob = (blob, filename) => {
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleViewAccreditation = async (user) => {
+    try {
+      const blob = await userService.downloadCommissionerAccreditation(user.id);
+      openBlob(blob, `accreditation-commissioner-${user.id}`);
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: true }));
+    } catch (err) {
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: false }));
+      setError(
+        "Impossible d'ouvrir le document d'accréditation (aucun document soumis pour ce commissaire)."
+      );
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleValidateAccreditation = async (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Validation impossible : aucun document CEN soumis par ce commissaire.");
+      setOpenSnackbar(true);
+      return;
+    }
+    try {
+      await userService.validateCommissionerAccreditation(user.id);
+      setSuccessMessage("Accréditation validée avec succès.");
+      setOpenSnackbar(true);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors de la validation de l'accréditation."
+      );
+      setOpenSnackbar(true);
+    }
+  };
+
+  const handleOpenRefuseAccreditation = (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Refus impossible : aucun document CEN soumis par ce commissaire.");
+      setOpenSnackbar(true);
+      return;
+    }
+    setSelectedUser(user);
+    setRefuseReason("");
+    setOpenRefuseAccreditationDialog(true);
+  };
+
+  const handleSubmitRefuseAccreditation = async () => {
+    if (!selectedUser || !refuseReason.trim()) return;
+    try {
+      await userService.refuseCommissionerAccreditation(
+        selectedUser.id,
+        refuseReason.trim()
+      );
+      setSuccessMessage("Accréditation refusée et motif envoyé au commissaire.");
+      setOpenSnackbar(true);
+      setOpenRefuseAccreditationDialog(false);
+      setSelectedUser(null);
+      setRefuseReason("");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors du refus de l'accréditation."
+      );
+      setOpenSnackbar(true);
+    }
+  };
+
   const getRoleLabel = (role) => {
     const roleMap = {
       ADMIN: "Administrateur",
@@ -270,8 +387,9 @@ export default function UsersManagementPage() {
       ROLE_COMMISSIONNER: "Commissaire",
       ATHLETE: "Athlète",
       ROLE_ATHLETE: "Athlète",
-      VOLUNTEER: "Bénévole",
-      ROLE_VOLUNTEER: "Bénévole",
+      // Backend utilise `ROLE_VOLONTEER` (avec O) et pas `ROLE_VOLUNTEER`
+      VOLONTEER: "Volontaires",
+      ROLE_VOLONTEER: "Volontaires",
       SPECTATOR: "Spectateur",
       ROLE_SPECTATOR: "Spectateur",
     };
@@ -308,13 +426,14 @@ export default function UsersManagementPage() {
     // Filtre par recherche
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      const name = `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
+      const name =
+        `${user.firstName || ""} ${user.lastName || ""}`.toLowerCase();
       const email = (user.email || "").toLowerCase();
       if (!name.includes(search) && !email.includes(search)) {
         return false;
       }
     }
-    
+
     // Filtre par rôle
     if (roleFilter !== "ALL") {
       const userRole = (user.role || "").toUpperCase();
@@ -323,10 +442,10 @@ export default function UsersManagementPage() {
         return false;
       }
     }
-    
+
     // Filtre par statut (isAccountActive dans develop)
     if (statusFilter !== "ALL") {
-      const isActive = user.isAccountActive !== undefined ? user.isAccountActive : user.enabled;
+      const isActive = user.isAccountActive;
       if (statusFilter === "ACTIVE" && !isActive) {
         return false;
       }
@@ -334,17 +453,19 @@ export default function UsersManagementPage() {
         return false;
       }
     }
-    
+
     return true;
   });
 
   // Pagination côté client
   const filteredUsers = allFilteredUsers.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
-  
-  const totalFilteredPages = Math.ceil(allFilteredUsers.length / ITEMS_PER_PAGE);
+
+  const totalFilteredPages = Math.ceil(
+    allFilteredUsers.length / ITEMS_PER_PAGE,
+  );
 
   return (
     <Box sx={{ p: 4, background: appTheme.gradients.page, minHeight: "100vh" }}>
@@ -439,7 +560,7 @@ export default function UsersManagementPage() {
             <MenuItem value="ADMIN">Administrateur</MenuItem>
             <MenuItem value="COMMISSIONNER">Commissaire</MenuItem>
             <MenuItem value="ATHLETE">Athlète</MenuItem>
-            <MenuItem value="VOLUNTEER">Bénévole</MenuItem>
+            <MenuItem value="VOLONTEER">Volontaires</MenuItem>
             <MenuItem value="SPECTATOR">Spectateur</MenuItem>
           </Select>
         </FormControl>
@@ -479,19 +600,29 @@ export default function UsersManagementPage() {
             <Table>
               <TableHead>
                 <TableRow sx={{ background: appTheme.gradients.card }}>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Nom
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Email
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Rôle
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Statut
                   </TableCell>
-                  <TableCell sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}>
+                  <TableCell
+                    sx={{ color: appTheme.colors.textPrimary, fontWeight: 700 }}
+                  >
                     Actions
                   </TableCell>
                 </TableRow>
@@ -525,15 +656,89 @@ export default function UsersManagementPage() {
                           }}
                         />
                       </TableCell>
-                      <TableCell>{getStatusChip(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)}</TableCell>
                       <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
+                        {getStatusChip(user.isAccountActive)}
+                      </TableCell>
+                      <TableCell>
+                        {isCommissionerRole(user.role) && (
+                          <Typography
+                            sx={{
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              color: accreditationAvailability[user.id] ? "#16a34a" : "#dc2626",
+                              mb: 0.8,
+                            }}
+                          >
+                            {accreditationAvailability[user.id]
+                              ? "Document CEN: Reçu"
+                              : "Document CEN: Non reçu"}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {isCommissionerRole(user.role) && (
+                            <>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Voir document d'accréditation"
+                                    : "Aucun document CEN soumis"
+                                }
+                              >
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewAccreditation(user)}
+                                  sx={{ color: appTheme.colors.cyan }}
+                                >
+                                  <DescriptionIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Valider l'accréditation"
+                                    : "Validation indisponible sans document CEN"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id]}
+                                    onClick={() => handleValidateAccreditation(user)}
+                                    sx={{ color: "#22c55e" }}
+                                  >
+                                    <TaskAltIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Refuser l'accréditation"
+                                    : "Refus indisponible sans document CEN"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id]}
+                                    onClick={() => handleOpenRefuseAccreditation(user)}
+                                    sx={{ color: "#ef4444" }}
+                                  >
+                                    <CancelIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            </>
+                          )}
                           <Tooltip title="Voir les détails (bientôt disponible)">
                             <span>
                               <IconButton
                                 size="small"
                                 disabled
-                                sx={{ color: appTheme.colors.cyan, opacity: 0.5 }}
+                                sx={{
+                                  color: appTheme.colors.cyan,
+                                  opacity: 0.5,
+                                }}
                               >
                                 <VisibilityIcon fontSize="small" />
                               </IconButton>
@@ -541,7 +746,7 @@ export default function UsersManagementPage() {
                           </Tooltip>
                           <Tooltip
                             title={
-                              (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
+                              user.isAccountActive
                                 ? "Désactiver (bientôt disponible)"
                                 : "Activer (bientôt disponible)"
                             }
@@ -551,13 +756,13 @@ export default function UsersManagementPage() {
                                 size="small"
                                 disabled
                                 sx={{
-                                  color: (user.isAccountActive !== undefined ? user.isAccountActive : user.enabled)
+                                  color: user.isAccountActive
                                     ? "#ef4444"
                                     : "#22c55e",
                                   opacity: 0.5,
                                 }}
                               >
-                                {(user.isAccountActive !== undefined ? user.isAccountActive : user.enabled) ? (
+                                {user.isAccountActive ? (
                                   <BlockIcon fontSize="small" />
                                 ) : (
                                   <CheckCircleIcon fontSize="small" />
@@ -570,7 +775,10 @@ export default function UsersManagementPage() {
                               <IconButton
                                 size="small"
                                 disabled
-                                sx={{ color: appTheme.colors.violet, opacity: 0.5 }}
+                                sx={{
+                                  color: appTheme.colors.violet,
+                                  opacity: 0.5,
+                                }}
                               >
                                 <LockResetIcon fontSize="small" />
                               </IconButton>
@@ -614,7 +822,9 @@ export default function UsersManagementPage() {
         <DialogTitle>Détails de l'utilisateur</DialogTitle>
         <DialogContent>
           {selectedUser && (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+            >
               <Typography>
                 <strong>Nom:</strong> {selectedUser.firstName}{" "}
                 {selectedUser.lastName}
@@ -627,7 +837,7 @@ export default function UsersManagementPage() {
               </Typography>
               <Typography>
                 <strong>Statut:</strong>{" "}
-                {selectedUser.enabled ? "Actif" : "Inactif"}
+                {selectedUser.isAccountActive ? "Actif" : "Inactif"}
               </Typography>
               {selectedUser.createdAt && (
                 <Typography>
@@ -654,9 +864,7 @@ export default function UsersManagementPage() {
             {selectedUser &&
               (confirmActionType === "toggle"
                 ? `Êtes-vous sûr de vouloir ${
-                    selectedUser.enabled
-                      ? "désactiver"
-                      : "activer"
+                    selectedUser.isAccountActive ? "désactiver" : "activer"
                   } cet utilisateur ?`
                 : "Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ?")}
           </Typography>
@@ -680,6 +888,46 @@ export default function UsersManagementPage() {
         </DialogActions>
       </Dialog>
 
+      <Dialog
+        open={openRefuseAccreditationDialog}
+        onClose={() => setOpenRefuseAccreditationDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Refuser l'accréditation commissaire</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mb: 1.5 }}>
+            Merci d'indiquer le motif qui sera envoyé au commissaire.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Motif du refus"
+            value={refuseReason}
+            onChange={(e) => setRefuseReason(e.target.value)}
+            placeholder="Ex: document illisible, merci d'envoyer une version plus nette."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenRefuseAccreditationDialog(false)}>Annuler</Button>
+          <Button
+            onClick={handleSubmitRefuseAccreditation}
+            disabled={!refuseReason.trim()}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              px: 3,
+              py: 1.1,
+              borderRadius: appTheme.radius.pill,
+              background: "linear-gradient(135deg,#ef4444,#dc2626)",
+              color: "#fff",
+            }}
+          >
+            Confirmer le refus
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* FORMULAIRE CRÉATION COMMISSAIRE */}
       <CommissionerFormDialog

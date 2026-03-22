@@ -2,6 +2,7 @@ package com.ciblorgasport.competition.api;
 
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,21 +26,30 @@ public class AthleteParticipationController {
 
     private final ParticipationService participationService;
     private final TrialService trialService;
-    
+
     @GetMapping
-    public ResponseEntity<List<AthleteCompetitionDetailsResponse>> getMyCards(@AuthenticationPrincipal UserAccount user) {
+    public ResponseEntity<List<AthleteCompetitionDetailsResponse>> getMyCards(
+            @AuthenticationPrincipal UserAccount user) {
         return ResponseEntity.ok(participationService.getAthleteDashboardCards(user.getId()));
     }
-    
-    @GetMapping("/{competitionId}/trials")
-    public ResponseEntity<List<TrialResponse>> getMyTrials(@PathVariable Long competitionId, @AuthenticationPrincipal UserAccount user) {
-        return ResponseEntity.ok(trialService.getTrialsForAthlete(competitionId, user.getId()));
+
+    @PostMapping("/{participationId}/confirm")
+    public ResponseEntity<Void> confirm(
+            @PathVariable Long participationId,
+            @AuthenticationPrincipal UserAccount user) {
+        participationService.confirmParticipation(participationId, user.getId());
+        return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/{participationId}/forfeit")
-    public ResponseEntity<Void> declareForfeit(@PathVariable Long participationId,
-                                               @AuthenticationPrincipal UserAccount user) {
-        participationService.declareForfeit(participationId, user.getId());
-        return ResponseEntity.ok().build();
+    @GetMapping("/{competitionId}/trials")
+    public ResponseEntity<List<TrialResponse>> getMyTrials(
+            @PathVariable Long competitionId,
+            @AuthenticationPrincipal UserAccount user) {
+        
+        if (!participationService.isConfirmed(user.getId(), competitionId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(trialService.getTrialsForAthlete(competitionId, user.getId()));
     }
 }
