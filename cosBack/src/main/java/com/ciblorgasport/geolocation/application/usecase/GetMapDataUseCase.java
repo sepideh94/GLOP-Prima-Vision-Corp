@@ -7,6 +7,7 @@ import com.ciblorgasport.site.infrastructure.SiteRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ public class GetMapDataUseCase {
     private final FanZoneRepository fanZoneRepository;
     private final AthleteLocationRepository athleteLocationRepository;
 
+    @Transactional(readOnly = true)
     public MapDataResponse execute(boolean includeAthletes) {
         List<MarkerDto> siteMarkers = siteRepository.findAll().stream()
                 .map(site -> MarkerDto.builder()

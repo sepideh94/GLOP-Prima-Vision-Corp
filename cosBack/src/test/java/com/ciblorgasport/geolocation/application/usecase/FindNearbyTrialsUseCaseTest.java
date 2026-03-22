@@ -39,7 +39,7 @@ class FindNearbyTrialsUseCaseTest {
         void shouldReturnTrialsWithinRadius() {
             Trial nearby = buildTrial(1L, "100m nage libre", 48.860, 2.360, false); // ~500m
             Trial far    = buildTrial(2L, "200m dos",        45.764, 4.836, false); // Lyon
-            when(trialRepository.findAll()).thenReturn(List.of(nearby, far));
+            when(trialRepository.findAllWithAssociations()).thenReturn(List.of(nearby, far));
 
             List<TrialWithLocationDto> results = useCase.execute(USER_LAT, USER_LNG, 5.0);
 
@@ -51,7 +51,7 @@ class FindNearbyTrialsUseCaseTest {
         @DisplayName("Exclut les épreuves annulées même dans le rayon")
         void shouldExcludeCancelledTrials() {
             Trial cancelled = buildTrial(1L, "50m brasse", 48.860, 2.360, true);
-            when(trialRepository.findAll()).thenReturn(List.of(cancelled));
+            when(trialRepository.findAllWithAssociations()).thenReturn(List.of(cancelled));
 
             List<TrialWithLocationDto> results = useCase.execute(USER_LAT, USER_LNG, 5.0);
 
@@ -64,7 +64,7 @@ class FindNearbyTrialsUseCaseTest {
             Trial noSite = new Trial();
             noSite.setId(1L);
             noSite.setName("Sans site");
-            when(trialRepository.findAll()).thenReturn(List.of(noSite));
+            when(trialRepository.findAllWithAssociations()).thenReturn(List.of(noSite));
 
             List<TrialWithLocationDto> results = useCase.execute(USER_LAT, USER_LNG, 10.0);
 
@@ -76,7 +76,7 @@ class FindNearbyTrialsUseCaseTest {
         void shouldSortByDistanceAscending() {
             Trial t1 = buildTrial(1L, "T1", 48.870, 2.360, false); // ~1.5km
             Trial t2 = buildTrial(2L, "T2", 48.858, 2.354, false); // ~200m
-            when(trialRepository.findAll()).thenReturn(List.of(t1, t2));
+            when(trialRepository.findAllWithAssociations()).thenReturn(List.of(t1, t2));
 
             List<TrialWithLocationDto> results = useCase.execute(USER_LAT, USER_LNG, 10.0);
 
@@ -88,7 +88,7 @@ class FindNearbyTrialsUseCaseTest {
         @DisplayName("Liste vide si aucune épreuve dans le rayon")
         void shouldReturnEmptyWhenNoTrialsInRadius() {
             Trial far = buildTrial(1L, "Loin", 45.764, 4.836, false);
-            when(trialRepository.findAll()).thenReturn(List.of(far));
+            when(trialRepository.findAllWithAssociations()).thenReturn(List.of(far));
 
             List<TrialWithLocationDto> results = useCase.execute(USER_LAT, USER_LNG, 5.0);
 

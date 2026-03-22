@@ -16,19 +16,59 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import CloseIcon from "@mui/icons-material/Close";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import siteService from "../../../common/api/siteService";
-import api from "../../../common/api/axiosInstance";
+import { getApiErrorMessage } from "../../../common/utils/apiErrorMessage";
 
 /**
- * Champ de sélection de site avec recherche Google Places.
- *
- * Flux :
- *  1. L'utilisateur tape une adresse
- *  2. Google Places propose des suggestions en temps réel
- *  3. À la sélection, le site est créé en base s'il n'existe pas déjà
- *  4. Un aperçu carte peut être affiché via l'icône 📍
+ * Extrait lat/lng quelle que soit la forme renvoyée par l'API Google Maps (fonction ou nombre).
+ */
+function readLatLng(location) {
+  if (!location) return { latitude: NaN, longitude: NaN };
+  const latRaw = location.lat;
+  const lngRaw = location.lng;
+  const latitude = typeof latRaw === "function" ? latRaw() : Number(latRaw);
+  const longitude = typeof lngRaw === "function" ? lngRaw() : Number(lngRaw);
+  return { latitude, longitude };
+}
+
+function geocodePlaceId(placeId) {
+  return new Promise((resolve, reject) => {
+    if (!window.google?.maps?.Geocoder) {
+      reject(new Error("GOOGLE_MAPS_NOT_READY"));
+      return;
+    }
+    const geocoder = new window.google.maps.Geocoder();
+    geocoder.geocode({ placeId }, (results, status) => {
+      if (status === "OK" && results?.[0]) {
+        resolve(results[0]);
+      } else {
+        reject(new Error(status || "UNKNOWN"));
+      }
+    });
+  });
+}
+
+function geocoderStatusMessage(status) {
+  switch (status) {
+    case "REQUEST_DENIED":
+      return "Géocodage refusé : vérifiez la clé Google Maps, les APIs Geocoding / Places activées et la facturation.";
+    case "OVER_QUERY_LIMIT":
+      return "Quota Google Maps dépassé. Réessayez plus tard.";
+    case "ZERO_RESULTS":
+      return "Aucun résultat pour ce lieu. Choisissez une autre suggestion.";
+    case "INVALID_REQUEST":
+      return "Requête de géocodage invalide.";
+    case "GOOGLE_MAPS_NOT_READY":
+      return "Carte Google non chargée. Rechargez la page ou vérifiez la configuration.";
+    default:
+      return `Impossible de résoudre l'adresse (${status}). Réessayez ou choisissez une autre suggestion.`;
+  }
+}
+
+/**
+ * Sélection de site via Google Places + enregistrement serveur (resolve or create).
  *
  * Props:
- *   value: number|null  — siteId
+ *   value: number|string — siteId
  *   onChange: (siteId) => void
  */
 export default function SiteSearchInput({ value, onChange }) {
@@ -39,30 +79,30 @@ export default function SiteSearchInput({ value, onChange }) {
   const [selectedSite, setSelectedSite] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const autocompleteService = useRef(null);
   const sessionToken = useRef(null);
   const debounceTimer = useRef(null);
 
-  // Init Google Places AutocompleteService
   useEffect(() => {
     if (!placesLib) return;
     autocompleteService.current = new placesLib.AutocompleteService();
     sessionToken.current = new placesLib.AutocompleteSessionToken();
   }, [placesLib]);
 
-  // Si un siteId est déjà sélectionné (mode édition), le charger
   useEffect(() => {
     if (!value) return;
-    siteService.getById(value)
+    siteService
+      .getById(value)
       .then((site) => {
         setSelectedSite(site);
         setInputValue(site.adress || "");
+        setSaveError("");
       })
       .catch(() => {});
   }, [value]);
 
-  // Recherche Places avec debounce 300ms
   const fetchSuggestions = useCallback((text) => {
     if (!autocompleteService.current || text.length < 3) {
       setSuggestions([]);
@@ -87,6 +127,7 @@ export default function SiteSearchInput({ value, onChange }) {
   const handleInputChange = (e) => {
     const text = e.target.value;
     setInputValue(text);
+    setSaveError("");
     if (selectedSite) {
       setSelectedSite(null);
       onChange("");
@@ -97,57 +138,62 @@ export default function SiteSearchInput({ value, onChange }) {
 
   const handleSelectSuggestion = async (prediction) => {
     setSuggestions([]);
+    setSaveError("");
     setLoading(true);
+    setSaving(false);
 
-    // Récupérer les détails du lieu (coordonnées)
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ placeId: prediction.place_id }, async (results, status) => {
-      setLoading(false);
-      if (status !== "OK" || !results[0]) return;
-
-      const { lat, lng } = results[0].geometry.location;
-      const adress = results[0].formatted_address;
-      const latitude = lat();
-      const longitude = lng();
-
-      setInputValue(adress);
-
-      // Vérifier si le site existe déjà (même adresse)
-      try {
-        const allSites = await siteService.getAll();
-        const existing = allSites.find(
-          (s) => s.adress === adress || (
-            Math.abs(s.latitude - latitude) < 0.0001 &&
-            Math.abs(s.longitude - longitude) < 0.0001
-          )
-        );
-
-        if (existing) {
-          setSelectedSite(existing);
-          onChange(existing.id);
-        } else {
-          // Créer le site en base
-          setSaving(true);
-          const created = await api.post("/api/admin/sites", { adress, latitude, longitude });
-          setSelectedSite(created.data);
-          onChange(created.data.id);
-          setSaving(false);
-        }
-      } catch {
-        setSaving(false);
+    try {
+      const result = await geocodePlaceId(prediction.place_id);
+      const adress = (result.formatted_address || "").trim();
+      if (!adress) {
+        setSaveError("Adresse introuvable pour ce lieu. Choisissez une autre suggestion.");
+        setLoading(false);
+        return;
       }
 
-      // Renouveler le session token après sélection
+      const { latitude, longitude } = readLatLng(result.geometry?.location);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        setSaveError("Coordonnées GPS invalides pour ce lieu.");
+        setLoading(false);
+        return;
+      }
+
+      setInputValue(adress);
+      setSaving(true);
+
+      const site = await siteService.resolveOrCreate({
+        adress,
+        latitude,
+        longitude,
+      });
+
+      setSelectedSite(site);
+      onChange(site.id);
+
       if (window.google?.maps?.places?.AutocompleteSessionToken) {
         sessionToken.current = new window.google.maps.places.AutocompleteSessionToken();
       }
-    });
+    } catch (e) {
+      if (e?.message && e.message !== "Error" && !e.response) {
+        setSaveError(geocoderStatusMessage(e.message));
+      } else if (e?.response?.status === 403) {
+        setSaveError("Création de site non autorisée pour votre compte (rôle requis : admin ou commissionnaire).");
+      } else {
+        setSaveError(getApiErrorMessage(e, "Impossible d'enregistrer ce lieu. Réessayez ou choisissez une autre suggestion."));
+      }
+      setSelectedSite(null);
+      onChange("");
+    } finally {
+      setLoading(false);
+      setSaving(false);
+    }
   };
 
   const handleClear = () => {
     setSelectedSite(null);
     setInputValue("");
     setSuggestions([]);
+    setSaveError("");
     onChange("");
   };
 
@@ -158,11 +204,16 @@ export default function SiteSearchInput({ value, onChange }) {
         label="Site *"
         value={inputValue}
         onChange={handleInputChange}
-        placeholder="Rechercher un lieu (ex: Piscine Olympique de Paris...)"
+        placeholder="Tapez au moins 3 caractères, puis choisissez une suggestion dans la liste"
+        helperText={
+          !placesLib
+            ? "Chargement de Google Places…"
+            : "La sélection dans la liste est obligatoire (pas seulement du texte libre)."
+        }
         slotProps={{
           inputLabel: { shrink: true },
           input: {
-            endAdornment: (loading || saving)
+            endAdornment: loading || saving
               ? <CircularProgress size={16} />
               : selectedSite
                 ? (
@@ -177,7 +228,13 @@ export default function SiteSearchInput({ value, onChange }) {
 
       {saving && (
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-          Enregistrement du site...
+          Liaison du lieu à la base…
+        </Typography>
+      )}
+
+      {saveError && (
+        <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+          {saveError}
         </Typography>
       )}
 

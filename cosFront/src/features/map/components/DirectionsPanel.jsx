@@ -71,8 +71,9 @@ export default function DirectionsPanel({ originLat, originLng, destinationParam
         ...destinationParams,
       });
       setResult(data);
-      if (onRoute && data.polylinePoints) {
-        onRoute(data.polylinePoints);
+      const points = extractPolylinePoints(data);
+      if (onRoute && points.length > 0) {
+        onRoute(points);
       }
     } catch {
       setError("Impossible de calculer l'itinéraire");

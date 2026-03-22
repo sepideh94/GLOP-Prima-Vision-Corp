@@ -146,12 +146,7 @@ export default function TrialFormDialog({
     }
   }, [open, initialData]);
 
-  // ... imports inchangés
-
-// tout le début du fichier reste IDENTIQUE
-// je ne modifie rien jusqu'au useEffect participants
-
-useEffect(() => {
+  useEffect(() => {
 
   if (!open || !showParticipantsTab || !initialData?.id) return;
 
@@ -221,16 +216,26 @@ useEffect(() => {
   };
 
   const handleSubmit = async () => {
-    if (
-      !form.trialName ||
-      !form.startDate ||
-      !form.startHour ||
-      !form.endHour ||
-      !form.mode ||
-      !form.categoryGender ||
-      !form.siteId
-    ) {
-      setError("Merci de remplir tous les champs obligatoires (*)");
+    const siteMissing =
+      form.siteId === "" || form.siteId === null || form.siteId === undefined;
+    const missingLabels = [];
+    if (!form.trialName) missingLabels.push("type d'épreuve");
+    if (!form.startDate) missingLabels.push("date");
+    if (!form.startHour) missingLabels.push("heure de début");
+    if (!form.endHour) missingLabels.push("heure de fin");
+    if (!form.mode) missingLabels.push("mode");
+    if (!form.categoryGender) missingLabels.push("catégorie");
+    if (siteMissing) {
+      missingLabels.push(
+        "site (choisissez une adresse dans la liste des suggestions Google, pas seulement du texte libre)"
+      );
+    }
+    if (missingLabels.length > 0) {
+      setError(
+        missingLabels.length === 1
+          ? `Champ obligatoire manquant : ${missingLabels[0]}.`
+          : `Champs obligatoires manquants : ${missingLabels.join(", ")}.`
+      );
       return;
     }
 

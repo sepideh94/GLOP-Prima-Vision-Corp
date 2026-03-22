@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import mapService from "../services/mapService";
 import fanZoneService from "../services/fanZoneService";
 import { distanceKm } from "../geoDistance";
+import { normalizeNearbyTrial, normalizeFanZoneMarker, toFiniteNumber } from "../mapApiNormalize";
 
 /**
  * @param {{ includeAdminAthleteLocations?: boolean }} options
@@ -36,26 +37,30 @@ export default function useNearbyPlaces(options = {}) {
 
         const list = Array.isArray(t) ? t : [];
         setTrials(
-          list.map((row) => ({
-            id: row.trialId ?? row.id,
-            name: row.trialName ?? row.name,
-            siteLatitude: row.latitude ?? row.siteLatitude,
-            siteLongitude: row.longitude ?? row.siteLongitude,
-            startDate: row.startDate,
-            startHour: row.startHour,
-          }))
+          list
+            .map(normalizeNearbyTrial)
+            .filter((row) => row.siteLatitude != null && row.siteLongitude != null)
         );
-        setFanZones(Array.isArray(fz) ? fz : []);
+
+        const fzList = Array.isArray(fz) ? fz : [];
+        setFanZones(
+          fzList
+            .map(normalizeFanZoneMarker)
+            .filter((row) => row.latitude != null && row.longitude != null)
+        );
 
         if (includeAdminAthleteLocations) {
           const athletesList = Array.isArray(adminRaw) ? adminRaw : [];
           setTrackedAthletes(
-            athletesList.filter(
-              (a) =>
-                a.latitude != null &&
-                a.longitude != null &&
-                distanceKm(lat, lng, a.latitude, a.longitude) <= radiusKm
-            )
+            athletesList.filter((a) => {
+              const alat = toFiniteNumber(a.latitude);
+              const alng = toFiniteNumber(a.longitude);
+              return (
+                alat != null &&
+                alng != null &&
+                distanceKm(lat, lng, alat, alng) <= radiusKm
+              );
+            })
           );
         } else {
           setTrackedAthletes([]);

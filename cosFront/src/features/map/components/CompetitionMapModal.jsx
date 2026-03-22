@@ -27,6 +27,8 @@ import MarkerColorDot from "./MarkerColorDot";
 import { GEO_FALLBACK_POSITION, isGeoFallbackEnabled } from "../geoFallbackConfig";
 import athleteLocationService from "../services/athleteLocationService";
 import { DEV_MEETING_POINTS } from "../devMocks";
+import { getApiErrorMessage } from "../../../common/utils/apiErrorMessage";
+import { formatTimeShort } from "../mapApiNormalize";
 
 CompetitionMapModal.propTypes = {
   open: PropTypes.bool.isRequired,
@@ -38,6 +40,7 @@ CompetitionMapModal.propTypes = {
 
 export default function CompetitionMapModal({ open, onClose, athleteId, competitionId, competitionName }) {
   const [meetingPoints, setMeetingPoints] = useState([]);
+  const [loadError, setLoadError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [userPin, setUserPin] = useState(null);
   const [mapRecenterNonce, setMapRecenterNonce] = useState(0);
@@ -56,12 +59,18 @@ export default function CompetitionMapModal({ open, onClose, athleteId, competit
   useEffect(() => {
     if (!open || !athleteId || !competitionId) return;
     setLoading(true);
-    athleteLocationService.getMeetingInfo(athleteId, competitionId)
-      .then(setMeetingPoints)
-      .catch(() => {
+    setLoadError(null);
+    athleteLocationService
+      .getMeetingInfo(athleteId, competitionId)
+      .then((data) => setMeetingPoints(Array.isArray(data) ? data : []))
+      .catch((e) => {
         if (import.meta.env.DEV) {
-          console.warn("[dev] Backend inaccessible — meeting points simulés.");
+          console.warn("[dev] Backend inaccessible — meeting points simulés.", e);
           setMeetingPoints(DEV_MEETING_POINTS);
+          setLoadError(null);
+        } else {
+          setMeetingPoints([]);
+          setLoadError(getApiErrorMessage(e, "Impossible de charger les lieux d’épreuve."));
         }
       })
       .finally(() => setLoading(false));
@@ -136,6 +145,11 @@ export default function CompetitionMapModal({ open, onClose, athleteId, competit
           </Box>
         ) : (
           <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            {loadError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {loadError}
+              </Alert>
+            )}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1, flexWrap: "wrap", gap: 1 }}>
               <Typography variant="subtitle2" fontWeight={700}>
                 Carte
@@ -202,7 +216,7 @@ export default function CompetitionMapModal({ open, onClose, athleteId, competit
                           </ListItemIcon>
                           <ListItemText
                             primary={mp.trialName}
-                            secondary={`${mp.siteAddress} — ${mp.startDate} à ${mp.startHour}`}
+                            secondary={`${mp.siteAddress ?? ""} — ${mp.startDate ?? ""} à ${formatTimeShort(mp.startHour)}`}
                           />
                         </ListItemButton>
                       </ListItem>

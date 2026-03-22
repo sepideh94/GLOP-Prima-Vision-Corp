@@ -20,12 +20,14 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 @Entity
 @Table(name = "competition")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Competition implements StatusChecker {
  
  @Id
  @GeneratedValue(strategy = GenerationType.IDENTITY)
+ @EqualsAndHashCode.Include
  private Long id;
 
  private String name;

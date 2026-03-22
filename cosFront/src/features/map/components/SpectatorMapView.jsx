@@ -24,6 +24,7 @@ import useUserGeolocation from "../hooks/useUserGeolocation";
 import useNearbyPlaces from "../hooks/useNearbyPlaces";
 import { formatAthleteMapLabel } from "../athleteDisplayName";
 import MarkerColorDot from "./MarkerColorDot";
+import { getApiErrorMessage } from "../../../common/utils/apiErrorMessage";
 
 /**
  * @param {{ variant?: "spectator" | "admin" }} props
@@ -134,7 +135,11 @@ export default function SpectatorMapView({ variant = "spectator" }) {
   return (
     <Box>
       {locError && <Alert severity="warning" sx={{ mb: 1 }}>{locError}</Alert>}
-      {searchError && <Alert severity="error" sx={{ mb: 1 }}>Erreur lors de la recherche</Alert>}
+      {searchError && (
+        <Alert severity="error" sx={{ mb: 1 }}>
+          {getApiErrorMessage(searchError, "Erreur lors de la recherche à proximité.")}
+        </Alert>
+      )}
 
       <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap", mb: 2, alignItems: "center" }}>
         <Button

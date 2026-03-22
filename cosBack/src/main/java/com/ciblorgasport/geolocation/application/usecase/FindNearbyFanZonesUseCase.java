@@ -9,6 +9,7 @@ import com.ciblorgasport.geolocation.dto.NearbyFanZonesResponse;
 import com.ciblorgasport.geolocation.infrastructure.FanZoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,7 @@ public class FindNearbyFanZonesUseCase {
     private final FanZoneRepository fanZoneRepository;
     private final GeoLocationService geoLocationService;
 
+    @Transactional(readOnly = true)
     public NearbyFanZonesResponse execute(double latitude, double longitude, double radiusKm) {
         GeoPoint userPoint = new GeoPoint(latitude, longitude);
 

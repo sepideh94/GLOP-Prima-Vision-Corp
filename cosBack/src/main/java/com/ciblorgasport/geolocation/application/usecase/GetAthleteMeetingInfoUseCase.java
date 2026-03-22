@@ -5,6 +5,7 @@ import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -18,6 +19,7 @@ public class GetAthleteMeetingInfoUseCase {
     private final TrialParticipantRepository trialParticipantRepository;
     private final TrialRepository trialRepository;
 
+    @Transactional(readOnly = true)
     public List<AthleteMeetingInfoResponse> execute(Long athleteId, Long competitionId) {
         return trialParticipantRepository.findByCompetitorId(athleteId).stream()
                 .map(tp -> trialRepository.findById(tp.getTrial().getId()).orElse(null))

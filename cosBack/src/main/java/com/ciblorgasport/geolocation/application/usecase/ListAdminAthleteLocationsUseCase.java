@@ -7,6 +7,7 @@ import com.ciblorgasport.geolocation.dto.AthleteLocationResponse;
 import com.ciblorgasport.geolocation.infrastructure.AthleteLocationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +19,7 @@ public class ListAdminAthleteLocationsUseCase {
     private final AthleteLocationRepository athleteLocationRepository;
     private final AthleteRepository athleteRepository;
 
+    @Transactional(readOnly = true)
     public List<AthleteLocationResponse> execute() {
         return athleteLocationRepository.findAll().stream()
                 .map(this::toResponseWithName)

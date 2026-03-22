@@ -5,6 +5,7 @@ import com.ciblorgasport.geolocation.dto.TrialWithLocationDto;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -15,10 +16,11 @@ public class FindNearbyTrialsUseCase {
 
     private final TrialRepository trialRepository;
 
+    @Transactional(readOnly = true)
     public List<TrialWithLocationDto> execute(double latitude, double longitude, double radiusKm) {
         GeoPoint userPoint = new GeoPoint(latitude, longitude);
 
-        return trialRepository.findAll().stream()
+        return trialRepository.findAllWithAssociations().stream()
                 .filter(trial -> !trial.isCancelled())
                 .filter(trial -> trial.getEndDate() == null || !trial.getEndDate().isBefore(LocalDate.now()))
                 .filter(trial -> trial.getSite() != null)
