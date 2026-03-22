@@ -36,12 +36,14 @@ import lombok.ToString;
 @Entity
 @Table(name = "trial")
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class Trial implements StatusChecker {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     private Long id;
 
     private String name;
@@ -103,7 +105,6 @@ public class Trial implements StatusChecker {
     private Round round;
 
     @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "trial", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TrialParticipant> participants = new ArrayList<>();
 

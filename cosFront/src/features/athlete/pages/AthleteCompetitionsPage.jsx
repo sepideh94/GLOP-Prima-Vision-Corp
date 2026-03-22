@@ -289,6 +289,7 @@ export default function AthleteCompetitionsPage() {
           loadProfile();
         }}
       />
+
     </Box>
   );
 }

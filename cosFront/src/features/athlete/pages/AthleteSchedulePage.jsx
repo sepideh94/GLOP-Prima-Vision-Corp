@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../../../common/contexts/AuthContext";
+import CompetitionMapModal from "../../map/components/CompetitionMapModal";
 import {
   Box,
   Typography,
@@ -16,6 +18,7 @@ import {
   ArrowBack as ArrowBackIcon,
   AccessTime as AccessTimeIcon,
   LocationOn as LocationOnIcon,
+  Map as MapIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import scheduleService from "../../schedule/services/scheduleService";
@@ -80,6 +83,8 @@ export default function AthleteSchedulePage() {
   const [resultsError, setResultsError] = useState(null);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [openResultsDialog, setOpenResultsDialog] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (competitionId) {
@@ -219,6 +224,40 @@ export default function AthleteSchedulePage() {
       >
         Retour aux compétitions
       </Button>
+      <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate("/athlete")}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            px: 3,
+            py: 1.1,
+            borderRadius: appTheme.radius.pill,
+            background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
+            color: appTheme.colors.dark,
+          }}
+        >
+          Retour
+        </Button>
+        <Button
+          startIcon={<MapIcon />}
+          onClick={() => setMapOpen(true)}
+          sx={{
+            textTransform: "none",
+            fontWeight: 700,
+            px: 3,
+            py: 1.1,
+            borderRadius: appTheme.radius.pill,
+            background: "rgba(34, 211, 238, 0.12)",
+            color: appTheme.colors.cyan,
+            border: "1px solid rgba(34, 211, 238, 0.2)",
+            "&:hover": { background: "rgba(34, 211, 238, 0.2)" },
+          }}
+        >
+          Plans
+        </Button>
+      </Box>
 
       <Box
         sx={{
@@ -545,6 +584,14 @@ export default function AthleteSchedulePage() {
           })}
         </Box>
       )}
+
+      <CompetitionMapModal
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        athleteId={user?.id}
+        competitionId={Number(competitionId)}
+        competitionName={schedule[0]?.competitionName}
+      />
 
       <AthleteTrialResultsDialog
         open={openResultsDialog}

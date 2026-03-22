@@ -10,5 +10,6 @@ node_modules/
 # Error and runtime logs
 *.log
 logs/
+
 hs_err_pid*
 replay_pid*

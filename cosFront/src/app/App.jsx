@@ -1,4 +1,5 @@
 import AuthProvider from "../common/contexts/AuthContext";
+import GoogleMapsProvider from "../common/components/GoogleMapsProvider";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PrivateRoute from "../common/components/PrivateRoute.jsx";
 
@@ -42,15 +43,19 @@ import AthleteCompetitionsPage from
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
 import AthleteSchedulePage from "../features/athlete/pages/AthleteSchedulePage.jsx";
 import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSchedulePage.jsx";
+import AdminFanZonePage from "../features/map/pages/AdminFanZonePage.jsx";
+import AdminMapPage from "../features/map/pages/AdminMapPage.jsx";
 
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
 import PublicResultsPage from "../features/spectator/pages/PublicResultsPage.jsx";
+import SpectatorMapPage from "../features/map/pages/SpectatorMapPage.jsx";
 
 
 export default function App() {
   return (
+    <GoogleMapsProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -106,6 +111,14 @@ export default function App() {
                 path="/admin/schedules/create"
                 element={<AdminCreateSchedulePage />}
               />
+              <Route
+                path="/admin/fan-zones"
+                element={<AdminFanZonePage />}
+              />
+              <Route
+                path="/admin/map"
+                element={<AdminMapPage />}
+              />
 
               <Route
                 path="/commissioner/competitions"
@@ -132,7 +145,6 @@ export default function App() {
                 path="/athlete/schedule/:competitionId"
                 element={<AthleteSchedulePage />}
               />
-
               {/* SPECTATOR */}
               <Route
                 path="/spectator/events/:eventId"
@@ -147,6 +159,10 @@ export default function App() {
                 element={<SpectatorProfilePage />}
               />
               <Route
+                path="/spectator/map"
+                element={<SpectatorMapPage />}
+              />
+              <Route
                 path="/spectator/notifications"
                 element={<NotificationsPage />}
               />
@@ -159,5 +175,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </GoogleMapsProvider>
   );
 }
