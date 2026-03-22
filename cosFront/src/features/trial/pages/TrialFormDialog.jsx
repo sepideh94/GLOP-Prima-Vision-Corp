@@ -6,7 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  Grid,
   MenuItem,
   Alert,
   Box,
@@ -16,12 +15,15 @@ import {
   Chip,
   Checkbox,
   CircularProgress,
+  Stack,
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import DatePickerForm from "../../../common/components/DatePickerForm";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
 import teamService from "../../participant/services/teamService";
+import SiteSearchInput from "../../map/components/SiteSearchInput";
+import WysiwygEditor from "../../../common/components/WysiwygEditor";
 
 const TRIAL_NAME_OPTIONS = [
   { value: "FIFTY_M_FREESTYLE", label: "50m nage libre" },
@@ -55,19 +57,8 @@ const CATEGORY_OPTIONS = [
   { value: "MIXTE", label: "Mixte" },
 ];
 
-const SITE_OPTIONS = [
-  { value: 1, label: "Site 1 - Piscine principale" },
-  { value: 2, label: "Site 2 - Piscine secondaire" },
-];
 
 const MAX_PARTICIPANTS = 8;
-
-const getMinWidth = (options, label) => {
-  const maxOptionLength = Math.max(...options.map((opt) => opt.label.length));
-  const labelLength = label.length;
-  const maxLength = Math.max(maxOptionLength, labelLength);
-  return `${Math.max(maxLength * 8 + 60, 150)}px`;
-};
 
 const ROUND_OPTIONS = [
   { value: "QUALIFICATION_HEAT", label: "Qualification / Heat" },
@@ -490,7 +481,9 @@ useEffect(() => {
         {/* ── ONGLET 0 : Informations ───────────────────── */}
         {tab === 0 && (
           <Box>
-            {error && <p style={{ color: "red", marginBottom: 16 }}>{error}</p>}
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+            )}
 
             {competition && (
               <Alert
@@ -512,221 +505,173 @@ useEffect(() => {
               </Alert>
             )}
 
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              <Grid item xs={12} sm={6} md={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Type d'épreuve *"
-                  name="trialName"
-                  value={form.trialName}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
-                  sx={{
-                    minWidth: getMinWidth(TRIAL_NAME_OPTIONS, "Type d'épreuve *"),
-                    "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": {
-                      whiteSpace: "nowrap",
-                      overflow: "visible",
-                      textOverflow: "clip",
-                    },
-                  }}
-                >
-                  {TRIAL_NAME_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+            <Stack spacing={2.5} sx={{ mt: 1 }}>
 
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Description"
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  multiline
-                  rows={2}
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Règles"
-                  name="rules"
-                  value={form.rules}
-                  onChange={handleChange}
-                  multiline
-                  rows={2}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <DatePickerForm
-                  fullWidth
-                  label="Date*"
-                  name="startDate"
-                  value={form.startDate}
-                  onChange={handleChange}
-                  disablePast
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Heure de début *"
-                  type="time"
-                  name="startHour"
-                  value={form.startHour}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
-                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  fullWidth
-                  label="Heure de fin *"
-                  type="time"
-                  name="endHour"
-                  value={form.endHour}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ onKeyDown: (e) => e.preventDefault() }}
-                  sx={{ "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" } }}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Mode *"
-                  name="mode"
-                  value={form.mode}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
-                  sx={{
-                    minWidth: getMinWidth(MODE_OPTIONS, "Mode *"),
-                    "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": {
-                      whiteSpace: "nowrap",
-                      overflow: "visible",
-                      textOverflow: "clip",
-                    },
-                  }}
-                >
-                  {MODE_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Catégorie *"
-                  name="categoryGender"
-                  value={form.categoryGender}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
-                  sx={{
-                    minWidth: getMinWidth(CATEGORY_OPTIONS, "Catégorie *"),
-                    "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": {
-                      whiteSpace: "nowrap",
-                      overflow: "visible",
-                      textOverflow: "clip",
-                    },
-                  }}
-                >
-                  {CATEGORY_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Site *"
-                  name="siteId"
-                  value={form.siteId}
-                  onChange={handleChange}
-                  InputLabelProps={{ shrink: true }}
-                  SelectProps={{ MenuProps: { PaperProps: { style: { maxHeight: 300 } } } }}
-                  sx={{
-                    minWidth: getMinWidth(SITE_OPTIONS, "Site *"),
-                    "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
-                    "& .MuiSelect-select": {
-                      whiteSpace: "nowrap",
-                      overflow: "visible",
-                      textOverflow: "clip",
-                    },
-                  }}
-                >
-                  {SITE_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                {isEdit ? (
-                  <TextField
-                    fullWidth
-                    label="Phase"
-                    value={initialData?.roundDisplayName || "—"}
-                    InputProps={{ readOnly: true }}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{ "& .MuiInputBase-input": { color: "text.secondary" } }}
-                  />
-                ) : (
+              {/* ── LIGNE 1 : Type | Date | Heure début | Heure fin ── */}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-start" }}>
+                <Box sx={{ flex: "2 1 220px" }}>
                   <TextField
                     select
                     fullWidth
-                    label="Phase *"
-                    name="roundName"
-                    value={form.roundName}
+                    label="Type d'épreuve *"
+                    name="trialName"
+                    value={form.trialName}
                     onChange={handleChange}
-                    InputLabelProps={{ shrink: true }}
-                    sx={{
-                      minWidth: getMinWidth(ROUND_OPTIONS, "Phase *"),
-                      "& .MuiInputLabel-root": { whiteSpace: "nowrap", overflow: "visible" },
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      select: { MenuProps: { PaperProps: { style: { maxHeight: 300 } } } },
                     }}
                   >
-                    {ROUND_OPTIONS.map((opt) => (
-                      <MenuItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </MenuItem>
+                    {TRIAL_NAME_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                     ))}
                   </TextField>
-                )}
-              </Grid>
-            </Grid>
+                </Box>
+                <Box sx={{ flex: "1 1 150px" }}>
+                  <DatePickerForm
+                    fullWidth
+                    label="Date *"
+                    name="startDate"
+                    value={form.startDate}
+                    onChange={handleChange}
+                    disablePast
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 130px" }}>
+                  <TextField
+                    fullWidth
+                    label="Heure de début *"
+                    type="time"
+                    name="startHour"
+                    value={form.startHour}
+                    onChange={handleChange}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      htmlInput: { onKeyDown: (e) => e.preventDefault() },
+                    }}
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 130px" }}>
+                  <TextField
+                    fullWidth
+                    label="Heure de fin *"
+                    type="time"
+                    name="endHour"
+                    value={form.endHour}
+                    onChange={handleChange}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      htmlInput: { onKeyDown: (e) => e.preventDefault() },
+                    }}
+                  />
+                </Box>
+              </Box>
+
+              {/* ── LIGNE 2 : Mode | Catégorie | Site | Phase ── */}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-start" }}>
+                <Box sx={{ flex: "1 1 130px" }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Mode *"
+                    name="mode"
+                    value={form.mode}
+                    onChange={handleChange}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      select: { MenuProps: { PaperProps: { style: { maxHeight: 300 } } } },
+                    }}
+                  >
+                    {MODE_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+                <Box sx={{ flex: "1 1 130px" }}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Catégorie *"
+                    name="categoryGender"
+                    value={form.categoryGender}
+                    onChange={handleChange}
+                    slotProps={{
+                      inputLabel: { shrink: true },
+                      select: { MenuProps: { PaperProps: { style: { maxHeight: 300 } } } },
+                    }}
+                  >
+                    {CATEGORY_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </TextField>
+                </Box>
+                <Box sx={{ flex: "3 1 260px" }}>
+                  <SiteSearchInput
+                    value={form.siteId}
+                    onChange={(id) => setForm((prev) => ({ ...prev, siteId: id }))}
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 160px" }}>
+                  {isEdit ? (
+                    <TextField
+                      fullWidth
+                      label="Phase"
+                      value={initialData?.roundDisplayName || "—"}
+                      slotProps={{ input: { readOnly: true }, inputLabel: { shrink: true } }}
+                      sx={{ "& .MuiInputBase-input": { color: "text.secondary" } }}
+                    />
+                  ) : (
+                    <TextField
+                      select
+                      fullWidth
+                      label="Phase *"
+                      name="roundName"
+                      value={form.roundName}
+                      onChange={handleChange}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        select: { MenuProps: { PaperProps: { style: { maxHeight: 300 } } } },
+                      }}
+                    >
+                      {ROUND_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                </Box>
+              </Box>
+
+              {/* ── LIGNE 3 : Description | Règles ── */}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-start" }}>
+                <Box sx={{ flex: "1 1 45%" }}>
+                  <WysiwygEditor
+                    label="Description"
+                    value={form.description}
+                    onChange={(html) => setForm((prev) => ({ ...prev, description: html }))}
+                    minHeight="130px"
+                  />
+                </Box>
+                <Box sx={{ flex: "1 1 45%" }}>
+                  <WysiwygEditor
+                    label="Règles"
+                    value={form.rules}
+                    onChange={(html) => setForm((prev) => ({ ...prev, rules: html }))}
+                    minHeight="130px"
+                  />
+                </Box>
+              </Box>
+
+            </Stack>
           </Box>
         )}
 
         {/* ── ONGLET 1 : Participants ───────────────────── */}
         {tab === 1 && showParticipantsTab && (
           <Box>
+            {participantsError && (
+              <Alert severity="error" sx={{ mb: 2 }}>{participantsError}</Alert>
+            )}
+
             {/* Compteur + chips */}
             <Box sx={{ mb: 2 }}>
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: "#555" }}>
@@ -804,7 +749,9 @@ useEffect(() => {
                     {filteredTeams.length === 0 ? (
                       <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
                         {competitionTeams.length === 0
-                          ? "Aucune équipe éligible pour cette épreuve."
+                          ? (form.roundName === "DEMI_FINALE" || form.roundName === "FINALE"
+                              ? "Aucune équipe qualifiée pour cette phase. Les résultats de la phase précédente doivent être enregistrés."
+                              : "Aucune équipe éligible pour cette épreuve.")
                           : "Aucune équipe ne correspond à la recherche."}
                       </Box>
                     ) : (
@@ -890,7 +837,9 @@ useEffect(() => {
                     {filteredAthletes.length === 0 ? (
                       <Box sx={{ p: 3, textAlign: "center", color: "#888" }}>
                         {competitionAthletes.length === 0
-                          ? "Aucun athlète importé pour cette compétition."
+                          ? (form.roundName === "DEMI_FINALE" || form.roundName === "FINALE"
+                              ? "Aucun athlète qualifié pour cette phase. Les résultats de la phase précédente doivent être enregistrés."
+                              : "Aucun athlète confirmé pour cette compétition.")
                           : "Aucun athlète ne correspond à la recherche."}
                       </Box>
                     ) : (

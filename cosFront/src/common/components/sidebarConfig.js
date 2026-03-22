@@ -5,6 +5,8 @@ import PeopleIcon from "@mui/icons-material/People";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import StadiumIcon from "@mui/icons-material/Stadium";
+import MapIcon from "@mui/icons-material/Map";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 
 const sidebarConfig = {
@@ -40,6 +42,16 @@ const sidebarConfig = {
       label: "Planning",
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
+    },
+    {
+      label: "Fan Zones",
+      icon: StadiumIcon,
+      path: "/admin/fan-zones",
+    },
+    {
+      label: "Carte opérations",
+      icon: MapIcon,
+      path: "/admin/map",
     },
   ],
 
@@ -91,6 +103,11 @@ const sidebarConfig = {
       label: "Mon profil",
       icon: PeopleIcon,
       path: "/spectator/profile",
+    },
+    {
+      label: "Carte",
+      icon: MapIcon,
+      path: "/spectator/map",
     },
     {
       label: "Notifications",

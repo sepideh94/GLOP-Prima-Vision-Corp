@@ -29,6 +29,8 @@ public class Competition implements StatusChecker {
  private Long id;
 
  private String name;
+
+ @Column(columnDefinition = "TEXT")
  private String description;
  private LocalDateTime startDate;
  private LocalDateTime endDate;
