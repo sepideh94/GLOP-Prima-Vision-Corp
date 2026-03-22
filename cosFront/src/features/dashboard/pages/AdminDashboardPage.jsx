@@ -51,9 +51,13 @@ const ROLE_COLORS = {
   ATHLETE: "#F97316",
   VOLONTEER: "#A78BFA",
   COMMISSIONNER: "#6366F1",
+  /** Variante d’orthographe si l’API renvoie ce libellé */
+  COMMISSIONER: "#6366F1",
+  /** Rose / fuchsia : évite le fallback PIE_COLORS[0] = cyan comme ADMIN */
+  SPECTATOR: "#EC4899",
 };
 
-const PIE_COLORS = ["#22D3EE", "#F97316", "#A78BFA", "#facc15", "#6366F1", "#ef4444"];
+const PIE_COLORS = ["#14B8A6", "#F97316", "#A78BFA", "#facc15", "#6366F1", "#EC4899", "#ef4444"];
 
 /** Bordures légères (évite le gris #334155 trop dur sur fond sombre) */
 const borderShell = "1px solid rgba(226, 232, 240, 0.14)";
@@ -74,7 +78,7 @@ function getResolutionColor(rate) {
 
 function getSessionColor(role, value) {
   if (role === "VOLONTEER" && value < 2) return "#f97316";
-  return ROLE_COLORS[role] || "#22D3EE";
+  return ROLE_COLORS[role] || "#64748B";
 }
 
 function KpiCard({ title, value, icon, accentColor }) {
