@@ -15,12 +15,10 @@ public class MapController {
 
     /**
      * GET /map/data
-     * Retourne toutes les données nécessaires pour alimenter la carte interactive.
+     * Données carte publiques (sans positions d’athlètes — réservées à l’admin).
      */
     @GetMapping("/data")
-    public ResponseEntity<MapDataResponse> getMapData(
-            @RequestParam(defaultValue = "false") boolean includeAthletes
-    ) {
-        return ResponseEntity.ok(getMapDataUseCase.execute(includeAthletes));
+    public ResponseEntity<MapDataResponse> getMapData() {
+        return ResponseEntity.ok(getMapDataUseCase.execute(false));
     }
 }

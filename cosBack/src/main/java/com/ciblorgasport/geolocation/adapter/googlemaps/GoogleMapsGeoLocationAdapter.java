@@ -1,9 +1,10 @@
 package com.ciblorgasport.geolocation.adapter.googlemaps;
 
-import com.ciblorgasport.geolocation.adapter.googlemaps.dto.GoogleDirectionsResult;
 import com.ciblorgasport.geolocation.adapter.googlemaps.dto.GooglePlaceResult;
 import com.ciblorgasport.geolocation.application.port.*;
 import com.ciblorgasport.geolocation.domain.FanZoneType;
+import com.ciblorgasport.geolocation.domain.GeoPoint;
+import com.ciblorgasport.geolocation.util.EncodedPolylineDecoder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
@@ -85,47 +86,110 @@ public class GoogleMapsGeoLocationAdapter implements GeoLocationService {
 
     @Override
     public RouteInfo calculateRoute(double fromLat, double fromLng, double toLat, double toLng, TravelMode mode) {
+        String apiKey = config.getApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            log.warn("googlemaps.api-key absente — itinéraire approximatif (ligne droite).");
+            return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                    "Approximation (clé Google Maps non configurée)", mode);
+        }
+
         String url = UriComponentsBuilder.fromHttpUrl(DIRECTIONS_URL)
                 .queryParam("origin", fromLat + "," + fromLng)
                 .queryParam("destination", toLat + "," + toLng)
                 .queryParam("mode", mode.name().toLowerCase())
-                .queryParam("key", config.getApiKey())
+                .queryParam("key", apiKey)
                 .toUriString();
 
         try {
             Map<?, ?> response = restTemplate.getForObject(url, Map.class);
-            if (response == null) throw new RuntimeException("Réponse vide de l'API Directions");
+            if (response == null) {
+                return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                        "Approximation (réponse vide)", mode);
+            }
+
+            String status = String.valueOf(response.get("status"));
+            if (!"OK".equals(status)) {
+                String err = response.get("error_message") != null
+                        ? String.valueOf(response.get("error_message"))
+                        : status;
+                log.warn("Directions API status={} — fallback ligne droite. {}", status, err);
+                return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                        "Approximation (API: " + status + ")", mode);
+            }
 
             List<?> routes = (List<?>) response.get("routes");
-            if (routes == null || routes.isEmpty())
-                throw new RuntimeException("Aucun itinéraire trouvé");
+            if (routes == null || routes.isEmpty()) {
+                return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                        "Approximation (aucun itinéraire)", mode);
+            }
 
             Map<?, ?> route = (Map<?, ?>) routes.get(0);
             List<?> legs = (List<?>) route.get("legs");
+            if (legs == null || legs.isEmpty()) {
+                return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                        "Approximation (jambes manquantes)", mode);
+            }
             Map<?, ?> leg = (Map<?, ?>) legs.get(0);
 
             Map<?, ?> distance = (Map<?, ?>) leg.get("distance");
             Map<?, ?> duration = (Map<?, ?>) leg.get("duration");
 
-            double distanceKm = ((Number) distance.get("value")).doubleValue() / 1000.0;
-            int durationMinutes = ((Number) duration.get("value")).intValue() / 60;
+            double distanceKm = distance != null && distance.get("value") != null
+                    ? ((Number) distance.get("value")).doubleValue() / 1000.0
+                    : new GeoPoint(fromLat, fromLng).distanceTo(new GeoPoint(toLat, toLng));
+            int durationMinutes = duration != null && duration.get("value") != null
+                    ? ((Number) duration.get("value")).intValue() / 60
+                    : estimateMinutes(distanceKm, mode);
 
             List<?> steps = (List<?>) leg.get("steps");
             String firstInstruction = steps != null && !steps.isEmpty()
                     ? (String) ((Map<?, ?>) steps.get(0)).get("html_instructions")
                     : null;
 
+            Map<?, ?> overview = (Map<?, ?>) route.get("overview_polyline");
+            String encoded = overview != null ? (String) overview.get("points") : null;
+            List<double[]> polyline = encoded != null && !encoded.isEmpty()
+                    ? EncodedPolylineDecoder.decode(encoded)
+                    : List.of(new double[]{fromLat, fromLng}, new double[]{toLat, toLng});
+
             return RouteInfo.builder()
                     .summary((String) route.get("summary"))
                     .distanceKm(distanceKm)
                     .durationMinutes(durationMinutes)
-                    .polyline(Collections.emptyList())
+                    .polyline(polyline)
                     .htmlInstructions(firstInstruction)
                     .build();
         } catch (Exception e) {
             log.error("Erreur calcul itinéraire: {}", e.getMessage());
-            throw new RuntimeException("Impossible de calculer l'itinéraire", e);
+            return buildStraightLineRoute(fromLat, fromLng, toLat, toLng,
+                    "Approximation (erreur réseau ou parsing)", mode);
         }
+    }
+
+    private static int estimateMinutes(double distanceKm, TravelMode mode) {
+        double kmh = switch (mode) {
+            case WALKING -> 5.0;
+            case BICYCLING -> 15.0;
+            case TRANSIT -> 25.0;
+            case DRIVING -> 40.0;
+        };
+        return (int) Math.max(1, Math.round(distanceKm / kmh * 60.0));
+    }
+
+    private RouteInfo buildStraightLineRoute(double fromLat, double fromLng, double toLat, double toLng,
+                                            String summary, TravelMode mode) {
+        GeoPoint a = new GeoPoint(fromLat, fromLng);
+        GeoPoint b = new GeoPoint(toLat, toLng);
+        double km = a.distanceTo(b);
+        int minutes = estimateMinutes(km, mode);
+        List<double[]> pl = List.of(new double[]{fromLat, fromLng}, new double[]{toLat, toLng});
+        return RouteInfo.builder()
+                .summary(summary)
+                .distanceKm(Math.round(km * 100.0) / 100.0)
+                .durationMinutes(minutes)
+                .polyline(pl)
+                .htmlInstructions("Itinéraire approximatif (ligne droite entre le départ et l’arrivée).")
+                .build();
     }
 
     @Override

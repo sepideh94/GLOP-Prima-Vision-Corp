@@ -21,13 +21,17 @@ export const DEV_MEETING_POINTS = [
 
 /** Itinéraire simulé : ligne droite entre l'origine et la destination. */
 export function DEV_DIRECTIONS(originLat, originLng, destLat, destLng) {
+  const polylinePoints = [
+    { lat: originLat, lng: originLng },
+    { lat: (originLat + destLat) / 2, lng: (originLng + destLng) / 2 },
+    { lat: destLat, lng: destLng },
+  ];
   return {
+    summary: "Itinéraire simulé (backend indisponible)",
     distanceText: "3,2 km (simulé)",
     durationText: "8 min (simulé)",
-    polylinePoints: [
-      { lat: originLat, lng: originLng },
-      { lat: (originLat + destLat) / 2, lng: (originLng + destLng) / 2 },
-      { lat: destLat, lng: destLng },
-    ],
+    distanceKm: 3.2,
+    durationMinutes: 8,
+    polylinePoints,
   };
 }

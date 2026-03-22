@@ -6,7 +6,7 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People, VolunteerActivism, Schedule, ReportProblem } from "@mui/icons-material";
+import { Event, EmojiEvents, People, VolunteerActivism, Schedule, ReportProblem, Stadium, Map } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -55,6 +55,20 @@ export default function Admin() {
       icon: <Schedule sx={{ fontSize: 42 }} />,
       color: "#f97316",
       route: "/admin/schedules/create",
+    },
+    {
+      title: "Fan Zones",
+      subtitle: "Créer et gérer les espaces spectateurs",
+      icon: <Stadium sx={{ fontSize: 42 }} />,
+      color: "#ec4899",
+      route: "/admin/fan-zones",
+    },
+    {
+      title: "Carte opérations",
+      subtitle: "Épreuves, fan zones et suivi athlètes",
+      icon: <Map sx={{ fontSize: 42 }} />,
+      color: "#6366f1",
+      route: "/admin/map",
     },
   ];
 

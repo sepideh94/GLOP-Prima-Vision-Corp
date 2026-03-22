@@ -54,17 +54,6 @@ class MapControllerTest {
         }
 
         @Test
-        @DisplayName("200 — includeAthletes=true transmet le paramètre au use case")
-        void shouldPassIncludeAthletesParam() throws Exception {
-            given(getMapDataUseCase.execute(true)).willReturn(buildMapData());
-
-            mockMvc.perform(get("/map/data").param("includeAthletes", "true"))
-                    .andExpect(status().isOk());
-
-            verify(getMapDataUseCase).execute(true);
-        }
-
-        @Test
         @DisplayName("200 — liste vide si aucune donnée")
         void shouldReturn200WithEmptyData() throws Exception {
             given(getMapDataUseCase.execute(false)).willReturn(

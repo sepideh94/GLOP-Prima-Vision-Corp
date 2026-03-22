@@ -7,11 +7,23 @@ import com.ciblorgasport.geolocation.infrastructure.FanZoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class CreateFanZoneUseCase {
 
     private final FanZoneRepository fanZoneRepository;
+
+    public List<FanZoneResponse> findAll() {
+        return fanZoneRepository.findAll().stream()
+                .map(FanZoneResponse::fromEntity)
+                .toList();
+    }
+
+    public void delete(Long id) {
+        fanZoneRepository.deleteById(id);
+    }
 
     public FanZoneResponse execute(FanZoneCreateRequest request) {
         FanZone fanZone = FanZone.builder()

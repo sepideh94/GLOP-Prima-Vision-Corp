@@ -15,6 +15,32 @@ import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
 import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import directionsService from "../services/directionsService";
 
+/** Réponse backend : `polyline` = [[lat,lng],…] ou tableau déjà normalisé côté mock. */
+function extractPolylinePoints(data) {
+  if (!data) return [];
+  if (Array.isArray(data.polylinePoints) && data.polylinePoints.length) return data.polylinePoints;
+  const pl = data.polyline;
+  if (!Array.isArray(pl) || !pl.length) return [];
+  const first = pl[0];
+  if (Array.isArray(first) && first.length >= 2) {
+    return pl.map(([lat, lng]) => ({ lat: Number(lat), lng: Number(lng) }));
+  }
+  if (first && typeof first === "object" && "lat" in first) return pl;
+  return [];
+}
+
+function formatDistanceDuration(data) {
+  const distanceText =
+    data.distanceText ??
+    (data.distanceKm != null
+      ? `${Number(data.distanceKm).toFixed(1).replace(".", ",")} km`
+      : "—");
+  const durationText =
+    data.durationText ??
+    (data.durationMinutes != null ? `${data.durationMinutes} min` : "—");
+  return { distanceText, durationText };
+}
+
 const TRAVEL_MODES = [
   { value: "DRIVING", label: "Voiture", icon: <DirectionsCarIcon fontSize="small" /> },
   { value: "WALKING", label: "À pied", icon: <DirectionsWalkIcon fontSize="small" /> },
@@ -90,11 +116,16 @@ export default function DirectionsPanel({ originLat, originLng, destinationParam
 
       {result && !error && (
         <Box sx={{ mt: 1 }}>
+          {result.summary && (
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+              {result.summary}
+            </Typography>
+          )}
           <Typography variant="body2">
-            Distance : <strong>{result.distanceText}</strong>
+            Distance : <strong>{formatDistanceDuration(result).distanceText}</strong>
           </Typography>
           <Typography variant="body2">
-            Durée : <strong>{result.durationText}</strong>
+            Durée : <strong>{formatDistanceDuration(result).durationText}</strong>
           </Typography>
         </Box>
       )}

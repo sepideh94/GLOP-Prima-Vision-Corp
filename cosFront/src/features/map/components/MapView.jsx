@@ -7,14 +7,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { Box, Typography } from "@mui/material";
-
-const MARKER_COLORS = {
-  SITE: { background: "#1976d2", glyphColor: "#fff", borderColor: "#1565c0" },
-  FAN_ZONE: { background: "#f57c00", glyphColor: "#fff", borderColor: "#e65100" },
-  EVENT: { background: "#00acc1", glyphColor: "#fff", borderColor: "#00838f" },
-  ATHLETE: { background: "#e53935", glyphColor: "#fff", borderColor: "#b71c1c" },
-  USER: { background: "#43a047", glyphColor: "#fff", borderColor: "#2e7d32" },
-};
+import { MAP_MARKER_COLORS } from "../mapMarkerColors";
 
 function PolylineOverlay({ path }) {
   const map = useMap();
@@ -40,6 +33,19 @@ function PolylineOverlay({ path }) {
   return null;
 }
 
+/** Recentre la carte quand `center` ou `recenterNonce` change (defaultCenter seul ne réagit pas aux mises à jour). */
+function MapCameraSync({ center, zoom, recenterNonce }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || center?.lat == null || center?.lng == null) return;
+    map.panTo({ lat: center.lat, lng: center.lng });
+    if (zoom != null) map.setZoom(zoom);
+  }, [map, center?.lat, center?.lng, zoom, recenterNonce]);
+
+  return null;
+}
+
 /**
  * Reusable Google Maps component.
  *
@@ -55,6 +61,8 @@ export default function MapView({
   polylinePath,
   center = { lat: 48.8566, lng: 2.3522 },
   zoom = 13,
+  /** Incrémenter (ex. clic « Me localiser ») pour forcer un recentrage même si les coords sont identiques. */
+  recenterNonce = 0,
   height = "400px",
 }) {
   const [selectedMarker, setSelectedMarker] = useState(null);
@@ -67,8 +75,9 @@ export default function MapView({
         mapId="ciblorgasport-map"
         style={{ width: "100%", height: "100%" }}
       >
+        <MapCameraSync center={center} zoom={zoom} recenterNonce={recenterNonce} />
         {markers.map((m) => {
-          const colors = MARKER_COLORS[m.type] || MARKER_COLORS.EVENT;
+          const colors = MAP_MARKER_COLORS[m.type] || MAP_MARKER_COLORS.EVENT;
           return (
             <AdvancedMarker
               key={m.id}

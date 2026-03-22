@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import athleteLocationService from "../services/athleteLocationService";
+import { GEO_FALLBACK_POSITION, isGeoFallbackEnabled } from "../geoFallbackConfig";
 
 const TRACKING_INTERVAL_MS = 30_000;
-
-// Position simulée utilisée uniquement en développement quand le GPS est indisponible
-const DEV_FALLBACK_POSITION = { lat: 50.604457, lng: 3.136702 }; // J43P+VG Villeneuve-d'Ascq
 
 export default function useAthleteTracking(athleteId) {
   const [tracking, setTracking] = useState(false);
@@ -17,8 +15,36 @@ export default function useAthleteTracking(athleteId) {
     athleteLocationService.updateLocation(athleteId, lat, lng).catch(() => {});
   }, [athleteId]);
 
+  const startFallbackInterval = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      sendLocation(GEO_FALLBACK_POSITION.lat, GEO_FALLBACK_POSITION.lng);
+    }, TRACKING_INTERVAL_MS);
+  }, [sendLocation]);
+
+  const startGpsInterval = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          setPosition({ lat: coords.latitude, lng: coords.longitude });
+          sendLocation(coords.latitude, coords.longitude);
+        },
+        () => {}
+      );
+    }, TRACKING_INTERVAL_MS);
+  }, [sendLocation]);
+
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
+      if (isGeoFallbackEnabled()) {
+        setError(null);
+        setTracking(true);
+        setPosition({ lat: GEO_FALLBACK_POSITION.lat, lng: GEO_FALLBACK_POSITION.lng });
+        sendLocation(GEO_FALLBACK_POSITION.lat, GEO_FALLBACK_POSITION.lng);
+        startFallbackInterval();
+        return;
+      }
       setError("Géolocalisation non supportée par ce navigateur");
       return;
     }
@@ -28,13 +54,20 @@ export default function useAthleteTracking(athleteId) {
         setTracking(true);
         setPosition({ lat: coords.latitude, lng: coords.longitude });
         sendLocation(coords.latitude, coords.longitude);
+        startGpsInterval();
       },
       (err) => {
-        if (err.code === 2 && import.meta.env.DEV) {
-          console.warn("[dev] GPS indisponible, position simulée utilisée (Paris).");
+        // 2 = POSITION_UNAVAILABLE, 3 = TIMEOUT — fréquent en Docker / HTTP non sécurisé / pas de GPS
+        const canUseFallback =
+          isGeoFallbackEnabled() && (err.code === 2 || err.code === 3);
+        if (canUseFallback) {
+          console.warn(
+            "[geo] GPS indisponible ou expiré, position de secours utilisée (VITE_GEO_FALLBACK ou mode dev)."
+          );
           setTracking(true);
-          setPosition(DEV_FALLBACK_POSITION);
-          sendLocation(DEV_FALLBACK_POSITION.lat, DEV_FALLBACK_POSITION.lng);
+          setPosition({ lat: GEO_FALLBACK_POSITION.lat, lng: GEO_FALLBACK_POSITION.lng });
+          sendLocation(GEO_FALLBACK_POSITION.lat, GEO_FALLBACK_POSITION.lng);
+          startFallbackInterval();
           return;
         }
         if (err.code === 1)
@@ -46,16 +79,7 @@ export default function useAthleteTracking(athleteId) {
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-    intervalRef.current = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(
-        ({ coords }) => {
-          setPosition({ lat: coords.latitude, lng: coords.longitude });
-          sendLocation(coords.latitude, coords.longitude);
-        },
-        () => {}
-      );
-    }, TRACKING_INTERVAL_MS);
-  }, [sendLocation]);
+  }, [sendLocation, startFallbackInterval, startGpsInterval]);
 
   const stopTracking = useCallback(() => {
     setTracking(false);

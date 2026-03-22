@@ -13,6 +13,10 @@ public class AthleteLocationResponse {
     private double latitude;
     private double longitude;
     private LocalDateTime timestamp;
+    /** Renseigné uniquement sur l’API admin (carte opérations). */
+    private String firstName;
+    /** Renseigné uniquement sur l’API admin (carte opérations). */
+    private String lastName;
 
     public static AthleteLocationResponse fromEntity(AthleteLocation loc) {
         return AthleteLocationResponse.builder()

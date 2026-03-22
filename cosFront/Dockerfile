@@ -18,6 +18,9 @@ ARG VITE_API_BASE_URL=http://localhost:8083
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ARG VITE_GOOGLE_MAPS_API_KEY
 ENV VITE_GOOGLE_MAPS_API_KEY=${VITE_GOOGLE_MAPS_API_KEY}
+# true = position fixe si GPS indisponible (recommandé pour images Docker / démo)
+ARG VITE_GEO_FALLBACK=false
+ENV VITE_GEO_FALLBACK=${VITE_GEO_FALLBACK}
 RUN npm run build
 
 # Stage 2: Serve avec Nginx

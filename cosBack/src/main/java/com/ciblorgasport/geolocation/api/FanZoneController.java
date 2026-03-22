@@ -34,6 +34,19 @@ public class FanZoneController {
         return ResponseEntity.ok(createFromGooglePlaceUseCase.execute(request));
     }
 
+    @GetMapping("/api/admin/fan-zones")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<FanZoneResponse>> getAll() {
+        return ResponseEntity.ok(createFanZoneUseCase.findAll());
+    }
+
+    @DeleteMapping("/api/admin/fan-zones/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        createFanZoneUseCase.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Spectateur ───────────────────────────────────────────────────────────
 
     @GetMapping("/api/fan-zones/nearby")
