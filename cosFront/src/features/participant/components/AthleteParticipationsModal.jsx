@@ -95,7 +95,13 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
       openBlob(blob, `certificat-medical-${athlete.id}.pdf`);
     } catch (err) {
       console.error("Erreur téléchargement certificat médical:", err);
-      setActionError("Impossible d'ouvrir le certificat médical.");
+      if (err.response?.status === 403) {
+        setActionError(
+          "Accès refusé : votre accréditation commissaire doit être validée par l'administrateur."
+        );
+      } else {
+        setActionError("Impossible d'ouvrir le certificat médical.");
+      }
     }
   };
 
@@ -107,7 +113,13 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
       openBlob(blob, `passeport-${athlete.id}.pdf`);
     } catch (err) {
       console.error("Erreur téléchargement passeport:", err);
-      setActionError("Impossible d'ouvrir le passeport.");
+      if (err.response?.status === 403) {
+        setActionError(
+          "Accès refusé : votre accréditation commissaire doit être validée par l'administrateur."
+        );
+      } else {
+        setActionError("Impossible d'ouvrir le passeport.");
+      }
     }
   };
 
@@ -197,34 +209,41 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {participations.map((p) => (
-                  <TableRow key={p.participationId}>
-                    <TableCell>{p.competitionName}</TableCell>
-                    <TableCell>{getStatusChip(p.status)}</TableCell>
-                    <TableCell>
-                      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
-                          disabled={actionLoadingId === p.participationId}
-                          onClick={() => handleValidateParticipation(p.participationId)}
-                        >
-                          {actionLoadingId === p.participationId ? "..." : "Valider"}
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="error"
-                          disabled={actionLoadingId === p.participationId}
-                          onClick={() => handleOpenRefuseDialog(p.participationId)}
-                        >
-                          Refuser
-                        </Button>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {participations.map((p) => {
+                  const canReview = p.status === "PENDING_VALIDATION";
+                  return (
+                    <TableRow key={p.participationId}>
+                      <TableCell>{p.competitionName}</TableCell>
+                      <TableCell>{getStatusChip(p.status)}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            disabled={
+                              !canReview || actionLoadingId === p.participationId
+                            }
+                            onClick={() => handleValidateParticipation(p.participationId)}
+                          >
+                            {actionLoadingId === p.participationId ? "..." : "Valider"}
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            disabled={
+                              !canReview || actionLoadingId === p.participationId
+                            }
+                            onClick={() => handleOpenRefuseDialog(p.participationId)}
+                          >
+                            Refuser
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>

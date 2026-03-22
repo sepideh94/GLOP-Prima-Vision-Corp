@@ -13,7 +13,7 @@ const notificationService = {
   },
 
   async markAsRead(id) {
-    await api.put(`/api/notifications/${id}/read`);
+    await api.patch(`/api/notifications/${id}/read`);
   },
 };
 

@@ -111,13 +111,7 @@ export default function Sidebar() {
                 <item.icon />
               )}
             </ListItemIcon>
-            <ListItemText
-              primary={
-                item.path?.includes("notifications") && unreadCount > 0
-                  ? `${item.label} (${unreadCount > 99 ? "99+" : unreadCount})`
-                  : item.label
-              }
-            />
+            <ListItemText primary={item.label} />
           </ListItemButton>
         ))}
       </List>
