@@ -13,6 +13,12 @@ public interface TrialResultService {
     /** Resultats de l'athlete (participation directe ou via equipe), toutes epreuves. */
     List<ResultResponse> getResultsByAthleteId(Long athleteId);
 
+    /**
+     * Resultats des autres participants aux memes epreuves que l'athlete
+     * (meme demi-serie / meme epreuve programme), sans ses propres performances.
+     */
+    List<ResultResponse> getCompetitorResultsByAthleteId(Long athleteId);
+
     /** Resultats de toutes les epreuves d'une competition, groupes par epreuve. */
     List<CompetitionResultsResponse> getResultsByCompetitionId(Long competitionId);
 

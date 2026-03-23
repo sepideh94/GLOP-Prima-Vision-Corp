@@ -1,13 +1,18 @@
 package com.ciblorgasport.trial.application;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Comparator;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.domain.TrialParticipantStatus;
 import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.dto.CompetitionResultsResponse;
@@ -85,6 +90,52 @@ public class TrialResultServiceImpl implements TrialResultService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ResultResponse> getCompetitorResultsByAthleteId(Long athleteId) {
+        List<TrialParticipant> myParticipations =
+                trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
+        if (myParticipations.isEmpty()) {
+            return List.of();
+        }
+
+        Set<Long> myParticipantIds = myParticipations.stream()
+                .map(TrialParticipant::getId)
+                .collect(Collectors.toSet());
+        Set<Long> trialIds = myParticipations.stream()
+                .map(tp -> tp.getTrial().getId())
+                .collect(Collectors.toSet());
+
+        Set<Long> competitorParticipantIds = new HashSet<>();
+        for (Long trialId : trialIds) {
+            for (TrialParticipant tp : trialParticipantRepository.findByTrialId(trialId)) {
+                if (!myParticipantIds.contains(tp.getId())) {
+                    competitorParticipantIds.add(tp.getId());
+                }
+            }
+        }
+        if (competitorParticipantIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Result> results =
+                resultRepository.findByTrialParticipantIdIn(new ArrayList<>(competitorParticipantIds));
+        var participantById = trialParticipantRepository.findAllById(competitorParticipantIds).stream()
+                .collect(Collectors.toMap(TrialParticipant::getId, tp -> tp));
+
+        return results.stream()
+                .map(result -> {
+                    TrialParticipant tp = participantById.get(result.getTrialParticipant().getId());
+                    if (tp == null) {
+                        return null;
+                    }
+                    var participantResponse = trialParticipantService.toResponse(tp);
+                    return ResultResponse.from(result, participantResponse);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<CompetitionResultsResponse> getResultsByCompetitionId(Long competitionId) {
         List<Trial> trials = trialRepository.findByCompetitionId(competitionId);
 
@@ -102,6 +153,10 @@ public class TrialResultServiceImpl implements TrialResultService {
                             .categoryGender(trial.getCategoryGender() != null ? trial.getCategoryGender().name() : null)
                             .roundName(trial.getRound() != null ? trial.getRound().getName().name() : null)
                             .roundDisplayName(trial.getRound() != null ? trial.getRound().getDisplayName() : null)
+                            .startDate(trial.getStartDate())
+                            .startHour(trial.getStartHour())
+                            .endDate(trial.getEndDate())
+                            .endHour(trial.getEndHour())
                             .results(results)
                             .build();
                 })
@@ -131,6 +186,8 @@ public class TrialResultServiceImpl implements TrialResultService {
                     return PublicCompetitionSummaryResponse.builder()
                             .competitionId(competition.getId())
                             .competitionName(competition.getName())
+                            .startDate(competition.getStartDate())
+                            .endDate(competition.getEndDate())
                             .lastUpdatedAt(latest)
                             .trialGroups(grouped)
                             .build();

@@ -1,9 +1,14 @@
-package com.ciblorgasport.spectator;
+package com.ciblorgasport.spectator.domain;
 
+import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.user.domain.UserAccount;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -19,6 +24,10 @@ import lombok.experimental.SuperBuilder;
 @DiscriminatorValue("SPECTATOR")
 public class Spectator extends UserAccount {
 
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "ticket_document_id")
+    private Document ticketDocument;
+
     @Override
     public String getRoleName() {
         return "ROLE_SPECTATOR";
@@ -28,8 +37,8 @@ public class Spectator extends UserAccount {
     public boolean isEnabled() {
         return isActive();
     }
-    
-    public boolean isSpectator(){
-    	return true;
+
+    public boolean isSpectator() {
+        return true;
     }
 }

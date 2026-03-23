@@ -15,7 +15,8 @@ import com.ciblorgasport.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Endpoints permettant a un athlete de consulter ses propres performances.
+ * Endpoints permettant a un athlete de consulter ses performances et celles de ses compétiteurs
+ * (memes epreuves / series).
  * Acces restreint au role ATHLETE (cf. SecurityConfig : /api/athlete/**).
  */
 @RestController
@@ -34,5 +35,16 @@ public class AthleteResultsController {
             @AuthenticationPrincipal UserAccount user) {
 
         return ResponseEntity.ok(trialResultService.getResultsByAthleteId(user.getId()));
+    }
+
+    /**
+     * Performances des autres participants aux epreuves auxquelles l'athlete connecte a pris part
+     * (individuellement ou en equipe), sans inclure ses propres resultats.
+     */
+    @GetMapping("/competitors")
+    public ResponseEntity<List<ResultResponse>> getCompetitorResults(
+            @AuthenticationPrincipal UserAccount user) {
+
+        return ResponseEntity.ok(trialResultService.getCompetitorResultsByAthleteId(user.getId()));
     }
 }
