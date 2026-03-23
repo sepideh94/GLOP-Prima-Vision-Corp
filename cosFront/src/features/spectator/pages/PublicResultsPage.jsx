@@ -34,15 +34,70 @@ export default function PublicResultsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const sanitizeTrialGroups = (groups) =>
+    (Array.isArray(groups) ? groups : [])
+      .map((trialGroup) => {
+        const results = Array.isArray(trialGroup?.results) ? trialGroup.results : [];
+        const validResults = results.filter((result) => {
+          const hasPerformance =
+            result?.performance !== null &&
+            result?.performance !== undefined &&
+            String(result.performance).trim() !== "";
+          const isForfeit = result?.participant?.status === "FORFEIT";
+          return hasPerformance || isForfeit;
+        });
+        if (validResults.length === 0) return null;
+        return {
+          ...trialGroup,
+          results: validResults,
+        };
+      })
+      .filter(Boolean);
+
+  const prettifyEnum = (value) => {
+    if (!value || typeof value !== "string") return "Non défini";
+    return value
+      .toLowerCase()
+      .replaceAll("_", " ")
+      .replaceAll(/\s+/g, " ")
+      .trim()
+      .replaceAll(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const getGenderLabel = (value) => {
+    const key = String(value || "").toUpperCase();
+    if (key === "MALE" || key === "MEN") return "Homme";
+    if (key === "FEMALE" || key === "WOMEN") return "Femme";
+    if (key === "MIXED") return "Mixte";
+    return prettifyEnum(value);
+  };
+
+  const getRoundLabel = (value) => {
+    const key = String(value || "").toUpperCase();
+    const map = {
+      QUALIFICATION_HEAT: "Série de qualification",
+      QUALIFICATION: "Qualification",
+      SEMI_FINAL: "Demi-finale",
+      FINAL: "Finale",
+      FINALE: "Finale",
+      HEAT: "Série",
+    };
+    return map[key] || prettifyEnum(value);
+  };
+
   const fetchDiscovery = async () => {
     try {
       setLoading(true);
       setError(null);
       const discovered = await publicResultsService.getCompetitionsWithResults();
-      setAvailableCompetitions(discovered);
+      const normalizedDiscovered = (Array.isArray(discovered) ? discovered : []).map((competition) => ({
+        ...competition,
+        trialGroups: sanitizeTrialGroups(competition?.trialGroups),
+      }));
+      setAvailableCompetitions(normalizedDiscovered);
 
-      if (discovered.length > 0) {
-        const first = discovered[0];
+      if (normalizedDiscovered.length > 0) {
+        const first = normalizedDiscovered[0];
         setSelectedCompetitionId(first.competitionId);
         setResultsByTrial(Array.isArray(first?.trialGroups) ? first.trialGroups : []);
       } else {
@@ -76,7 +131,7 @@ export default function PublicResultsPage() {
     try {
       setLoading(true);
       const data = await publicResultsService.getCompetitionResults(competitionId);
-      setResultsByTrial(Array.isArray(data) ? data : []);
+      setResultsByTrial(sanitizeTrialGroups(data));
     } catch {
       setResultsByTrial([]);
       setError("Impossible de charger cette compétition pour le moment.");
@@ -285,7 +340,9 @@ export default function PublicResultsPage() {
                     >
                       <Box>
                         <Typography sx={{ fontWeight: 900, fontSize: 17, color: "#E2E8F0" }}>
-                          {trialGroup?.trialName || `Épreuve ${trialGroup?.trialId}`}
+                          {trialGroup?.trialDisplayName ||
+                            trialGroup?.trialName ||
+                            `Épreuve ${trialGroup?.trialId}`}
                         </Typography>
                         {selectedCompetitionId && selectedCompetitionName && (
                           <Typography sx={{ color: "#67E8F9", fontSize: 12, mb: 0.3, fontWeight: 700 }}>
@@ -293,8 +350,12 @@ export default function PublicResultsPage() {
                           </Typography>
                         )}
                         <Typography sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13 }}>
-                          {trialGroup?.roundName || "Round non défini"}
-                          {trialGroup?.categoryGender ? ` · ${trialGroup?.categoryGender}` : ""}
+                          {trialGroup?.roundDisplayName ||
+                            getRoundLabel(trialGroup?.roundName) ||
+                            "Round non défini"}
+                          {trialGroup?.categoryGender
+                            ? ` · ${getGenderLabel(trialGroup?.categoryGender)}`
+                            : ""}
                         </Typography>
                       </Box>
                       <Stack direction="row" spacing={1}>

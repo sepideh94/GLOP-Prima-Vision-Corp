@@ -19,8 +19,10 @@ public class CompetitionResultsResponse {
 
     private Long trialId;
     private String trialName;
+    private String trialDisplayName;
     private String categoryGender;
     private String roundName;
+    private String roundDisplayName;
 
     /** Classement de cette epreuve, trie par rang. Vide si aucun resultat. */
     private List<ResultResponse> results;

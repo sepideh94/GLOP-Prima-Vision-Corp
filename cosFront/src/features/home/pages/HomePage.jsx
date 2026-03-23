@@ -39,9 +39,21 @@ export default function HomePage() {
 
         const trialRows = competitions.flatMap((competition) =>
           (Array.isArray(competition?.trialGroups) ? competition.trialGroups : [])
-            .filter((trialGroup) => Array.isArray(trialGroup?.results) && trialGroup.results.length > 0)
             .map((trialGroup) => {
-              const latestUpdate = trialGroup.results
+              const validResults = (Array.isArray(trialGroup?.results) ? trialGroup.results : []).filter(
+                (result) => {
+                  const hasPerformance =
+                    result?.performance !== null &&
+                    result?.performance !== undefined &&
+                    String(result?.performance).trim() !== "";
+                  const isForfeit = result?.participant?.status === "FORFEIT";
+                  return hasPerformance || isForfeit;
+                }
+              );
+
+              if (validResults.length === 0) return null;
+
+              const latestUpdate = validResults
                 .map((r) => r?.updatedAt)
                 .filter(Boolean)
                 .sort((a, b) => new Date(b) - new Date(a))[0] || competition.lastUpdatedAt;
@@ -50,13 +62,16 @@ export default function HomePage() {
                 competitionId: competition.competitionId,
                 competitionName: competition.competitionName,
                 trialId: trialGroup.trialId,
-                trialName: trialGroup.trialName,
+                trialDisplayName: trialGroup.trialDisplayName,
+                trialName: trialGroup.trialNameFr || trialGroup.nameFr || trialGroup.trialName,
                 roundName: trialGroup.roundName,
+                roundDisplayName: trialGroup.roundDisplayName,
                 categoryGender: trialGroup.categoryGender,
-                results: trialGroup.results,
+                results: validResults,
                 latestUpdatedAt: latestUpdate,
               };
             })
+            .filter(Boolean)
         );
 
         trialRows.sort(
@@ -129,7 +144,52 @@ export default function HomePage() {
       RELAY_4X200M_FREESTYLE: "Relais 4x200m nage libre",
       CENT_METRES: "100 mètres",
     };
-    return map[key] || prettifyEnum(value);
+    if (map[key]) return map[key];
+
+    const wordsToNumber = {
+      FIFTY: "50",
+      ONE_HUNDRED: "100",
+      TWO_HUNDRED: "200",
+      THREE_HUNDRED: "300",
+      FOUR_HUNDRED: "400",
+      FIVE_HUNDRED: "500",
+      EIGHT_HUNDRED: "800",
+      ONE_THOUSAND: "1000",
+      ONE_THOUSAND_FIVE_HUNDRED: "1500",
+    };
+
+    let normalized = key;
+    Object.entries(wordsToNumber).forEach(([wordKey, numberValue]) => {
+      normalized = normalized.replace(wordKey, numberValue);
+    });
+
+    const tokenMap = {
+      FREESTYLE: "nage libre",
+      BACKSTROKE: "dos",
+      BREASTSTROKE: "brasse",
+      BUTTERFLY: "papillon",
+      MEDLEY: "4 nages",
+      RELAY: "Relais",
+      MIXED: "mixte",
+      MEN: "hommes",
+      MALE: "hommes",
+      WOMEN: "femmes",
+      FEMALE: "femmes",
+      OPEN: "open",
+    };
+
+    Object.entries(tokenMap).forEach(([en, frValue]) => {
+      normalized = normalized.replace(new RegExp(`\\b${en}\\b`, "g"), frValue);
+    });
+
+    normalized = normalized
+      .replace(/(\d+)_M\b/g, "$1m")
+      .replace(/_/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b(\d+)X(\d+)M\b/gi, (_, a, b) => `${a}x${b}m`);
+
+    return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
 
   const latestSectionDescription = useMemo(() => {
@@ -651,14 +711,15 @@ export default function HomePage() {
                           >
                             <Box>
                               <Typography sx={{ color: "#E2E8F0", fontWeight: 900, mb: 0.4 }}>
-                                {getTrialNameLabel(trial.trialName || `Épreuve ${trial.trialId}`)}
+                                {trial.trialDisplayName ||
+                                  getTrialNameLabel(trial.trialName || `Épreuve ${trial.trialId}`)}
                               </Typography>
                               <Typography
                                 sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13 }}
                               >
                                 {trial.competitionName || `Compétition ${trial.competitionId}`}{" "}
                                 {trial.roundName || trial.categoryGender ? "· " : ""}
-                                {getRoundLabel(trial.roundName || "Round")}{" "}
+                                {trial.roundDisplayName || getRoundLabel(trial.roundName || "Round")}{" "}
                                 {trial.categoryGender
                                   ? `· ${getGenderLabel(trial.categoryGender)}`
                                   : ""}

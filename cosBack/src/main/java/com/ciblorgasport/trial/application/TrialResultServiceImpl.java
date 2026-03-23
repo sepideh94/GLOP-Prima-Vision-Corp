@@ -98,8 +98,10 @@ public class TrialResultServiceImpl implements TrialResultService {
                             )
                             .trialId(trial.getId())
                             .trialName(trial.getTrialName() != null ? trial.getTrialName().name() : null)
+                            .trialDisplayName(trial.getTrialName() != null ? trial.getTrialName().getDisplayName() : null)
                             .categoryGender(trial.getCategoryGender() != null ? trial.getCategoryGender().name() : null)
                             .roundName(trial.getRound() != null ? trial.getRound().getName().name() : null)
+                            .roundDisplayName(trial.getRound() != null ? trial.getRound().getDisplayName() : null)
                             .results(results)
                             .build();
                 })
