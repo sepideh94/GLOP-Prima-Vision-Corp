@@ -336,6 +336,8 @@ class TrialParticipantServiceImplTest {
             when(trial.hasStarted()).thenReturn(false);
             when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
                     .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
             assertDoesNotThrow(() -> trialParticipantService.declareForfeit(4L, 13L));
 
@@ -369,6 +371,8 @@ class TrialParticipantServiceImplTest {
             when(trial.hasStarted()).thenReturn(true);
             when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
                     .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
             IllegalStateException exception = assertThrows(
                     IllegalStateException.class,
@@ -391,6 +395,8 @@ class TrialParticipantServiceImplTest {
             when(trial.hasStarted()).thenReturn(false);
             when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
                     .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
             IllegalStateException exception = assertThrows(
                     IllegalStateException.class,

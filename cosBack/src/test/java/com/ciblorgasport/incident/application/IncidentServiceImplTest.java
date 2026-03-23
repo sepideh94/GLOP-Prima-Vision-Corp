@@ -11,6 +11,7 @@ import com.ciblorgasport.incident.domain.IncidentStatus;
 import com.ciblorgasport.incident.dto.IncidentCreateRequest;
 import com.ciblorgasport.incident.dto.IncidentResponse;
 import com.ciblorgasport.incident.dto.IncidentUpdateRequest;
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
 import com.ciblorgasport.notification.application.IncidentNotificationService;
 import com.ciblorgasport.notification.application.NotificationService;
@@ -56,6 +57,8 @@ class IncidentServiceImplTest {
     private IncidentNotificationService incidentNotificationService;
     @Mock
     private NotificationService notificationService;
+    @Mock
+    private AnalyticsService analyticsService;
 
     @InjectMocks
     private IncidentServiceImpl incidentService;
