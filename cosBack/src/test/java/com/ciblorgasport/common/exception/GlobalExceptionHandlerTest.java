@@ -2,78 +2,94 @@ package com.ciblorgasport.common.exception;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
+import com.ciblorgasport.common.model.Status;
+import com.ciblorgasport.event.domain.exception.EventNotFoundException;
+import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
 
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
 
 class GlobalExceptionHandlerTest {
 
-    private GlobalExceptionHandler exceptionHandler;
-    private HttpServletRequest request;
-
-    @BeforeEach
-    void setUp() {
-        exceptionHandler = new GlobalExceptionHandler();
-        request = mock(HttpServletRequest.class);
-        when(request.getRequestURI()).thenReturn("/api/test");
-    }
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
-    void handleEntityNotFoundException_Returns404() {
-        EntityNotFoundException ex = new EntityNotFoundException("Entity non trouvée");
+    void shouldHandleResponseStatusException() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/test");
+        ResponseStatusException ex = new ResponseStatusException(HttpStatus.BAD_REQUEST, "bad payload");
 
-        ResponseEntity<ApiError> response = exceptionHandler.handleEntityNotFoundException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(404);
-        assertThat(response.getBody().getMessage()).isEqualTo("Entity non trouvée");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/test");
-    }
-
-    @Test
-    void handleAccessDeniedException_Returns403() {
-        org.springframework.security.access.AccessDeniedException ex = 
-                new org.springframework.security.access.AccessDeniedException("Accès refusé");
-
-        ResponseEntity<ApiError> response = exceptionHandler.handleAccessDeniedException(ex, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(403);
-        assertThat(response.getBody().getMessage()).isEqualTo("Accès refusé");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/test");
-    }
-
-    @Test
-    void handleIllegalArgumentException_Returns400() {
-        IllegalArgumentException ex = new IllegalArgumentException("Argument invalide");
-
-        ResponseEntity<ApiError> response = exceptionHandler.handleIllegalArgumentException(ex, request);
+        var response = handler.handleResponseStatusException(ex, request);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(400);
-        assertThat(response.getBody().getMessage()).isEqualTo("Argument invalide");
+        assertThat(response.getBody().getMessage()).isEqualTo("bad payload");
         assertThat(response.getBody().getPath()).isEqualTo("/api/test");
     }
 
     @Test
-    void handleGenericException_Returns500() {
-        Exception ex = new Exception("Erreur fatale interne");
+    void shouldHandleValidationException() {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/events");
+        BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "obj");
+        bindingResult.addError(new FieldError("obj", "name", "nom requis"));
+        MethodArgumentNotValidException ex = new MethodArgumentNotValidException(mock(MethodParameter.class), bindingResult);
 
-        ResponseEntity<ApiError> response = exceptionHandler.handleGenericException(ex, request);
+        var response = handler.handleValidationException(ex, request);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getStatus()).isEqualTo(500);
-        assertThat(response.getBody().getMessage()).isEqualTo("Une erreur interne est survenue.");
-        assertThat(response.getBody().getPath()).isEqualTo("/api/test");
+        assertThat(response.getBody().getValidationErrors()).containsEntry("name", "nom requis");
+    }
+
+    @Test
+    void shouldHandleDomainExceptions() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/x");
+
+        assertThat(handler.handleEventNotFound(new EventNotFoundException(1L), request).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(handler.handleTrialNotFoundException(new TrialNotFoundException(10L), request).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(handler.handleTrialNotCompletedException(new TrialNotCompletedException(10L, Status.UPCOMING), request).getStatusCode())
+                .isEqualTo(HttpStatus.CONFLICT);
+        assertThat(handler.handleResultModificationNotAllowed(new ResultModificationNotAllowedException(10L), request).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(handler.handleCompetitionDateIntegrityException(new CompetitionDateIntegrityException("dates"), request).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+    }
+
+    @Test
+    void shouldHandleSecurityAndGenericExceptions() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/secure");
+
+        ApiError badCreds = handler.handleBadCredentialsException(new BadCredentialsException("bad"));
+        assertThat(badCreds.getStatus()).isEqualTo(HttpStatus.UNAUTHORIZED.value());
+        assertThat(badCreds.getMessage()).contains("incorrect");
+
+        assertThat(handler.handleDisabledException(new DisabledException("disabled"), request).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
+        assertThat(handler.handleEntityNotFoundException(new EntityNotFoundException("missing"), request).getStatusCode())
+                .isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(handler.handleMaxUploadSizeExceededException(new MaxUploadSizeExceededException(10_000), request).getStatusCode())
+                .isEqualTo(HttpStatus.PAYLOAD_TOO_LARGE);
+        assertThat(handler.handleIllegalArgumentException(new IllegalArgumentException("bad"), request).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(handler.handleIllegalStateException(new IllegalStateException("state"), request).getStatusCode())
+                .isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(handler.handleGenericException(new RuntimeException("boom"), request).getStatusCode())
+                .isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        assertThat(handler.handleAccessDeniedException(new org.springframework.security.access.AccessDeniedException("denied"), request).getStatusCode())
+                .isEqualTo(HttpStatus.FORBIDDEN);
     }
 }
