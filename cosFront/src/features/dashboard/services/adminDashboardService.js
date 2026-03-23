@@ -6,6 +6,18 @@ const adminDashboardService = {
     return res.data;
   },
 
+  async getTopConsultedSections() {
+    const res = await api.get("/api/admin/stats/consultations");
+    return res.data;
+  },
+
+  async getTopConsultedSectionsByRole(role) {
+    const res = await api.get("/api/admin/stats/consultations-by-role", {
+      params: { role },
+    });
+    return res.data;
+  },
+
   async getReportSummary() {
     const res = await api.get("/api/admin/report-summary", {
       transformResponse: [(data) => data],

@@ -12,6 +12,10 @@ import {
   Chip,
   ToggleButton,
   ToggleButtonGroup,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   LoginOutlined,
@@ -79,6 +83,16 @@ function getResolutionColor(rate) {
 function getSessionColor(role, value) {
   if (role === "VOLONTEER" && value < 2) return "#f97316";
   return ROLE_COLORS[role] || "#64748B";
+}
+
+function formatSectionLabel(rawValue) {
+  if (!rawValue) return "Section inconnue";
+  return String(rawValue)
+    .replaceAll("_", " ")
+    .replaceAll("-", " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function KpiCard({ title, value, icon, accentColor }) {
@@ -209,9 +223,12 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
+  const [consultedSections, setConsultedSections] = useState([]);
+  const [sectionRoleFilter, setSectionRoleFilter] = useState("ALL");
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(true);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [error, setError] = useState(null);
   const [days, setDays] = useState(7);
@@ -248,15 +265,45 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  const fetchConsultedSections = useCallback(async ({ silent = false, role = sectionRoleFilter } = {}) => {
+    try {
+      if (!silent) setSectionsLoading(true);
+      const data =
+        role === "ALL"
+          ? await adminDashboardService.getTopConsultedSections()
+          : await adminDashboardService.getTopConsultedSectionsByRole(role);
+      const normalized = Array.isArray(data)
+        ? data.map((item) => ({
+            name: formatSectionLabel(item.section),
+            value: item.visitCount,
+          }))
+        : [];
+      setConsultedSections(normalized);
+    } catch {
+      // On conserve une dégradation douce : fallback sur /stats si disponible.
+      setConsultedSections([]);
+    } finally {
+      if (!silent) setSectionsLoading(false);
+    }
+  }, [sectionRoleFilter]);
+
   useEffect(() => {
     fetchData(days);
     fetchSummary();
   }, [fetchData, fetchSummary, days]);
 
+  useEffect(() => {
+    fetchConsultedSections({ role: sectionRoleFilter });
+  }, [fetchConsultedSections, sectionRoleFilter]);
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      await Promise.all([fetchData(days, { silent: true }), fetchSummary({ silent: true })]);
+      await Promise.all([
+        fetchData(days, { silent: true }),
+        fetchSummary({ silent: true }),
+        fetchConsultedSections({ silent: true, role: sectionRoleFilter }),
+      ]);
     } finally {
       setRefreshing(false);
     }
@@ -264,6 +311,10 @@ export default function AdminDashboardPage() {
 
   const handlePeriodChange = (_, newVal) => {
     if (newVal !== null) setDays(newVal);
+  };
+
+  const handleSectionRoleChange = (event) => {
+    setSectionRoleFilter(event.target.value);
   };
 
   /** PDF généré côté client : une page par graphique, lisible et hi-res. */
@@ -339,9 +390,12 @@ export default function AdminDashboardPage() {
     ? Object.entries(stats.averageSessionByRole).map(([role, value]) => ({ role, value: parseFloat(value) }))
     : [];
 
-  const sectionsData = stats?.topViewedSections
-    ? Object.entries(stats.topViewedSections).map(([name, value]) => ({ name, value }))
-    : [];
+  const sectionsData =
+    consultedSections.length > 0
+      ? consultedSections
+      : stats?.topViewedSections
+        ? Object.entries(stats.topViewedSections).map(([name, value]) => ({ name: formatSectionLabel(name), value }))
+        : [];
 
   return (
     <Box>
@@ -761,7 +815,28 @@ export default function AdminDashboardPage() {
             refProp={chartSectionsRef}
             chartSurface
           >
-            {sectionsData.length === 0 ? (
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+              <FormControl size="small" sx={{ minWidth: 220 }}>
+                <InputLabel id="section-role-filter-label">Filtrer par rôle</InputLabel>
+                <Select
+                  labelId="section-role-filter-label"
+                  value={sectionRoleFilter}
+                  label="Filtrer par rôle"
+                  onChange={handleSectionRoleChange}
+                >
+                  <MenuItem value="ALL">Global (tous les rôles)</MenuItem>
+                  <MenuItem value="ADMIN">ADMIN</MenuItem>
+                  <MenuItem value="ATHLETE">ATHLETE</MenuItem>
+                  <MenuItem value="COMMISSIONNER">COMMISSIONNER</MenuItem>
+                  <MenuItem value="VOLONTEER">VOLONTEER</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+            {sectionsLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress size={28} sx={{ color: appTheme.colors.cyan }} />
+              </Box>
+            ) : sectionsData.length === 0 ? (
               <Alert severity="info" sx={{ borderRadius: 2 }}>
                 Aucune consultation enregistrée sur cette période (données « sections les plus consultées » de l&apos;API admin). Quand
                 le serveur alimentera ces compteurs, le graphique apparaîtra ici — utile pour repérer les écrans peu utilisés et limiter la
