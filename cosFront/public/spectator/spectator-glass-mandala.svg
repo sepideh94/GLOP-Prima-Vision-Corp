@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" fill="none" aria-hidden="true">
+  <defs>
+    <style>
+      .lace { stroke: #ffffff; stroke-width: 0.65; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+    </style>
+  </defs>
+  <g opacity="0.42" class="lace">
+    <g transform="translate(400,400)">
+      <circle r="268" opacity="0.35"/>
+      <circle r="210" opacity="0.4"/>
+      <circle r="152" opacity="0.45"/>
+      <circle r="94" opacity="0.5"/>
+      <path d="M0-268 L0-210 M188-188 L148-148 M268 0 L210 0 M188 188 L148 148 M0 268 L0 210 M-188 188 L-148 148 M-268 0 L-210 0 M-188-188 L-148-148"/>
+      <path d="M0-152 L0-94 M134-134 L78-78 M152 0 L94 0 M134 134 L78 78 M0 152 L0 94 M-134 134 L-78 78 M-152 0 L-94 0 M-134-134 L-78-78" opacity="0.85"/>
+      <path d="M-40-240 Q0-280 40-240 M240-40 Q280 0 240 40 M40 240 Q0 280 -40 240 M-240 40 Q-280 0 -240-40" opacity="0.7"/>
+    </g>
+  </g>
+  <g opacity="0.38" class="lace">
+    <path d="M48 80 Q120 24 200 48 T352 48 Q432 24 504 80" opacity="0.9"/>
+    <path d="M48 720 Q120 776 200 752 T352 752 Q432 776 504 720" opacity="0.9"/>
+    <path d="M80 48 Q24 120 48 200 T48 352 Q24 432 80 504" opacity="0.9"/>
+    <path d="M720 48 Q776 120 752 200 T752 352 Q776 432 720 504" opacity="0.9"/>
+    <path d="M64 64 Q140 100 200 88 Q260 76 336 64" opacity="0.55"/>
+    <path d="M736 64 Q660 100 600 88 Q540 76 464 64" opacity="0.55"/>
+    <path d="M64 736 Q140 700 200 712 Q260 724 336 736" opacity="0.55"/>
+    <path d="M736 736 Q660 700 600 712 Q540 724 464 736" opacity="0.55"/>
+  </g>
+  <g opacity="0.28" class="lace" stroke-width="0.5">
+    <rect x="56" y="56" width="688" height="688" rx="48" ry="48"/>
+    <rect x="72" y="72" width="656" height="656" rx="40" ry="40" opacity="0.7"/>
+  </g>
+</svg>

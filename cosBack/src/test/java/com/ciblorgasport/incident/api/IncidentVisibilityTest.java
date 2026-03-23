@@ -24,7 +24,7 @@ import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.incident.domain.IncidentStatus;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 

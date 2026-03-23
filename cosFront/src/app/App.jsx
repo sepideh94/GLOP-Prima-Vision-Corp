@@ -1,7 +1,17 @@
 import AuthProvider from "../common/contexts/AuthContext";
+import {
+  BrowserRouter,
+  HashRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { USE_HASH_ROUTER } from "../common/utils/spaNavigation";
 import GoogleMapsProvider from "../common/components/GoogleMapsProvider";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PrivateRoute from "../common/components/PrivateRoute.jsx";
+import PrivateRoute from "../common/components/PrivateRoute.jsx";
+
+const AppRouter = USE_HASH_ROUTER ? HashRouter : BrowserRouter;
 
 import Layout from "../common/components/Layout";
 
@@ -58,7 +68,7 @@ export default function App() {
   return (
     <GoogleMapsProvider>
     <AuthProvider>
-      <BrowserRouter>
+      <AppRouter>
         <Routes>
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<HomePage />} />
@@ -178,7 +188,7 @@ export default function App() {
           {/* FALLBACK */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </AppRouter>
     </AuthProvider>
     </GoogleMapsProvider>
   );
