@@ -59,6 +59,7 @@ const CATEGORY_OPTIONS = [
 
 
 const MAX_PARTICIPANTS = 8;
+const FORFEIT_STATUS = "FORFEIT";
 
 const ROUND_OPTIONS = [
   { value: "QUALIFICATION_HEAT", label: "Qualification / Heat" },
@@ -272,6 +273,9 @@ export default function TrialFormDialog({
 
   const participantsCount =
     form.mode === "TEAM" ? assignedTeams.length : assignedParticipants.length;
+  const forfeitedParticipantsCount = assignedParticipants.filter(
+    (p) => p?.status === FORFEIT_STATUS
+  ).length;
 
   const isMaxReached = participantsCount >= MAX_PARTICIPANTS;
 
@@ -682,6 +686,11 @@ export default function TrialFormDialog({
               <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: "#555" }}>
                 {participantsCount} / {MAX_PARTICIPANTS} participants assignés
               </Typography>
+              {form.mode === "INDIVIDUAL" && forfeitedParticipantsCount > 0 && (
+                <Typography variant="caption" sx={{ color: "#b91c1c", fontWeight: 600 }}>
+                  {forfeitedParticipantsCount} athlète(s) marqué(s) en forfait.
+                </Typography>
+              )}
 
               {form.mode === "TEAM" ? (
                 assignedTeams.length > 0 && (
@@ -706,12 +715,21 @@ export default function TrialFormDialog({
                     {assignedParticipants.map((p) => (
                       <Chip
                         key={getParticipantId(p)}
-                        label={p.displayName || `Athlète ${getParticipantId(p)}`}
+                        label={`${p.displayName || `Athlète ${getParticipantId(p)}`}${
+                          p?.status === FORFEIT_STATUS ? " — Forfait" : ""
+                        }`}
                         onDelete={() => handleRemoveChip(getParticipantId(p))}
                         sx={{
-                          background: "rgba(34, 211, 238, 0.15)",
+                          background:
+                            p?.status === FORFEIT_STATUS
+                              ? "rgba(239, 68, 68, 0.15)"
+                              : "rgba(34, 211, 238, 0.15)",
                           fontWeight: 600,
-                          border: "1px solid rgba(34, 211, 238, 0.4)",
+                          border:
+                            p?.status === FORFEIT_STATUS
+                              ? "1px solid rgba(239, 68, 68, 0.4)"
+                              : "1px solid rgba(34, 211, 238, 0.4)",
+                          color: p?.status === FORFEIT_STATUS ? "#b91c1c" : "inherit",
                         }}
                       />
                     ))}

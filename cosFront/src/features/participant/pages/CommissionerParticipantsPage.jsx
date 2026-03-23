@@ -29,7 +29,7 @@ const STATUS_LABELS = {
   INVITED: "Invité",
   CONFIRMED: "Confirmé",
   ACCEPTED: "Accepté",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
   COMPLETED: "Terminé",
 };
 
@@ -69,7 +69,7 @@ export default function CommissionerParticipantsPage() {
     if (status === "INVITED") return "INVITED";
     if (status === "PENDING_VALIDATION") return "PENDING_VALIDATION";
     if (status === "PENDING") return "PENDING";
-    if (status === "CANCELLED") return "CANCELLED";
+    if (status === "CANCELED") return "CANCELED";
     if (status === "COMPLETED") return "COMPLETED";
 
     return status;
@@ -96,7 +96,7 @@ export default function CommissionerParticipantsPage() {
           ? "rgba(34,197,94,0.25)"
           : normalized === "INVITED"
           ? "rgba(250,204,21,0.25)"
-          : normalized === "CANCELLED"
+          : normalized === "CANCELED"
           ? "rgba(239,68,68,0.25)"
           : normalized === "PENDING"
           ? "rgba(250,204,21,0.25)"

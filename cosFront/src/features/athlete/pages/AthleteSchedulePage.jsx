@@ -36,14 +36,14 @@ const STATUS_LABELS = {
   UPCOMING: "À venir",
   IN_PROGRESS: "En cours",
   COMPLETED: "Terminé",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulée",
 };
 
 const STATUS_COLORS = {
   UPCOMING: "#f59e0b",
   IN_PROGRESS: "#22d3ee",
   COMPLETED: "#16a34a",
-  CANCELLED: "#ef4444",
+  CANCELED: "#ef4444",
 };
 
 const PARTICIPANT_STATUS_LABELS = {
@@ -194,6 +194,19 @@ export default function AthleteSchedulePage() {
   }, [selectedTrial, athleteResults]);
 
   const competitionHeading = schedule[0]?.competitionName || "";
+  const normalizeTrialStatus = (status) => String(status || "").toUpperCase();
+  const isCancelledTrialStatus = (status) => {
+    const normalized = normalizeTrialStatus(status);
+    return normalized === "CANCELED";
+  };
+  const getStatusLabel = (status) => {
+    if (isCancelledTrialStatus(status)) return "Annulée";
+    return STATUS_LABELS[normalizeTrialStatus(status)] || status;
+  };
+  const getStatusColor = (status) => {
+    if (isCancelledTrialStatus(status)) return STATUS_COLORS.CANCELED;
+    return STATUS_COLORS[normalizeTrialStatus(status)] || "#6b7280";
+  };
 
   return (
     <Box
@@ -364,11 +377,12 @@ export default function AthleteSchedulePage() {
           }}
         >
           {schedule.map((trial, index) => {
+            const isCancelled = isCancelledTrialStatus(trial.trialStatus);
             const canDeclareForfeit =
               trial.trialParticipantId &&
               trial.participantStatus !== "FORFEIT" &&
               trial.trialStatus !== "COMPLETED" &&
-              trial.trialStatus !== "CANCELLED";
+              !isCancelled;
 
             return (
               <Card
@@ -411,13 +425,11 @@ export default function AthleteSchedulePage() {
                     </Typography>
 
                     <Chip
-                      label={STATUS_LABELS[trial.trialStatus] || trial.trialStatus}
+                      label={getStatusLabel(trial.trialStatus)}
                       size="small"
                       sx={{
-                        backgroundColor: `${
-                          STATUS_COLORS[trial.trialStatus] || "#6b7280"
-                        }20`,
-                        color: STATUS_COLORS[trial.trialStatus] || "#6b7280",
+                        backgroundColor: `${getStatusColor(trial.trialStatus)}20`,
+                        color: getStatusColor(trial.trialStatus),
                         fontWeight: 700,
                         ml: 1,
                       }}
@@ -506,29 +518,35 @@ export default function AthleteSchedulePage() {
                     </Box>
                     {trial.trialStatus === "COMPLETED" && (
                       <Box sx={{ mt: 3, display: "flex", justifyContent: "center" }}>
-                        <Button
-                          variant="contained"
-                          size="small"
-                          onClick={() => handleOpenResultsDialog(trial)}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 800,
-                            fontSize: 14,
-                            px: 3,
-                            py: 1,
-                            borderRadius: appTheme.radius.pill,
-                            background:
-                              "linear-gradient(135deg, #22c55e, #16a34a)",
-                            color: "#fff",
-                            boxShadow: "0 6px 16px rgba(34,197,94,0.35)",
-                            "&:hover": {
+                        {trial.participantStatus !== "FORFEIT" ? (
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={() => handleOpenResultsDialog(trial)}
+                            sx={{
+                              textTransform: "none",
+                              fontWeight: 800,
+                              fontSize: 14,
+                              px: 3,
+                              py: 1,
+                              borderRadius: appTheme.radius.pill,
                               background:
-                                "linear-gradient(135deg, #16a34a, #15803d)",
-                            },
-                          }}
-                        >
-                          Voir mes résultats
-                        </Button>
+                                "linear-gradient(135deg, #22c55e, #16a34a)",
+                              color: "#fff",
+                              boxShadow: "0 6px 16px rgba(34,197,94,0.35)",
+                              "&:hover": {
+                                background:
+                                  "linear-gradient(135deg, #16a34a, #15803d)",
+                              },
+                            }}
+                          >
+                            Voir mes résultats
+                          </Button>
+                        ) : (
+                          <Alert severity="info" sx={{ width: "100%" }}>
+                            Forfait déclaré : accès aux résultats indisponible.
+                          </Alert>
+                        )}
                       </Box>
                     )}
                   </Box>

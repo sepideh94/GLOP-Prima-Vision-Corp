@@ -107,6 +107,17 @@ export default function PublicResultsPage() {
     if (rank === 3) return "🥉";
     return rank;
   };
+  const withDisplayRank = (rows) =>
+    rows.map((row, index, arr) => {
+      if (index === 0) return { ...row, displayRank: 1 };
+      const prev = arr[index - 1];
+      const isSameRankAsPrev =
+        row?.rank != null && prev?.rank != null && row.rank === prev.rank;
+      return {
+        ...row,
+        displayRank: isSameRankAsPrev ? prev.displayRank : index + 1,
+      };
+    });
 
   return (
     <Box
@@ -231,6 +242,15 @@ export default function PublicResultsPage() {
 
             {resultsByTrial.map((trialGroup) => {
               const results = Array.isArray(trialGroup?.results) ? trialGroup.results : [];
+              const rankedRows = withDisplayRank(
+                results.filter((r) => r?.participant?.status !== "FORFEIT")
+              );
+              const displayResults = [
+                ...rankedRows,
+                ...results
+                  .filter((r) => r?.participant?.status === "FORFEIT")
+                  .map((r) => ({ ...r, rank: null, tie: false, displayRank: null })),
+              ];
               const hasTeam = results.some((r) => r?.participant?.competitorType === "TEAM");
               const modeLabel = hasTeam ? "Équipe" : "Individuel";
               const performanceType = results[0]?.performanceType || null;
@@ -310,23 +330,37 @@ export default function PublicResultsPage() {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {results.map((result) => {
+                            {displayResults.map((result) => {
                               const members = Array.isArray(result?.participant?.members)
                                 ? result.participant.members
                                 : [];
                               const isTeam = result?.participant?.competitorType === "TEAM";
+                              const isForfeit = result?.participant?.status === "FORFEIT";
 
                               return (
                                 <TableRow key={result.id}>
                                   <TableCell sx={{ width: 76 }}>
                                     <Typography sx={{ fontWeight: 800, color: "#E2E8F0" }}>
-                                      {getMedal(result.rank)}
+                                      {result.displayRank == null ? "—" : getMedal(result.displayRank)}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
                                     <Typography sx={{ fontWeight: 700, color: "#E2E8F0" }}>
                                       {result?.participant?.displayName || "Participant inconnu"}
                                     </Typography>
+                                    {isForfeit && (
+                                      <Chip
+                                        label="Forfait"
+                                        size="small"
+                                        sx={{
+                                          mt: 0.6,
+                                          fontWeight: 700,
+                                          color: "#fecaca",
+                                          background: "rgba(239, 68, 68, 0.20)",
+                                          border: "1px solid rgba(239, 68, 68, 0.45)",
+                                        }}
+                                      />
+                                    )}
                                     {isTeam && members.length > 0 && (
                                       <Typography
                                         sx={{
@@ -347,10 +381,15 @@ export default function PublicResultsPage() {
                                   </TableCell>
                                   <TableCell>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                      <Typography sx={{ fontWeight: 900, color: "#E2E8F0" }}>
-                                        {result.performance}
+                                      <Typography
+                                        sx={{
+                                          fontWeight: 900,
+                                          color: isForfeit ? "#fecaca" : "#E2E8F0",
+                                        }}
+                                      >
+                                        {isForfeit ? "Forfait" : result.performance}
                                       </Typography>
-                                      {result.tie && (
+                                      {result.tie && !isForfeit && (
                                         <Chip label="Ex æquo" size="small" color="warning" />
                                       )}
                                     </Box>
