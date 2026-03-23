@@ -3,6 +3,8 @@ package com.ciblorgasport.analytics.application;
 import com.ciblorgasport.admin.AdminStatsResponse;
 import com.ciblorgasport.admin.ChartPointResponse;
 import com.ciblorgasport.analytics.domain.SystemLog;
+import com.ciblorgasport.analytics.dto.SectionVisitCount;
+import com.ciblorgasport.analytics.infrastructure.PageVisitRepository;
 import com.ciblorgasport.analytics.infrastructure.SystemLogRepository;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
 import com.ciblorgasport.volonteer.infrastructure.VolonteerRepository;
@@ -25,6 +27,7 @@ public class AnalyticsService {
     private final SystemLogRepository logRepository;
     private final IncidentRepository incidentRepository;
     private final VolonteerRepository volonteerRepository;
+    private final PageVisitRepository pageVisitRepository;
 
     /**
      * Enregistre une trace d'activité dans le système.
@@ -60,6 +63,14 @@ public class AnalyticsService {
      */
     public long getActiveIncidentsCount() {
         return incidentRepository.count();
+    }
+
+    public List<SectionVisitCount> getMostConsultedSections() {
+        return pageVisitRepository.findMostConsultedSections();
+    }
+
+    public List<SectionVisitCount> getMostConsultedSectionsByRole(String role) {
+        return pageVisitRepository.findMostConsultedSectionsByRole(role);
     }
     
     public String generateWeeklyReportSummary() {
