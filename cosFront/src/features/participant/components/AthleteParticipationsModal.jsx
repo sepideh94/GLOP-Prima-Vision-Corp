@@ -25,6 +25,7 @@ import {
 } from "@mui/material";
 import athleteService from "../services/athleteService";
 import appTheme from "../../../common/theme/appTheme";
+import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 const getStatusChip = (status) => {
   switch (status) {
@@ -53,6 +54,12 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
   const [selectedParticipationId, setSelectedParticipationId] = useState(null);
   const [rejectedDocument, setRejectedDocument] = useState("PASSPORT");
   const [reason, setReason] = useState("");
+  const [filePreviewOpen, setFilePreviewOpen] = useState(false);
+  const [filePreviewLoading, setFilePreviewLoading] = useState(false);
+  const [filePreviewError, setFilePreviewError] = useState("");
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [previewName, setPreviewName] = useState("");
+  const [previewType, setPreviewType] = useState("");
 
   useEffect(() => {
     if (open && athlete) {
@@ -74,25 +81,21 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
     }
   };
 
-  const openBlob = (blob, filename) => {
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-    link.target = "_blank";
-    link.rel = "noopener noreferrer";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(blobUrl);
+  const openPreview = (blob, filename, fallbackType = "") => {
+    setPreviewBlob(blob);
+    setPreviewName(filename);
+    setPreviewType(blob?.type || fallbackType || "");
+    setFilePreviewError("");
+    setFilePreviewOpen(true);
   };
 
   const handleOpenMedicalCertificate = async () => {
     if (!athlete?.id) return;
     setActionError(null);
     try {
+      setFilePreviewLoading(true);
       const blob = await athleteService.downloadMedicalCertificate(athlete.id);
-      openBlob(blob, `certificat-medical-${athlete.id}.pdf`);
+      openPreview(blob, `certificat-medical-${athlete.id}.pdf`, "application/pdf");
     } catch (err) {
       console.error("Erreur téléchargement certificat médical:", err);
       if (err.response?.status === 403) {
@@ -103,14 +106,18 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
         setActionError("Impossible d'ouvrir le certificat médical.");
       }
     }
+    finally {
+      setFilePreviewLoading(false);
+    }
   };
 
   const handleOpenPassport = async () => {
     if (!athlete?.id) return;
     setActionError(null);
     try {
+      setFilePreviewLoading(true);
       const blob = await athleteService.downloadPassport(athlete.id);
-      openBlob(blob, `passeport-${athlete.id}.pdf`);
+      openPreview(blob, `passeport-${athlete.id}.pdf`, "application/pdf");
     } catch (err) {
       console.error("Erreur téléchargement passeport:", err);
       if (err.response?.status === 403) {
@@ -120,6 +127,9 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
       } else {
         setActionError("Impossible d'ouvrir le passeport.");
       }
+    }
+    finally {
+      setFilePreviewLoading(false);
     }
   };
 
@@ -314,6 +324,22 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <UploadedFilePreviewModal
+        open={filePreviewOpen}
+        onClose={() => {
+          setFilePreviewOpen(false);
+          setPreviewBlob(null);
+          setPreviewName("");
+          setPreviewType("");
+        }}
+        title="Visualisation du document"
+        fileBlob={previewBlob}
+        fileName={previewName}
+        contentType={previewType}
+        loading={filePreviewLoading}
+        error={filePreviewError}
+      />
     </Dialog>
   );
 }

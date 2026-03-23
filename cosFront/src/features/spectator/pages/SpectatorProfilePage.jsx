@@ -16,12 +16,19 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Tooltip,
 } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SaveIcon from "@mui/icons-material/Save";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import DownloadIcon from "@mui/icons-material/Download";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
 import spectatorProfileService from "../services/spectatorProfileService";
@@ -32,6 +39,7 @@ import {
   spectatorGlassTint,
   textLegibleDark,
 } from "../spectatorGlassTheme";
+import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 const TICKET_MAX_BYTES = 15 * 1024 * 1024;
 const TICKET_ACCEPT = "application/pdf,image/jpeg,image/png,image/webp,.pdf,.jpg,.jpeg,.png,.webp";
@@ -134,12 +142,18 @@ export default function SpectatorProfilePage() {
 
   const [ticketStatusLoading, setTicketStatusLoading] = useState(true);
   const [hasTicket, setHasTicket] = useState(false);
+  const [ticketRows, setTicketRows] = useState([]);
   const [ticketUploading, setTicketUploading] = useState(false);
-  const [ticketDownloading, setTicketDownloading] = useState(false);
   const [ticketDeleting, setTicketDeleting] = useState(false);
   const [ticketError, setTicketError] = useState("");
   const [ticketSuccess, setTicketSuccess] = useState("");
   const [deleteTicketOpen, setDeleteTicketOpen] = useState(false);
+  const [ticketToDelete, setTicketToDelete] = useState(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [previewName, setPreviewName] = useState("");
 
   // Mot de passe
   const [passwordData, setPasswordData] = useState({
@@ -157,10 +171,19 @@ export default function SpectatorProfilePage() {
     setTicketStatusLoading(true);
     setTicketError("");
     try {
-      const exists = await spectatorProfileService.hasStoredTicket();
-      setHasTicket(exists);
+      const tickets = await spectatorProfileService.listTickets();
+      setTicketRows(
+        tickets.map((t) => ({
+          id: t.id,
+          filename: t.fileName || `billet-${t.id}`,
+          uploadedAt: t.uploadedAt || new Date().toISOString(),
+          active: !!t.active,
+        }))
+      );
+      setHasTicket(tickets.length > 0);
     } catch (e) {
       setHasTicket(false);
+      setTicketRows([]);
       setTicketError(formatTicketError(e));
     } finally {
       setTicketStatusLoading(false);
@@ -190,8 +213,8 @@ export default function SpectatorProfilePage() {
     setTicketUploading(true);
     try {
       await spectatorProfileService.uploadTicket(file);
-      setHasTicket(true);
-      setTicketSuccess("Billet enregistré. Vous pouvez le télécharger à tout moment.");
+      await refreshTicketStatus();
+      setTicketSuccess("Billet enregistré. Vous pouvez le visualiser dans le tableau.");
     } catch (err) {
       setTicketError(formatTicketError(err));
     } finally {
@@ -199,28 +222,34 @@ export default function SpectatorProfilePage() {
     }
   };
 
-  const handleDownloadTicket = async () => {
+  const handleViewTicket = async (row) => {
     setTicketError("");
     setTicketSuccess("");
-    setTicketDownloading(true);
+    setPreviewError("");
     try {
-      await spectatorProfileService.downloadTicketToDevice();
+      setPreviewLoading(true);
+      const { blob, filename } = await spectatorProfileService.getTicketBlobById(row?.id);
+      setPreviewBlob(blob);
+      setPreviewName(filename || row?.filename || "billet");
+      setPreviewOpen(true);
     } catch (err) {
-      setTicketError(formatTicketError(err));
-      setHasTicket(false);
+      setPreviewError(formatTicketError(err));
+      setPreviewOpen(true);
     } finally {
-      setTicketDownloading(false);
+      setPreviewLoading(false);
     }
   };
 
   const handleConfirmDeleteTicket = async () => {
+    if (!ticketToDelete) return;
     setTicketError("");
     setTicketSuccess("");
     setTicketDeleting(true);
     try {
-      await spectatorProfileService.deleteTicket();
+      await spectatorProfileService.deleteTicketById(ticketToDelete.id);
       setDeleteTicketOpen(false);
-      setHasTicket(false);
+      await refreshTicketStatus();
+      setTicketToDelete(null);
       setTicketSuccess("Billet supprimé.");
     } catch (err) {
       setTicketError(formatTicketError(err));
@@ -566,8 +595,8 @@ export default function SpectatorProfilePage() {
               lineHeight: 1.55,
             }}
           >
-            Déposez un PDF ou une image de votre billet (remplace le précédent s’il existe). Vous pourrez le
-            télécharger ou le supprimer depuis cet écran.
+            Déposez un PDF ou une image de votre billet. Vous pourrez le visualiser ou le supprimer depuis
+            cet écran.
           </Typography>
 
           <input
@@ -615,7 +644,7 @@ export default function SpectatorProfilePage() {
               <Typography sx={{ color: appTheme.colors.textMuted }}>Vérification du billet…</Typography>
             </Box>
           ) : (
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} flexWrap="wrap">
+            <Stack spacing={2}>
               <Button
                 variant="contained"
                 startIcon={ticketUploading ? <CircularProgress size={18} color="inherit" /> : <UploadFileIcon />}
@@ -629,42 +658,61 @@ export default function SpectatorProfilePage() {
                   "&:hover": { background: "linear-gradient(135deg, #06B6D4, #0891B2)" },
                 }}
               >
-                {hasTicket ? "Remplacer le billet" : "Importer un billet"}
+                Importer un billet
               </Button>
 
-              {hasTicket && (
-                <>
-                  <Button
-                    variant="outlined"
-                    startIcon={
-                      ticketDownloading ? <CircularProgress size={18} sx={{ color: appTheme.colors.cyan }} /> : <DownloadIcon />
-                    }
-                    disabled={ticketDownloading || ticketUploading || ticketDeleting}
-                    onClick={handleDownloadTicket}
-                    sx={{
-                      borderColor: "rgba(34,211,238,0.55)",
-                      color: "#a5f3fc",
-                      fontWeight: 700,
-                      textTransform: "none",
-                      "&:hover": {
-                        borderColor: appTheme.colors.cyan,
-                        background: "rgba(34,211,238,0.08)",
-                      },
-                    }}
-                  >
-                    Télécharger
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="error"
-                    startIcon={<DeleteOutlineIcon />}
-                    disabled={ticketDeleting || ticketUploading || ticketDownloading}
-                    onClick={() => setDeleteTicketOpen(true)}
-                    sx={{ textTransform: "none", fontWeight: 700 }}
-                  >
-                    Supprimer
-                  </Button>
-                </>
+              {ticketRows.length > 0 && (
+                <TableContainer
+                  component={Paper}
+                  elevation={0}
+                  sx={{ borderRadius: 2, background: "rgba(2, 6, 23, 0.35)", border: "1px solid rgba(148,163,184,0.2)" }}
+                >
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ color: "#E2E8F0", fontWeight: 800 }}>Billet</TableCell>
+                        <TableCell sx={{ color: "#E2E8F0", fontWeight: 800 }}>Date</TableCell>
+                        <TableCell sx={{ color: "#E2E8F0", fontWeight: 800, width: 120 }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {ticketRows.map((row) => (
+                        <TableRow key={row.id}>
+                          <TableCell sx={{ color: "#E2E8F0" }}>{row.filename}</TableCell>
+                          <TableCell sx={{ color: "rgba(226,232,240,0.82)" }}>
+                            {new Date(row.uploadedAt).toLocaleString("fr-FR")}
+                          </TableCell>
+                          <TableCell>
+                            <Stack direction="row" spacing={0.4}>
+                              <Tooltip title="Visualiser">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewTicket(row)}
+                                  sx={{ color: "#67E8F9" }}
+                                >
+                                  <VisibilityIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Supprimer">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => {
+                                    setTicketToDelete(row);
+                                    setDeleteTicketOpen(true);
+                                  }}
+                                  disabled={ticketDeleting}
+                                  sx={{ color: "#f87171" }}
+                                >
+                                  <DeleteOutlineIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
               )}
             </Stack>
           )}
@@ -686,7 +734,7 @@ export default function SpectatorProfilePage() {
         <DialogTitle sx={{ color: "#f8fafc", fontWeight: 800 }}>Supprimer le billet ?</DialogTitle>
         <DialogContent>
           <Typography sx={{ color: "rgba(226,232,240,0.88)", lineHeight: 1.55 }}>
-            Le fichier sera retiré de votre compte. Vous pourrez en importer un autre ensuite.
+            Ce billet sera retiré de la liste. S’il s’agit du billet actif, il sera aussi supprimé du compte.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
@@ -714,6 +762,22 @@ export default function SpectatorProfilePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <UploadedFilePreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBlob(null);
+          setPreviewError("");
+          setPreviewName("");
+        }}
+        title="Billet"
+        fileBlob={previewBlob}
+        fileName={previewName}
+        contentType={previewBlob?.type || ""}
+        loading={previewLoading}
+        error={previewError}
+      />
     </SpectatorProfileGlassShell>
   );
 }

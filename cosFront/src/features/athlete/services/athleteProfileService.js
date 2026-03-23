@@ -53,6 +53,20 @@ const athleteProfileService = {
     return res.data;
   },
 
+  async downloadPassportBlob() {
+    const res = await api.get("/api/athlete/profile/passport", {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+
+  async downloadMedicalCertificateBlob() {
+    const res = await api.get("/api/athlete/profile/medical-certificate", {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+
   async getCountries() {
     // API publique, pas besoin d'authentification
     const res = await api.get("/api/countries");

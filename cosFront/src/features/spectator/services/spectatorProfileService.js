@@ -24,7 +24,7 @@ function parseFilenameFromContentDisposition(disposition) {
   const ascii = /filename="([^"]+)"/i.exec(disposition);
   if (ascii) return ascii[1];
   const loose = /filename=([^;\s]+)/i.exec(disposition);
-  if (loose) return loose[1].replace(/"/g, "");
+  if (loose) return loose[1].replaceAll('"', "");
   return null;
 }
 
@@ -143,8 +143,43 @@ const spectatorProfileService = {
     URL.revokeObjectURL(url);
   },
 
+  /** Récupère le billet en blob pour visualisation. */
+  async getTicketBlob() {
+    const res = await api.get(TICKET_PATH, { responseType: "blob" });
+    const contentType = res.headers["content-type"] || res.data?.type || "application/octet-stream";
+    const disposition = res.headers["content-disposition"];
+    const parsedName = parseFilenameFromContentDisposition(disposition);
+    const ext = fileExtensionFromContentType(contentType);
+    const filename =
+      parsedName && parsedName !== "ticket"
+        ? parsedName
+        : `billet${ext || ""}`;
+    return { blob: res.data, contentType, filename };
+  },
+
   async deleteTicket() {
     await api.delete(TICKET_PATH);
+  },
+
+  async listTickets() {
+    const res = await api.get("/api/spectator/profile/tickets");
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
+  async getTicketBlobById(ticketId) {
+    const res = await api.get(`/api/spectator/profile/tickets/${ticketId}`, {
+      responseType: "blob",
+    });
+    const contentType = res.headers["content-type"] || res.data?.type || "application/octet-stream";
+    return {
+      blob: res.data,
+      contentType,
+      filename: `billet-${ticketId}${fileExtensionFromContentType(contentType) || ""}`,
+    };
+  },
+
+  async deleteTicketById(ticketId) {
+    await api.delete(`/api/spectator/profile/tickets/${ticketId}`);
   },
 };
 
