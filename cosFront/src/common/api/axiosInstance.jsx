@@ -1,5 +1,6 @@
 import axios from "axios";
 import { AUTH_LOGOUT_EVENT } from "../contexts/AuthContext";
+import { spaFullUrl } from "../utils/spaNavigation";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8083";
 
@@ -49,7 +50,7 @@ api.interceptors.response.use(
       // Utiliser un délai pour permettre au contexte de se mettre à jour
       // avant de rediriger
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = spaFullUrl("/login");
       }, 100);
     }
     return Promise.reject(error);

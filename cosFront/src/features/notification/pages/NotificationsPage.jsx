@@ -22,6 +22,12 @@ import { fr } from "date-fns/locale/fr";
 
 import appTheme from "../../../common/theme/appTheme";
 import notificationService from "../services/notificationService";
+import { SPECTATOR_MENU_GLASS_DECOR } from "../../spectator/swimmingVisuals";
+import {
+  spectatorGlassTint,
+  textLegibleDark,
+  spectatorDarkMenuShell,
+} from "../../spectator/spectatorGlassTheme";
 
 const NOTIFICATION_TYPE_LABELS = {
   INCIDENT: "Incident",
@@ -126,11 +132,10 @@ export default function NotificationsPage() {
     ? {
         flex: 1,
         width: "100%",
-        minHeight: "100%",
+        minHeight: 0,
         display: "flex",
         flexDirection: "column",
-        px: { xs: 1.5, sm: 2, md: 3 },
-        py: { xs: 2, sm: 2.5, md: 3 },
+        alignSelf: "stretch",
         boxSizing: "border-box",
       }
     : {
@@ -140,67 +145,59 @@ export default function NotificationsPage() {
         boxSizing: "border-box",
       };
 
-  const innerGlassSx = isSpectatorRoute
-    ? {
-        flex: 1,
-        width: "100%",
-        p: { xs: 2, sm: 2.5, md: 4 },
-        background: "rgba(15, 23, 42, 0.42)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        borderRadius: { xs: 2, md: 3 },
-        boxShadow: "0 8px 32px rgba(2, 6, 23, 0.35)",
-        border: "1px solid rgba(255, 255, 255, 0.14)",
-        boxSizing: "border-box",
-      }
-    : {
-        maxWidth: 880,
-        mx: "auto",
-        width: "100%",
-      };
+  const innerNonSpectatorSx = {
+    maxWidth: 880,
+    mx: "auto",
+    width: "100%",
+  };
 
-  return (
-    <Box sx={outerSx}>
-      <Box sx={innerGlassSx}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", sm: "center" }}
-          justifyContent="space-between"
-          sx={{ mb: 3 }}
-        >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+  const spectatorActionIconSx = {
+    color: "#e2e8f0",
+    bgcolor: "rgba(255,255,255,0.08)",
+    border: "1px solid rgba(255,255,255,0.22)",
+    borderRadius: "999px",
+    boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
+    "&:hover": {
+      bgcolor: "rgba(34,211,238,0.2)",
+      borderColor: appTheme.colors.cyan,
+      color: "#f8fafc",
+    },
+    "&.Mui-disabled": { color: "rgba(226,232,240,0.4)", borderColor: "rgba(255,255,255,0.12)" },
+  };
+
+  const pageContent = (
+    <>
+        {isSpectatorRoute ? (
+          <>
             <Box
               sx={{
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                background: "linear-gradient(135deg, rgba(34,211,238,0.22), rgba(167,139,250,0.2))",
-                border: "1px solid rgba(34,211,238,0.35)",
-                flexShrink: 0,
+                mb: 4,
+                pb: 3,
+                borderBottom: "1px solid rgba(14, 116, 144, 0.2)",
+                px: { xs: 0, sm: 0.5 },
               }}
             >
-              <NotificationsActiveIcon sx={{ color: appTheme.colors.cyan, fontSize: 26 }} />
-            </Box>
-            <Box sx={{ minWidth: 0 }}>
               <Typography
+                variant="h4"
+                component="h1"
                 sx={{
-                  fontWeight: 800,
-                  fontSize: { xs: "1.35rem", sm: "1.5rem" },
-                  color: isSpectatorRoute ? appTheme.colors.textPrimary : appTheme.colors.dark,
+                  fontWeight: 900,
+                  mb: 0,
                   letterSpacing: "-0.02em",
+                  fontSize: { xs: "1.65rem", sm: "2rem" },
+                  ...textLegibleDark,
                 }}
               >
                 Notifications
               </Typography>
               <Typography
                 sx={{
-                  color: isSpectatorRoute ? appTheme.colors.textMuted : appTheme.colors.textMuted,
-                  fontSize: 14,
-                  mt: 0.25,
+                  mt: 1.15,
+                  lineHeight: 1.55,
+                  fontSize: { xs: "0.9375rem", sm: "1rem" },
+                  fontWeight: 400,
+                  color: "#d1d5db",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.5)",
                 }}
               >
                 {unreadCount === 0
@@ -208,40 +205,144 @@ export default function NotificationsPage() {
                   : `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`}
               </Typography>
             </Box>
-          </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ xs: "flex-start", sm: "flex-end" }}>
-            <Tooltip title="Actualiser">
-              <IconButton
-                onClick={load}
-                disabled={loading}
-                sx={{
-                  color: appTheme.colors.cyan,
-                  border: "1px solid rgba(34,211,238,0.35)",
-                  borderRadius: 2,
-                  "&:hover": { background: "rgba(34,211,238,0.12)" },
-                }}
-                aria-label="Actualiser la liste"
-              >
-                <RefreshIcon />
-              </IconButton>
-            </Tooltip>
-            <Button
-              startIcon={<ArrowBackIcon />}
-              onClick={goBackHome}
+            <Box
               sx={{
-                color: appTheme.colors.cyan,
-                textTransform: "none",
-                fontWeight: 700,
-                borderRadius: appTheme.radius.pill,
-                px: 2,
-                "&:hover": { background: "rgba(34,211,238,0.12)" },
+                ...spectatorDarkMenuShell,
+                display: "flex",
+                flexWrap: "wrap",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: 1.25,
+                mb: 3,
+                py: 1.5,
+                px: { xs: 1.5, sm: 2 },
               }}
             >
-              {isSpectatorRoute ? "Accueil spectateur" : "Retour"}
-            </Button>
+              <Tooltip title="Actualiser">
+                <IconButton
+                  onClick={load}
+                  disabled={loading}
+                  sx={spectatorActionIconSx}
+                  aria-label="Actualiser la liste"
+                >
+                  <RefreshIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+              </Tooltip>
+              <Button
+                startIcon={<ArrowBackIcon sx={{ fontSize: 20 }} />}
+                onClick={goBackHome}
+                variant="contained"
+                disableElevation
+                sx={{
+                  borderRadius: "999px",
+                  px: 2,
+                  py: 0.75,
+                  textTransform: "none",
+                  fontWeight: 800,
+                  fontSize: 13,
+                  backgroundImage: "none",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  color: "#f1f5f9",
+                  border: "1px solid rgba(255,255,255,0.22)",
+                  boxShadow: "none",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.16)",
+                    borderColor: "rgba(255,255,255,0.32)",
+                  },
+                }}
+              >
+                Accueil spectateur
+              </Button>
+            </Box>
+          </>
+        ) : (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            justifyContent="space-between"
+            sx={{ mb: 3 }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  flexShrink: 0,
+                  background: "linear-gradient(135deg, rgba(34,211,238,0.22), rgba(167,139,250,0.2))",
+                  border: "1px solid rgba(34,211,238,0.35)",
+                }}
+              >
+                <NotificationsActiveIcon sx={{ color: appTheme.colors.cyan, fontSize: 26 }} />
+              </Box>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  sx={{
+                    fontWeight: 900,
+                    fontSize: { xs: "1.35rem", sm: "1.5rem" },
+                    letterSpacing: "-0.02em",
+                    color: appTheme.colors.dark,
+                  }}
+                >
+                  Notifications
+                </Typography>
+                <Typography
+                  sx={{
+                    fontSize: 14,
+                    mt: 0.25,
+                    color: appTheme.colors.textMuted,
+                  }}
+                >
+                  {unreadCount === 0
+                    ? "Aucune notification non lue"
+                    : `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent={{ xs: "flex-start", sm: "flex-end" }}
+            >
+              <Tooltip title="Actualiser">
+                <IconButton
+                  onClick={load}
+                  disabled={loading}
+                  sx={{
+                    color: appTheme.colors.cyan,
+                    border: "1px solid rgba(34,211,238,0.35)",
+                    borderRadius: 2,
+                    "&:hover": { background: "rgba(34,211,238,0.12)" },
+                  }}
+                  aria-label="Actualiser la liste"
+                >
+                  <RefreshIcon />
+                </IconButton>
+              </Tooltip>
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={goBackHome}
+                sx={{
+                  color: appTheme.colors.cyan,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: appTheme.radius.pill,
+                  px: 2,
+                  "&:hover": { background: "rgba(34,211,238,0.12)" },
+                }}
+              >
+                Retour
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
+        )}
 
         {loadError && (
           <Alert
@@ -249,9 +350,18 @@ export default function NotificationsPage() {
             sx={{
               mb: 2,
               borderRadius: 2,
-              background: "rgba(127, 29, 29, 0.25)",
-              color: "#fecaca",
-              border: "1px solid rgba(248, 113, 113, 0.35)",
+              ...(isSpectatorRoute
+                ? {
+                    background: "rgba(254, 226, 226, 0.95)",
+                    color: "#991b1b",
+                    border: "1px solid rgba(248, 113, 113, 0.45)",
+                    "& .MuiAlert-icon": { color: "#b91c1c" },
+                  }
+                : {
+                    background: "rgba(127, 29, 29, 0.25)",
+                    color: "#fecaca",
+                    border: "1px solid rgba(248, 113, 113, 0.35)",
+                  }),
             }}
             action={
               <Button color="inherit" size="small" onClick={load} sx={{ fontWeight: 700 }}>
@@ -264,7 +374,15 @@ export default function NotificationsPage() {
         )}
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              py: 10,
+              minHeight: 200,
+            }}
+          >
             <CircularProgress sx={{ color: appTheme.colors.cyan }} />
           </Box>
         ) : sortedNotifications.length === 0 ? (
@@ -274,38 +392,51 @@ export default function NotificationsPage() {
               px: 3,
               textAlign: "center",
               borderRadius: appTheme.radius.lg,
-              background: isSpectatorRoute ? appTheme.gradients.card : "rgba(248,250,252,0.95)",
-              border: isSpectatorRoute
-                ? "1px solid rgba(148,163,184,0.2)"
-                : "1px solid rgba(148,163,184,0.25)",
-              boxShadow: isSpectatorRoute ? appTheme.shadows.card : undefined,
+              ...(isSpectatorRoute
+                ? {
+                    background:
+                      "linear-gradient(145deg, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.48) 100%)",
+                    backdropFilter: "blur(16px)",
+                    WebkitBackdropFilter: "blur(16px)",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    boxShadow:
+                      "0 12px 40px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
+                  }
+                : {
+                    background: "rgba(248,250,252,0.95)",
+                    border: "1px solid rgba(148,163,184,0.25)",
+                  }),
             }}
           >
             <NotificationsNoneIcon
               sx={{
                 fontSize: 56,
-                color: isSpectatorRoute ? appTheme.colors.textMuted : appTheme.colors.darkSoft,
+                color: isSpectatorRoute ? "rgba(148,163,184,0.95)" : appTheme.colors.darkSoft,
                 mb: 2,
-                opacity: 0.85,
+                opacity: 0.95,
               }}
             />
             <Typography
               sx={{
-                fontWeight: 700,
+                fontWeight: 800,
                 fontSize: "1.1rem",
-                color: isSpectatorRoute ? appTheme.colors.textPrimary : appTheme.colors.dark,
                 mb: 1,
+                ...(isSpectatorRoute
+                  ? { color: "#f8fafc", textShadow: "0 1px 3px rgba(0,0,0,0.5)" }
+                  : { color: appTheme.colors.dark }),
               }}
             >
               Aucune notification
             </Typography>
             <Typography
               sx={{
-                color: isSpectatorRoute ? appTheme.colors.textSecondary : appTheme.colors.textMuted,
                 maxWidth: 400,
                 mx: "auto",
                 fontSize: 15,
-                lineHeight: 1.5,
+                lineHeight: 1.55,
+                ...(isSpectatorRoute
+                  ? { color: "#d1d5db", fontWeight: 500 }
+                  : { color: appTheme.colors.textMuted }),
               }}
             >
               Vous serez informé ici des alertes importantes (par ex. incidents signalés sur les
@@ -328,23 +459,46 @@ export default function NotificationsPage() {
                     p: { xs: 2, sm: 2.5 },
                     borderRadius: appTheme.radius.lg,
                     overflow: "hidden",
-                    background: appTheme.gradients.card,
-                    border: isRead
-                      ? "1px solid rgba(148,163,184,0.18)"
-                      : "1px solid rgba(34,211,238,0.45)",
-                    boxShadow: isRead
-                      ? "0 12px 28px rgba(2,6,23,0.28)"
-                      : "0 12px 32px rgba(2,6,23,0.35), 0 0 0 1px rgba(34,211,238,0.12)",
+                    isolation: "isolate",
+                    ...(isSpectatorRoute
+                      ? {
+                          background:
+                            "linear-gradient(145deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.72) 100%)",
+                          backdropFilter: "blur(14px)",
+                          WebkitBackdropFilter: "blur(14px)",
+                          border: isRead
+                            ? "1px solid rgba(255,255,255,0.12)"
+                            : "1px solid rgba(34,211,238,0.35)",
+                          borderLeft: isRead
+                            ? "6px solid rgba(148,163,184,0.35)"
+                            : `6px solid ${appTheme.colors.cyan}`,
+                          boxShadow: isRead
+                            ? "0 12px 36px rgba(2,6,23,0.45), inset 0 0 0 1px rgba(255,255,255,0.04)"
+                            : `0 12px 36px rgba(2,6,23,0.45), inset 0 0 0 1px rgba(34,211,238,0.15)`,
+                        }
+                      : {
+                          background: appTheme.gradients.card,
+                          border: isRead
+                            ? "1px solid rgba(148,163,184,0.18)"
+                            : "1px solid rgba(34,211,238,0.45)",
+                          boxShadow: isRead
+                            ? "0 12px 28px rgba(2,6,23,0.28)"
+                            : "0 12px 32px rgba(2,6,23,0.35), 0 0 0 1px rgba(34,211,238,0.12)",
+                        }),
                     transition: "transform 0.2s ease, box-shadow 0.2s ease",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: isRead
-                        ? "0 16px 36px rgba(2,6,23,0.38)"
-                        : "0 18px 40px rgba(2,6,23,0.42), 0 0 0 1px rgba(34,211,238,0.2)",
+                      boxShadow: isSpectatorRoute
+                        ? isRead
+                          ? "0 16px 40px rgba(2,6,23,0.5)"
+                          : `0 18px 44px rgba(2,6,23,0.5), 0 0 0 1px rgba(34,211,238,0.22)`
+                        : isRead
+                          ? "0 16px 36px rgba(2,6,23,0.38)"
+                          : "0 18px 40px rgba(2,6,23,0.42), 0 0 0 1px rgba(34,211,238,0.2)",
                     },
-                    "&::before": isRead
-                      ? undefined
-                      : {
+                    ...(!isSpectatorRoute &&
+                      !isRead && {
+                        "&::before": {
                           content: '""',
                           position: "absolute",
                           left: 0,
@@ -354,6 +508,7 @@ export default function NotificationsPage() {
                           background: `linear-gradient(180deg, ${appTheme.colors.cyan}, ${appTheme.colors.violet})`,
                           borderRadius: "4px 0 0 4px",
                         },
+                      }),
                   }}
                 >
                   <Stack
@@ -535,7 +690,65 @@ export default function NotificationsPage() {
             })}
           </Stack>
         )}
-      </Box>
+    </>
+  );
+
+  return (
+    <Box sx={outerSx}>
+      {isSpectatorRoute ? (
+        <Box
+          sx={{
+            flex: 1,
+            width: "100%",
+            minHeight: 0,
+            position: "relative",
+            borderRadius: 0,
+            overflow: "hidden",
+            border: "none",
+            boxSizing: "border-box",
+          }}
+        >
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              inset: 0,
+              background: spectatorGlassTint,
+              backdropFilter: "blur(26px) saturate(1.12)",
+              WebkitBackdropFilter: "blur(26px) saturate(1.12)",
+            }}
+          />
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: `url(${SPECTATOR_MENU_GLASS_DECOR})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              opacity: 0.42,
+              mixBlendMode: "soft-light",
+              pointerEvents: "none",
+            }}
+          />
+          <Box
+            sx={{
+              position: "relative",
+              zIndex: 1,
+              height: "100%",
+              overflow: "auto",
+              overflowX: "hidden",
+              WebkitOverflowScrolling: "touch",
+              p: { xs: 2, sm: 2.5, md: 3.5 },
+              boxSizing: "border-box",
+            }}
+          >
+            {pageContent}
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={innerNonSpectatorSx}>{pageContent}</Box>
+      )}
     </Box>
   );
 }

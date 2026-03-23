@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link} from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
+import { consumeSpectatorSignupWelcomeName } from '../../../common/utils/spectatorWelcomeName';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -33,12 +34,15 @@ const LoginPage = () => {
       // Utiliser le rôle renvoyé par le backend
       const userRole = res.role || "SPECTATOR";
 
-      // Stocker dans AuthContext
+      const firstNameFromSignup = consumeSpectatorSignupWelcomeName(formData.email);
+
+      // Stocker dans AuthContext (prénom : inscription récente même navigateur, sinon inchangé)
       login({
         token: res.token,
         user: {
           email: formData.email,
           role: userRole,
+          ...(firstNameFromSignup ? { firstName: firstNameFromSignup } : {}),
         },
       });
 

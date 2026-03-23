@@ -74,7 +74,7 @@ export default function Layout() {
           </Box>
         </Box>
 
-        <Footer />
+        {!isSpectatorArea && <Footer />}
       </Box>
     </Box>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import authService from '../../../common/api/authService';
+import { saveSpectatorSignupWelcomeName } from '../../../common/utils/spectatorWelcomeName';
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -53,7 +54,8 @@ const SignUpPage = () => {
 
       // Sauvegarder l'email avant de réinitialiser le formulaire
       const userEmail = formData.email;
-      
+      saveSpectatorSignupWelcomeName(formData.firstName, formData.email);
+
       // Afficher le message de succès et réinitialiser le formulaire
       setSuccess(true);
       setSuccessEmail(userEmail);

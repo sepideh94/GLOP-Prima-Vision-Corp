@@ -14,6 +14,9 @@ export const SPECTATOR_PAGE_BACKGROUND =
 
 export const SPECTATOR_PAGE_BACKGROUND_SVG = publicSpectatorUrl("pool-hero.svg");
 
+/** Décor filigrane pour le panneau « verre » de l’espace spectateur */
+export const SPECTATOR_MENU_GLASS_DECOR = publicSpectatorUrl("spectator-glass-mandala.svg");
+
 const SWIM_FILES = [
   "swim-0.svg",
   "swim-1.svg",
