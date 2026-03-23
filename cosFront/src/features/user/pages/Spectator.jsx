@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -32,13 +32,13 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import spectatorService from "../../spectator/services/spectatorService";
 import spectatorProfileService from "../../spectator/services/spectatorProfileService";
+import competitionFollowService from "../../spectator/services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
 import { stripHtmlTags } from "../../../common/utils/htmlUtils";
 
 export default function Spectator() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const modeParam = searchParams.get("mode");
+  const location = useLocation();
 
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
@@ -47,7 +47,10 @@ export default function Spectator() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [favorites, setFavorites] = useState([]);
-  const [competitionFavorites, setCompetitionFavorites] = useState([]);
+  const [followedCompetitionIds, setFollowedCompetitionIds] = useState([]);
+  const [followListError, setFollowListError] = useState(null);
+  const [followActionLoadingId, setFollowActionLoadingId] = useState(null);
+  const [followActionError, setFollowActionError] = useState(null);
   const [competitionsCount, setCompetitionsCount] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitionsByEvent, setCompetitionsByEvent] = useState({});
@@ -57,17 +60,37 @@ export default function Spectator() {
   const eventsCarouselRef = useRef(null);
   const competitionsCarouselRef = useRef(null);
 
-  useEffect(() => {
-    loadEvents();
-    loadFavorites();
-    loadCompetitionFavorites();
+  const loadFollowedCompetitions = useCallback(async () => {
+    setFollowListError(null);
+    try {
+      const list = await competitionFollowService.listFollowed();
+      setFollowedCompetitionIds(
+        list.map((row) => String(row.competitionId))
+      );
+    } catch (err) {
+      console.error(err);
+      setFollowListError(
+        "Impossible de charger vos abonnements compétition. Les boutons peuvent être indisponibles."
+      );
+      setFollowedCompetitionIds([]);
+    }
   }, []);
 
   useEffect(() => {
-    setViewMode(modeParam === "favorites" ? "favorites" : "all");
-    // Quand on change de vue via le menu, on revient à la sélection "toutes les compétitions"
+    loadEvents();
+    loadFavorites();
+    loadFollowedCompetitions();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const isFavorites = params.get("mode") === "favorites";
+    setViewMode(isFavorites ? "favorites" : "all");
     setSelectedEventId(null);
-  }, [modeParam]);
+    if (isFavorites) {
+      loadFollowedCompetitions();
+    }
+  }, [location.search, loadFollowedCompetitions]);
 
   useEffect(() => {
     filterEvents();
@@ -76,11 +99,6 @@ export default function Spectator() {
   const loadFavorites = () => {
     const favs = spectatorProfileService.getFavorites();
     setFavorites(favs);
-  };
-
-  const loadCompetitionFavorites = () => {
-    const favs = spectatorProfileService.getCompetitionFavorites();
-    setCompetitionFavorites(favs);
   };
 
   const filterEvents = () => {
@@ -115,14 +133,32 @@ export default function Spectator() {
     loadFavorites();
   };
 
-  const toggleCompetitionFavorite = (competitionId, e) => {
+  const toggleCompetitionFollow = async (competitionId, e) => {
     e.stopPropagation();
-    if (spectatorProfileService.isCompetitionFavorite(competitionId)) {
-      spectatorProfileService.removeCompetitionFavorite(competitionId);
-    } else {
-      spectatorProfileService.addCompetitionFavorite(competitionId);
+    const id = String(competitionId);
+    const isFollowing = followedCompetitionIds.includes(id);
+    setFollowActionError(null);
+    setFollowActionLoadingId(id);
+    try {
+      if (isFollowing) {
+        await competitionFollowService.unfollow(competitionId);
+        setFollowedCompetitionIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        await competitionFollowService.follow(competitionId);
+        setFollowedCompetitionIds((prev) =>
+          prev.includes(id) ? prev : [...prev, id]
+        );
+      }
+    } catch (err) {
+      const status = err.response?.status;
+      setFollowActionError(
+        status === 404
+          ? "Cette compétition n'existe pas ou n'est plus disponible."
+          : "Impossible de mettre à jour l'abonnement. Réessayez plus tard."
+      );
+    } finally {
+      setFollowActionLoadingId(null);
     }
-    loadCompetitionFavorites();
   };
 
   const loadEvents = async () => {
@@ -197,13 +233,13 @@ export default function Spectator() {
   };
 
   const favoriteEventIdSet = new Set(favorites.map((id) => String(id)));
-  const competitionFavoriteIdSet = new Set(competitionFavorites.map((id) => String(id)));
+  const followedCompetitionIdSet = new Set(followedCompetitionIds);
   const competitionsToDisplay =
     selectedEventId !== null
       ? competitionsByEvent[selectedEventId] || []
       : viewMode === "favorites"
         ? allCompetitions.filter((c) =>
-            competitionFavoriteIdSet.has(String(c.id))
+            followedCompetitionIdSet.has(String(c.id))
           )
         : allCompetitions;
 
@@ -272,6 +308,16 @@ export default function Spectator() {
         >
           Consultez les événements, compétitions et résultats en temps réel
         </Typography>
+        {followListError && (
+          <Alert severity="warning" sx={{ mt: 2 }}>
+            {followListError}
+          </Alert>
+        )}
+        {followActionError && (
+          <Alert severity="error" sx={{ mt: 2 }} onClose={() => setFollowActionError(null)}>
+            {followActionError}
+          </Alert>
+        )}
       </Box>
 
       {/* Spectateur Nav: événements (carousel pastilles) -> compétitions (carousel) */}
@@ -324,7 +370,10 @@ export default function Spectator() {
             }}
           >
             <Button
-              onClick={() => setSelectedEventId(null)}
+              onClick={() => {
+                setSelectedEventId(null);
+                navigate("/spectator", { replace: true });
+              }}
               variant="contained"
               disableElevation
               sx={{
@@ -334,12 +383,20 @@ export default function Spectator() {
                 minHeight: 36,
                 textTransform: "none",
                 fontWeight: 700,
-                bgcolor: selectedEventId === null ? appTheme.gradients.navbar : "transparent",
-                color: selectedEventId === null ? "#020617" : appTheme.colors.dark,
+                bgcolor:
+                  selectedEventId === null && viewMode === "all"
+                    ? appTheme.gradients.navbar
+                    : "transparent",
+                color:
+                  selectedEventId === null && viewMode === "all"
+                    ? "#020617"
+                    : appTheme.colors.dark,
                 backgroundColor:
-                  selectedEventId === null ? "transparent" : "rgba(255,255,255,0.92)",
+                  selectedEventId === null && viewMode === "all"
+                    ? "transparent"
+                    : "rgba(255,255,255,0.92)",
                 border:
-                  selectedEventId === null
+                  selectedEventId === null && viewMode === "all"
                     ? "1px solid rgba(34,211,238,0.55)"
                     : "1px solid rgba(148,163,184,0.35)",
                 boxShadow: "none",
@@ -347,7 +404,7 @@ export default function Spectator() {
                 '& .MuiButton-startIcon': { marginRight: 0 },
                 "&:hover": {
                   bgcolor:
-                    selectedEventId === null
+                    selectedEventId === null && viewMode === "all"
                       ? appTheme.gradients.navbar
                       : "rgba(148,163,184,0.12)",
                 },
@@ -433,7 +490,7 @@ export default function Spectator() {
             {selectedEventId !== null
               ? `Compétitions de l'événement`
               : viewMode === "favorites"
-                ? "Compétitions suivies"
+                ? "Abonnements (notifications)"
                 : "Toutes les compétitions"}
           </Typography>
         </Box>
@@ -464,8 +521,10 @@ export default function Spectator() {
                   p: 3,
                 }}
               >
-                <Typography sx={{ color: appTheme.colors.textSecondary }}>
-                  Aucune compétition disponible.
+                <Typography sx={{ color: appTheme.colors.textSecondary, fontWeight: 600 }}>
+                  {viewMode === "favorites"
+                    ? "Aucune compétition suivie pour le moment."
+                    : "Aucune compétition disponible."}
                 </Typography>
               </Card>
             ) : (
@@ -508,34 +567,45 @@ export default function Spectator() {
                         >
                           <Button
                             size="small"
-                            onClick={(e) =>
-                              toggleCompetitionFavorite(competition.id, e)
+                            disabled={
+                              followActionLoadingId === String(competition.id)
                             }
+                            onClick={(e) => toggleCompetitionFollow(competition.id, e)}
                             sx={{
                               borderRadius: "999px",
                               textTransform: "none",
                               fontWeight: 800,
                               px: 2,
                               py: 0.75,
-                              background: competitionFavoriteIdSet.has(String(competition.id))
+                              background: followedCompetitionIdSet.has(
+                                String(competition.id)
+                              )
                                 ? `${appTheme.colors.violet}20`
                                 : "transparent",
-                              color: competitionFavoriteIdSet.has(String(competition.id))
+                              color: followedCompetitionIdSet.has(
+                                String(competition.id)
+                              )
                                 ? appTheme.colors.violet
                                 : appTheme.colors.textMuted,
-                              border: competitionFavoriteIdSet.has(String(competition.id))
+                              border: followedCompetitionIdSet.has(
+                                String(competition.id)
+                              )
                                 ? `1px solid ${appTheme.colors.violet}40`
                                 : "1px solid rgba(148, 163, 184, 0.25)",
                               "&:hover": {
-                                background: competitionFavoriteIdSet.has(String(competition.id))
+                                background: followedCompetitionIdSet.has(
+                                  String(competition.id)
+                                )
                                   ? `${appTheme.colors.violet}25`
                                   : "rgba(34,211,238,0.08)",
                               },
                             }}
                           >
-                            {competitionFavoriteIdSet.has(String(competition.id))
-                              ? "Suivi"
-                              : "Suivre"}
+                            {followActionLoadingId === String(competition.id)
+                              ? "…"
+                              : followedCompetitionIdSet.has(String(competition.id))
+                                ? "Abonné"
+                                : "Suivre"}
                           </Button>
                           <Chip
                             label={getStatusLabel(competition.status)}

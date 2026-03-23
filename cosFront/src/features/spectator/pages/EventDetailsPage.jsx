@@ -20,6 +20,7 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
+import competitionFollowService from "../services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
 import HtmlContent from "../../../common/components/HtmlContent";
 
@@ -30,10 +31,54 @@ export default function EventDetailsPage() {
   const [competitions, setCompetitions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [followedCompetitionIds, setFollowedCompetitionIds] = useState([]);
+  const [followActionId, setFollowActionId] = useState(null);
 
   useEffect(() => {
     loadEventData();
   }, [eventId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const list = await competitionFollowService.listFollowed();
+        if (!cancelled) {
+          setFollowedCompetitionIds(
+            list.map((row) => String(row.competitionId))
+          );
+        }
+      } catch {
+        if (!cancelled) setFollowedCompetitionIds([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [eventId]);
+
+  const toggleCompetitionFollow = async (competitionId, e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const id = String(competitionId);
+    const isFollowing = followedCompetitionIds.includes(id);
+    setFollowActionId(id);
+    try {
+      if (isFollowing) {
+        await competitionFollowService.unfollow(competitionId);
+        setFollowedCompetitionIds((prev) => prev.filter((x) => x !== id));
+      } else {
+        await competitionFollowService.follow(competitionId);
+        setFollowedCompetitionIds((prev) =>
+          prev.includes(id) ? prev : [...prev, id]
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFollowActionId(null);
+    }
+  };
 
   const loadEventData = async () => {
     try {
@@ -260,21 +305,52 @@ export default function EventDetailsPage() {
                           justifyContent: "space-between",
                           alignItems: "flex-start",
                           mb: 2,
+                          gap: 1,
                         }}
                       >
                         <EmojiEventsIcon
                           sx={{ fontSize: 32, color: appTheme.colors.violet }}
                         />
-                        <Chip
-                          label={getStatusLabel(competition.status)}
-                          size="small"
+                        <Box
                           sx={{
-                            background: `${getStatusColor(competition.status)}20`,
-                            color: getStatusColor(competition.status),
-                            fontWeight: 600,
-                            border: `1px solid ${getStatusColor(competition.status)}40`,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-end",
+                            gap: 1,
                           }}
-                        />
+                        >
+                          <Button
+                            size="small"
+                            variant="text"
+                            disabled={followActionId === String(competition.id)}
+                            onClick={(e) => toggleCompetitionFollow(competition.id, e)}
+                            sx={{
+                              textTransform: "none",
+                              fontWeight: 800,
+                              minWidth: 0,
+                              px: 1,
+                              color: followedCompetitionIds.includes(String(competition.id))
+                                ? appTheme.colors.violet
+                                : appTheme.colors.textMuted,
+                            }}
+                          >
+                            {followActionId === String(competition.id)
+                              ? "…"
+                              : followedCompetitionIds.includes(String(competition.id))
+                                ? "Abonné"
+                                : "Suivre"}
+                          </Button>
+                          <Chip
+                            label={getStatusLabel(competition.status)}
+                            size="small"
+                            sx={{
+                              background: `${getStatusColor(competition.status)}20`,
+                              color: getStatusColor(competition.status),
+                              fontWeight: 600,
+                              border: `1px solid ${getStatusColor(competition.status)}40`,
+                            }}
+                          />
+                        </Box>
                       </Box>
 
                       <Typography
