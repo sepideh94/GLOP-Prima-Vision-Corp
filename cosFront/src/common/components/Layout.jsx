@@ -1,14 +1,34 @@
-import { Box } from "@mui/material";
+import { useEffect, useState, useCallback } from "react";
+import { Box, Snackbar, Alert } from "@mui/material";
 import { Outlet, useLocation } from "react-router-dom";
 import Navbar from "./Navbar";
 import Sidebar from "./Sidebar";
 import Footer from "./Footer";
 import appTheme from "../theme/appTheme";
 import { SPECTATOR_PAGE_BACKGROUND } from "../../features/spectator/swimmingVisuals";
+import { ATHLETE_PLANNING_ACCESS_DENIED_EVENT } from "../api/axiosInstance";
 
 export default function Layout() {
   const location = useLocation();
   const isSpectatorArea = location.pathname.startsWith("/spectator");
+  const [athleteAccessDenied, setAthleteAccessDenied] = useState({ open: false, message: "" });
+
+  const handleAthleteAccessDenied = useCallback((event) => {
+    const message = event?.detail?.message || "";
+    if (!message) return;
+    setAthleteAccessDenied({ open: true, message });
+  }, []);
+
+  const closeAthleteAccessDenied = useCallback(() => {
+    setAthleteAccessDenied((prev) => ({ ...prev, open: false }));
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(ATHLETE_PLANNING_ACCESS_DENIED_EVENT, handleAthleteAccessDenied);
+    return () => {
+      window.removeEventListener(ATHLETE_PLANNING_ACCESS_DENIED_EVENT, handleAthleteAccessDenied);
+    };
+  }, [handleAthleteAccessDenied]);
 
   return (
     <Box
@@ -54,7 +74,7 @@ export default function Layout() {
       >
         <Navbar />
 
-        <Box sx={{ display: "flex", flex: 1, minHeight: 0, mt: "64px" }}>
+<Box sx={{ display: "flex", flex: 1, minHeight: 0, mt: "64px" }}>
           {!isSpectatorArea && <Sidebar />}
 
           <Box
@@ -65,7 +85,7 @@ export default function Layout() {
               flexDirection: "column",
               minWidth: 0,
               minHeight: 0,
-              px: isSpectatorArea ? 0 : 6,
+              px: isSpectatorArea ? 3 : 6,
               py: isSpectatorArea ? 0 : 5,
               ...(isSpectatorArea && { background: "transparent" }),
             }}
@@ -74,8 +94,23 @@ export default function Layout() {
           </Box>
         </Box>
 
-        {!isSpectatorArea && <Footer />}
-      </Box>
+{!isSpectatorArea && <Footer />}
+
+        <Snackbar
+          open={athleteAccessDenied.open}
+          autoHideDuration={8000}
+          onClose={closeAthleteAccessDenied}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={closeAthleteAccessDenied}
+            severity="warning"
+            variant="filled"
+            sx={{ width: "100%", maxWidth: 560 }}
+          >
+            {athleteAccessDenied.message}
+          </Alert>
+        </Snackbar>
     </Box>
   );
 }

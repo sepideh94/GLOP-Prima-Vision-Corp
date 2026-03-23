@@ -43,6 +43,7 @@ import {
 } from "../../spectator/spectatorGlassTheme";
 import { useAuth } from "../../../common/contexts/AuthContext";
 import { getSpectatorDisplayFirstName } from "../../../common/utils/spectatorWelcomeName";
+import { stripHtmlTags } from "../../../common/utils/htmlUtils";
 
 export default function Spectator() {
   const { user } = useAuth();
@@ -106,7 +107,7 @@ export default function Spectator() {
       filtered = filtered.filter(
         (event) =>
           event.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          event.description?.toLowerCase().includes(searchQuery.toLowerCase())
+          stripHtmlTags(event.description).toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 

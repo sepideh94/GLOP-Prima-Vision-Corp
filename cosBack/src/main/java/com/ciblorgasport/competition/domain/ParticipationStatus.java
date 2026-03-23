@@ -5,7 +5,8 @@ package com.ciblorgasport.competition.domain;
  */
 public enum ParticipationStatus {
     PENDING,
+    PENDING_VALIDATION,
     INVITED,
     CONFIRMED,
-    CANCELLED
+    CANCELED
 }

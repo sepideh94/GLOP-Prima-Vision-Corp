@@ -27,6 +27,7 @@ import {
   Event as EventIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
+import WysiwygEditor from "../../../common/components/WysiwygEditor";
 import scheduleService from "../services/scheduleService";
 import competitionService from "../../competition/services/competitionService";
 import volunteerService from "../../volunteer/services/volunteerService";
@@ -459,13 +460,10 @@ Créer un planning
               </Select>
             </FormControl>
 
-            <TextField
+            <WysiwygEditor
               label="Description"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-              multiline
-              rows={3}
-              fullWidth
+              onChange={(html) => setForm({ ...form, description: html })}
             />
 
             <Grid container spacing={2}>

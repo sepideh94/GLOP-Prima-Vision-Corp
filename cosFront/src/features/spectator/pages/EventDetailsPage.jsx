@@ -27,6 +27,7 @@ import {
   competitionStatusLabel,
   eventStatusChipProps,
 } from "../utils/competitionStatus";
+import HtmlContent from "../../../common/components/HtmlContent";
 
 export default function EventDetailsPage() {
   const { eventId } = useParams();
@@ -170,15 +171,14 @@ export default function EventDetailsPage() {
               {event.name}
             </Typography>
             {event.description && (
-              <Typography
+              <HtmlContent
+                html={event.description}
                 sx={{
                   color: "rgba(226, 232, 240, 0.88)",
                   fontSize: "1.1rem",
                   mb: 2,
                 }}
-              >
-                {event.description}
-              </Typography>
+              />
             )}
           </Box>
           <Chip
@@ -314,7 +314,8 @@ export default function EventDetailsPage() {
                       </Typography>
 
                       {competition.description && (
-                        <Typography
+                        <HtmlContent
+                          html={competition.description}
                           sx={{
                             color: appTheme.colors.textSecondary,
                             fontSize: "0.875rem",
@@ -324,9 +325,7 @@ export default function EventDetailsPage() {
                             WebkitBoxOrient: "vertical",
                             overflow: "hidden",
                           }}
-                        >
-                          {competition.description}
-                        </Typography>
+                        />
                       )}
 
                       {competition.startDate && (

@@ -40,6 +40,7 @@ const LoginPage = () => {
       login({
         token: res.token,
         user: {
+          id: res.userId,
           email: formData.email,
           role: userRole,
           ...(firstNameFromSignup ? { firstName: firstNameFromSignup } : {}),

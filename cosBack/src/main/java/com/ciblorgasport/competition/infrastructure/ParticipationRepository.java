@@ -37,6 +37,13 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 
     Optional<Participation> findByCompetition_IdAndCompetitorIdAndCompetitorType(
             Long competitionId, Long competitorId, CompetitorType competitorType);
+            
+    @Query("SELECT p FROM Participation p " +
+           "WHERE p.competition.id = :competitionId " +
+           "AND p.competitorType = 'TEAM' " +
+           "AND p.competitorId IN (SELECT t.id FROM Team t JOIN t.members m WHERE m.id = :athleteId)")
+    List<Participation> findTeamParticipationsByAthleteAndCompetition(
+            @Param("athleteId") Long athleteId, @Param("competitionId") Long competitionId);
     
     @Query("SELECT p FROM Participation p " +
     	       "WHERE (p.competitorId = :athleteId AND p.competitorType = 'ATHLETE') " +

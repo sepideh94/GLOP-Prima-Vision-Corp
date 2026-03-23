@@ -15,20 +15,21 @@ import {
   Assignment as AssignmentIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
+import HtmlContent from "../../../common/components/HtmlContent";
 import scheduleService from "../../schedule/services/scheduleService";
 
 const STATUS_LABELS = {
   UPCOMING: "À venir",
   IN_PROGRESS: "En cours",
   COMPLETED: "Terminé",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
 };
 
 const STATUS_COLORS = {
   UPCOMING: "#f59e0b",
   IN_PROGRESS: "#22d3ee",
   COMPLETED: "#16a34a",
-  CANCELLED: "#ef4444",
+  CANCELED: "#ef4444",
 };
 
 const formatDateTime = (dateTimeString) => {
@@ -170,15 +171,14 @@ export default function VolunteerSchedulePage() {
                   </Box>
 
                   {mission.description && (
-                    <Typography
+                    <HtmlContent
+                      html={mission.description}
                       sx={{
                         fontSize: 14,
                         color: appTheme.colors.textMuted,
                         mb: 2,
                       }}
-                    >
-                      {mission.description}
-                    </Typography>
+                    />
                   )}
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>

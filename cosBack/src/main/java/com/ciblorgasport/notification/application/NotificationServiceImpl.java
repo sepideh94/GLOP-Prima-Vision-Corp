@@ -52,6 +52,32 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public Notification createSystemNotification(
+            UserAccount recipient,
+            NotificationType type,
+            String title,
+            String message,
+            String link
+    ) {
+        if (recipient == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Destinataire notification manquant.");
+        }
+
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .incident(null)
+                .type(type)
+                .title(title)
+                .message(message)
+                .incidentStatus(null)
+                .link(link)
+                .isRead(false)
+                .build();
+
+        return notificationRepository.save(notification);
+    }
+
+    @Override
     public void markAsRead(Long notificationId, UserAccount actor) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Notification introuvable."));

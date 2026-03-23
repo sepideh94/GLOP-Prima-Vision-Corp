@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialParticipantStatus;
 import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.dto.CompetitionResultsResponse;
 import com.ciblorgasport.trial.dto.PublicCompetitionSummaryResponse;
@@ -59,7 +60,9 @@ public class TrialResultServiceImpl implements TrialResultService {
     @Transactional(readOnly = true)
     public List<ResultResponse> getResultsByAthleteId(Long athleteId) {
         // Recupere toutes les participations : directe (ATHLETE) + via equipe (TEAM)
-        var participations = trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId);
+        var participations = trialParticipantRepository.findAllDirectAndTeamTrialParticipations(athleteId).stream()
+                .filter(tp -> tp.getStatus() != TrialParticipantStatus.FORFEIT)
+                .toList();
         if (participations.isEmpty()) return List.of();
 
         List<Long> participantIds = participations.stream()

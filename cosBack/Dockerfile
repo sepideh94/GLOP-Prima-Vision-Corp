@@ -24,7 +24,8 @@ EXPOSE 8083
 
 # Variables d'environnement par défaut
 ENV DB_HOST=postgres
-ENV DB_PORT=5433
+# Port interne du conteneur Postgres (5433 sur la machine hôte = mapping compose, pas celui-ci)
+ENV DB_PORT=5432
 ENV DB_NAME=ciblorgasport
 ENV DB_USER=postgres
 ENV DB_PASSWORD=postgres123

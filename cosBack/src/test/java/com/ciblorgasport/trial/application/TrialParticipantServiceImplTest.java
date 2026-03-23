@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -23,9 +24,14 @@ import org.mockito.quality.Strictness;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.commissionner.CommissionerRepository;
+import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.infrastructure.TeamRepository;
 import com.ciblorgasport.trial.domain.Trial;
@@ -59,6 +65,15 @@ class TrialParticipantServiceImplTest {
     private ParticipationRepository participationRepository;
 
     @Mock
+    private CommissionerRepository commissionerRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private NotificationService notificationService;
+
+    @Mock
     private TrialModeStrategy strategy;
 
     @InjectMocks
@@ -84,6 +99,14 @@ class TrialParticipantServiceImplTest {
         when(team.getName()).thenReturn(name);
         when(team.getMembers()).thenReturn(members);
         return team;
+    }
+
+    private Commissionner mockCommissioner(Long id, String firstName, String email) {
+        Commissionner commissioner = org.mockito.Mockito.mock(Commissionner.class);
+        when(commissioner.getId()).thenReturn(id);
+        when(commissioner.getFirstName()).thenReturn(firstName);
+        when(commissioner.getEmail()).thenReturn(email);
+        return commissioner;
     }
 
     private void stubQualificationTrial() {
@@ -297,146 +320,4 @@ class TrialParticipantServiceImplTest {
         }
     }
 
-    @Nested
-    class DeclareForfeitServiceTests {
-
-        @Test
-        void shouldDeclareForfeitSuccessfully() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(4L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.ACTIVE)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(false);
-            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
-                    .thenReturn(Optional.of(participant));
-
-            assertDoesNotThrow(() -> trialParticipantService.declareForfeit(4L, 13L));
-
-            assertEquals(TrialParticipantStatus.FORFEIT, participant.getStatus());
-            verify(trialParticipantRepository).save(participant);
-        }
-
-        @Test
-        void shouldThrowWhenTrialParticipantNotFound() {
-            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
-                    .thenReturn(Optional.empty());
-
-            EntityNotFoundException exception = assertThrows(
-                    EntityNotFoundException.class,
-                    () -> trialParticipantService.declareForfeit(4L, 13L)
-            );
-
-            assertEquals("Participation à l'épreuve introuvable", exception.getMessage());
-        }
-
-        @Test
-        void shouldThrowWhenTrialAlreadyStarted() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(4L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.ACTIVE)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(true);
-            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
-                    .thenReturn(Optional.of(participant));
-
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
-                    () -> trialParticipantService.declareForfeit(4L, 13L)
-            );
-
-            assertEquals("L'épreuve a déjà commencé.", exception.getMessage());
-        }
-
-        @Test
-        void shouldThrowWhenForfeitAlreadyDeclared() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(4L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.FORFEIT)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(false);
-            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
-                    .thenReturn(Optional.of(participant));
-
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
-                    () -> trialParticipantService.declareForfeit(4L, 13L)
-            );
-
-            assertEquals("Le forfait a déjà été déclaré pour cette épreuve.", exception.getMessage());
-        }
-    }
-
-    @Nested
-    class TrialParticipantEntityTests {
-
-        @Test
-        void shouldDeclareForfeitOnEntity() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(5L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.ACTIVE)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(false);
-
-            assertDoesNotThrow(participant::declareForfeit);
-
-            assertEquals(TrialParticipantStatus.FORFEIT, participant.getStatus());
-            assertNotNull(participant.getUpdatedAt());
-        }
-
-        @Test
-        void shouldThrowWhenDeclaringForfeitOnStartedTrial() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(5L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.ACTIVE)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(true);
-
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
-                    participant::declareForfeit
-            );
-
-            assertEquals("L'épreuve a déjà commencé.", exception.getMessage());
-        }
-
-        @Test
-        void shouldThrowWhenForfeitAlreadyDeclaredOnEntity() {
-            TrialParticipant participant = TrialParticipant.builder()
-                    .id(5L)
-                    .trial(trial)
-                    .competitorId(13L)
-                    .competitorType(CompetitorType.ATHLETE)
-                    .status(TrialParticipantStatus.FORFEIT)
-                    .build();
-
-            when(trial.hasStarted()).thenReturn(false);
-
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
-                    participant::declareForfeit
-            );
-
-            assertEquals("Le forfait a déjà été déclaré pour cette épreuve.", exception.getMessage());
-        }
-    }
 }

@@ -1,6 +1,7 @@
 package com.ciblorgasport.site.application;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -18,6 +19,48 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SiteServiceImpl implements SiteService {
     private final SiteRepository siteRepository;
+
+    /** Tolérance ~22 m pour considérer deux points comme le même lieu (Places / géocode). */
+    private static final double COORD_TOLERANCE = 0.0002;
+
+    @Transactional
+    @Override
+    public SiteResponse resolveOrCreate(SiteCreateRequest request) {
+        String addr = request.getAdress() == null ? "" : request.getAdress().trim();
+        if (addr.isEmpty()) {
+            throw new IllegalArgumentException("L'adresse du lieu est obligatoire.");
+        }
+        double lat = request.getLatitude();
+        double lng = request.getLongitude();
+        if (!Double.isFinite(lat) || !Double.isFinite(lng)) {
+            throw new IllegalArgumentException("Coordonnées GPS invalides.");
+        }
+
+        double latMin = lat - COORD_TOLERANCE;
+        double latMax = lat + COORD_TOLERANCE;
+        double lngMin = lng - COORD_TOLERANCE;
+        double lngMax = lng + COORD_TOLERANCE;
+
+        List<Site> candidates = siteRepository.findInBoundingBox(latMin, latMax, lngMin, lngMax);
+        for (Site s : candidates) {
+            if (Math.abs(s.getLatitude() - lat) < COORD_TOLERANCE
+                    && Math.abs(s.getLongitude() - lng) < COORD_TOLERANCE) {
+                return SiteResponse.fromEntity(s);
+            }
+        }
+
+        Optional<Site> sameAddress = siteRepository.findFirstByAdressIgnoreCase(addr);
+        if (sameAddress.isPresent()) {
+            return SiteResponse.fromEntity(sameAddress.get());
+        }
+
+        Site newSite = new Site();
+        newSite.setAdress(addr);
+        newSite.setLatitude(lat);
+        newSite.setLongitude(lng);
+        Site saved = siteRepository.save(newSite);
+        return SiteResponse.fromEntity(saved);
+    }
 
     @Transactional
     @Override

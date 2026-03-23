@@ -7,9 +7,13 @@ import {
   Chip,
   CircularProgress,
   IconButton,
-  Stack,
   Tooltip,
   Typography,
+  Divider,
+  Snackbar,
+  Alert as MuiAlert,
+  Paper,
+  Stack,
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -19,8 +23,10 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale/fr";
+import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+import NotificationsActiveOutlinedIcon from "@mui/icons-material/NotificationsActiveOutlined";
+import GroupsIcon from "@mui/icons-material/Groups";
 
-import appTheme from "../../../common/theme/appTheme";
 import notificationService from "../services/notificationService";
 import { SPECTATOR_MENU_GLASS_DECOR } from "../../spectator/swimmingVisuals";
 import {
@@ -66,7 +72,62 @@ function formatSentAt(sentAt) {
     full: format(d, "d MMM yyyy · HH:mm", { locale: fr }),
     relative: formatDistanceToNow(d, { addSuffix: true, locale: fr }),
   };
+function formatDateTime(sentAt) {
+  if (!sentAt) return "—";
+  const d = new Date(sentAt);
+  if (Number.isNaN(d.getTime())) return String(sentAt);
+  return d.toLocaleString("fr-FR", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
+
+function formatRelative(sentAt) {
+  if (!sentAt) return "";
+  const d = new Date(sentAt);
+  if (Number.isNaN(d.getTime())) return "";
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "À l’instant";
+  if (mins < 60) return `Il y a ${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `Il y a ${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `Il y a ${days} j`;
+  return "";
+}
+
+const NOTIFICATION_TYPE_LABELS = {
+  TEAM_PARTICIPATION_VALIDATED: "Équipe",
+  PARTICIPATION_VALIDATED: "Validation",
+  PARTICIPATION_REFUSED: "Refus",
+};
+
+const TYPE_STYLE = {
+  TEAM_PARTICIPATION_VALIDATED: {
+    bg: "linear-gradient(135deg, #bfdbfe, #93c5fd)",
+    fg: "#1e3a8a",
+    icon: <GroupsIcon sx={{ fontSize: 20 }} />,
+  },
+  PARTICIPATION_VALIDATED: {
+    bg: "linear-gradient(135deg, #86efac, #4ade80)",
+    fg: "#14532d",
+    icon: null,
+  },
+  PARTICIPATION_REFUSED: {
+    bg: "linear-gradient(135deg, #fdba74, #fb923c)",
+    fg: "#7c2d12",
+    icon: null,
+  },
+  default: {
+    bg: "linear-gradient(135deg, #fde047, #facc15)",
+    fg: "#713f12",
+    icon: null,
+  },
+};
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
@@ -78,6 +139,10 @@ export default function NotificationsPage() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [markingId, setMarkingId] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const sortedNotifications = useMemo(() => {
     return [...notifications].sort((a, b) => {
@@ -111,11 +176,17 @@ export default function NotificationsPage() {
     load();
   }, [load]);
 
-  const handleMarkAsRead = async (id) => {
+  const handleMarkAsRead = async (rawId) => {
+    const id = Number(rawId);
+    if (!Number.isFinite(id)) {
+      setSnackbar({ open: true, message: "Identifiant de notification invalide." });
+      return;
+    }
+    setMarkingId(id);
     try {
       await notificationService.markAsRead(id);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
+        prev.map((n) => (Number(n.id) === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (e) {

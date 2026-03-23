@@ -41,6 +41,7 @@ import {
   textLegibleDark,
   spectatorDarkMenuShell,
 } from "../spectatorGlassTheme";
+import HtmlContent from "../../../common/components/HtmlContent";
 import TrialResultsViewDialog from "../../trial/pages/TrialResultsViewDialog";
 import {
   competitionStatusColor,
@@ -303,6 +304,17 @@ export default function CompetitionResultsPage() {
 
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
+  const withDisplayRank = (rows) =>
+    rows.map((row, index, arr) => {
+      if (index === 0) return { ...row, displayRank: 1 };
+      const prev = arr[index - 1];
+      const isSameRankAsPrev =
+        row?.rank != null && prev?.rank != null && row.rank === prev.rank;
+      return {
+        ...row,
+        displayRank: isSameRankAsPrev ? prev.displayRank : index + 1,
+      };
+    });
 
   // Grouper les épreuves par round
   const trialsByRound = trials.reduce((acc, trial) => {
@@ -496,16 +508,15 @@ export default function CompetitionResultsPage() {
               {competition.name}
             </Typography>
             {competition.description && (
-              <Typography
+              <HtmlContent
+                html={competition.description}
                 sx={{
                   color: appTheme.colors.textSecondary,
                   fontSize: "1.1rem",
                   mb: 2,
                   maxWidth: "65ch",
                 }}
-              >
-                {competition.description}
-              </Typography>
+              />
             )}
           </Box>
           <Chip
@@ -676,15 +687,14 @@ export default function CompetitionResultsPage() {
                           </Typography>
 
                           {trial.description && (
-                            <Typography
+                            <HtmlContent
+                              html={trial.description}
                               sx={{
                                 color: appTheme.colors.textSecondary,
                                 fontSize: "0.875rem",
                                 mb: 2,
                               }}
-                            >
-                              {trial.description}
-                            </Typography>
+                            />
                           )}
 
                           {trial.startDate && (
@@ -847,6 +857,15 @@ export default function CompetitionResultsPage() {
                 const results = Array.isArray(trialGroup.results)
                   ? trialGroup.results
                   : [];
+                const rankedRows = withDisplayRank(
+                  results.filter((r) => r?.participant?.status !== "FORFEIT")
+                );
+                const displayResults = [
+                  ...rankedRows,
+                  ...results
+                    .filter((r) => r?.participant?.status === "FORFEIT")
+                    .map((r) => ({ ...r, rank: null, tie: false, displayRank: null })),
+                ];
                 const resultsCount = results.length;
                 const performanceType = results[0]?.performanceType || null;
                 const performanceLabel =
@@ -1040,11 +1059,11 @@ export default function CompetitionResultsPage() {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {results.map((result) => (
+                              {displayResults.map((result) => (
                                 <TableRow
                                   key={result.id}
                                   sx={
-                                    result.tie
+                                    result.tie && result?.participant?.status !== "FORFEIT"
                                       ? {
                                           background: "rgba(250, 204, 21, 0.14)",
                                           "&:hover": {
@@ -1060,19 +1079,34 @@ export default function CompetitionResultsPage() {
                                 >
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Typography sx={{ fontWeight: 700 }}>
-                                      {result.rank === 1
+                                      {result.displayRank == null
+                                        ? "—"
+                                        : result.displayRank === 1
                                         ? "🥇"
-                                        : result.rank === 2
+                                        : result.displayRank === 2
                                         ? "🥈"
-                                        : result.rank === 3
+                                        : result.displayRank === 3
                                         ? "🥉"
-                                        : result.rank}
+                                        : result.displayRank}
                                     </Typography>
                                   </TableCell>
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Typography sx={{ fontWeight: 600 }}>
                                       {result.participant?.displayName || "Participant inconnu"}
                                     </Typography>
+                                    {result.participant?.status === "FORFEIT" && (
+                                      <Chip
+                                        size="small"
+                                        label="Forfait"
+                                        sx={{
+                                          mt: 0.6,
+                                          fontWeight: 700,
+                                          color: "#fecaca",
+                                          background: "rgba(239, 68, 68, 0.20)",
+                                          border: "1px solid rgba(239, 68, 68, 0.45)",
+                                        }}
+                                      />
+                                    )}
                                     {result.participant?.competitorType === "TEAM" &&
                                       Array.isArray(result.participant?.members) &&
                                       result.participant.members.length > 0 && (
@@ -1093,10 +1127,21 @@ export default function CompetitionResultsPage() {
                                   </TableCell>
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                      <Typography sx={{ fontWeight: 800 }}>
-                                        {result.performance}
+                                      <Typography
+                                        sx={{
+                                          fontWeight: 800,
+                                          color:
+                                            result.participant?.status === "FORFEIT"
+                                              ? "#fecaca"
+                                              : "#E2E8F0",
+                                        }}
+                                      >
+                                        {result.participant?.status === "FORFEIT"
+                                          ? "Forfait"
+                                          : result.performance}
                                       </Typography>
-                                      {result.tie && (
+                                      {result.tie &&
+                                        result.participant?.status !== "FORFEIT" && (
                                         <Chip
                                           size="small"
                                           label="Ex æquo"
