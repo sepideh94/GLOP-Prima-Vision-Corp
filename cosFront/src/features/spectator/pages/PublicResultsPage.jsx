@@ -702,10 +702,10 @@ export default function PublicResultsPage() {
                                         size="small"
                                         sx={{
                                           mt: 0.6,
-                                          fontWeight: 700,
-                                          color: "#fecaca",
-                                          background: "rgba(239, 68, 68, 0.20)",
-                                          border: "1px solid rgba(239, 68, 68, 0.45)",
+                                          fontWeight: 800,
+                                          color: "#ef4444",
+                                          background: "#fff1f2",
+                                          border: "1px solid #fca5a5",
                                         }}
                                       />
                                     )}

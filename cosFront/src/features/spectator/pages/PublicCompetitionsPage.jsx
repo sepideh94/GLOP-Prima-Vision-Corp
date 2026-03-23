@@ -193,17 +193,6 @@ export default function PublicCompetitionsPage() {
                 >
                   Accueil
                 </Button>
-                <Chip
-                  label="Annuaire public"
-                  sx={{
-                    ml: 1,
-                    mb: 1.3,
-                    fontWeight: 800,
-                    bgcolor: `${PAL.orange}22`,
-                    color: PAL.orangeDeep,
-                    border: `1px solid ${PAL.orange}55`,
-                  }}
-                />
                 <Typography
                   component="h1"
                   sx={{

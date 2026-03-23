@@ -17,6 +17,7 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import KeyboardArrowDownRoundedIcon from "@mui/icons-material/KeyboardArrowDownRounded";
+import KeyboardArrowUpRoundedIcon from "@mui/icons-material/KeyboardArrowUpRounded";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
@@ -159,11 +160,21 @@ function scrollToSection(id) {
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [isHeaderSolid, setIsHeaderSolid] = useState(false);
   const [competitionSummaries, setCompetitionSummaries] = useState([]);
   const [latestTrials, setLatestTrials] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
   const [resultsLoading, setResultsLoading] = useState(false);
   const [resultsError, setResultsError] = useState(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setIsHeaderSolid(window.scrollY > 0);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -471,6 +482,21 @@ export default function HomePage() {
     return getTrialNameLabel(value);
   };
 
+  const getEventDescriptionPreview = (value, maxLen = 220) => {
+    const plain = String(value || "")
+      .replaceAll(/<[^>]*>/g, " ")
+      .replaceAll(/&nbsp;/gi, " ")
+      .replaceAll(/&amp;/gi, "&")
+      .replaceAll(/&quot;/gi, '"')
+      .replaceAll(/&#39;/gi, "'")
+      .replaceAll(/&lt;/gi, "<")
+      .replaceAll(/&gt;/gi, ">")
+      .replaceAll(/\s+/g, " ")
+      .trim();
+    if (!plain) return "";
+    return plain.length > maxLen ? `${plain.slice(0, maxLen)}…` : plain;
+  };
+
   const highlights = useMemo(
     () => [
       {
@@ -559,13 +585,16 @@ export default function HomePage() {
       <Box
         component="header"
         sx={{
-          position: "sticky",
+          position: "fixed",
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 50,
-          bgcolor: "#020617",
-          backdropFilter: "blur(14px)",
-          borderBottom: "1px solid rgba(148,163,184,0.2)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+          bgcolor: isHeaderSolid ? "#020617" : "transparent",
+          backdropFilter: isHeaderSolid ? "blur(14px)" : "none",
+          borderBottom: isHeaderSolid ? "1px solid rgba(148,163,184,0.2)" : "1px solid transparent",
+          boxShadow: isHeaderSolid ? "0 8px 32px rgba(0,0,0,0.35)" : "none",
+          transition: "background-color 180ms ease, box-shadow 180ms ease, border-color 180ms ease",
         }}
       >
         <Container maxWidth="lg">
@@ -596,17 +625,6 @@ export default function HomePage() {
               <Box>
                 <Typography sx={{ fontWeight: 900, fontSize: 18, color: "#f8fafc", letterSpacing: "-0.02em" }}>
                   CiblOrgaSport
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    color: PAL.cyan,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                  }}
-                >
-                  Compétitions · Organisation · Résultats
                 </Typography>
               </Box>
             </Box>
@@ -686,7 +704,10 @@ export default function HomePage() {
             `,
           }}
         />
-        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1, py: { xs: 3.5, md: 4.5 } }}>
+        <Container
+          maxWidth="lg"
+          sx={{ position: "relative", zIndex: 1, pt: { xs: 12, md: 14 }, pb: { xs: 3.5, md: 4.5 } }}
+        >
           <Box sx={{ maxWidth: { xs: "100%", md: "62%" } }}>
             <Chip
               label="Événements sportifs"
@@ -1473,6 +1494,7 @@ export default function HomePage() {
                   startAt && endAt
                     ? Math.max(1, Math.ceil((endAt.getTime() - startAt.getTime()) / (1000 * 60 * 60 * 24)) + 1)
                     : null;
+                const eventDescriptionPreview = getEventDescriptionPreview(ev.description);
                 return (
                   <Box
                     key={ev.id}
@@ -1590,10 +1612,9 @@ export default function HomePage() {
                           </Typography>
                         </Box>
                       )}
-                      {ev.description ? (
+                      {eventDescriptionPreview ? (
                         <Typography sx={{ fontSize: 14, color: INK_MUTED, mt: 1.25, lineHeight: 1.6 }}>
-                          {String(ev.description).slice(0, 220)}
-                          {String(ev.description).length > 220 ? "…" : ""}
+                          {eventDescriptionPreview}
                         </Typography>
                       ) : null}
                     </Box>
@@ -1771,12 +1792,13 @@ export default function HomePage() {
                       }}
                     >
                       <Typography sx={{ fontWeight: 900, color: INK, fontSize: 17, mb: 1, lineHeight: 1.35 }}>
-                        {getDisplayTrialName(trial.trialName || `Épreuve ${trial.trialId}`)}
+                        {trial.trialDisplayName ||
+                          getDisplayTrialName(trial.trialName || `Épreuve ${trial.trialId}`)}
                       </Typography>
                       <Typography sx={{ fontSize: 13, color: INK_MUTED, fontWeight: 600, mb: 1 }}>
                         {trial.competitionName || `Compétition ${trial.competitionId}`}
                         {(trial.roundName || trial.categoryGender) && " · "}
-                        {trial.roundName ? `${getRoundLabel(trial.roundName)}` : ""}
+                        {trial.roundDisplayName || (trial.roundName ? `${getRoundLabel(trial.roundName)}` : "")}
                         {trial.categoryGender ? ` · ${getGenderLabel(trial.categoryGender)}` : ""}
                       </Typography>
                       {(trial.startDate && trial.startHour) || (trial.endDate && trial.endHour) ? (
@@ -1993,6 +2015,33 @@ export default function HomePage() {
           </Stack>
         </Container>
       </Box>
+
+      {/* Retour rapide en haut de page */}
+      <Button
+        aria-label="Revenir en haut de page"
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        sx={{
+          position: "fixed",
+          right: { xs: 16, md: 22 },
+          bottom: { xs: 16, md: 22 },
+          minWidth: 0,
+          width: { xs: 46, md: 50 },
+          height: { xs: 46, md: 50 },
+          borderRadius: "50%",
+          p: 0,
+          zIndex: 60,
+          color: "#fff",
+          background: `linear-gradient(135deg, ${PAL.blueDeep}, ${PAL.blue} 55%, ${PAL.cyan})`,
+          boxShadow: "0 10px 26px rgba(2,132,199,0.45)",
+          border: "1px solid rgba(255,255,255,0.35)",
+          "&:hover": {
+            background: `linear-gradient(135deg, ${PAL.blueDeep}, ${PAL.blue}, ${PAL.greenDeep})`,
+            boxShadow: "0 14px 30px rgba(2,132,199,0.55)",
+          },
+        }}
+      >
+        <KeyboardArrowUpRoundedIcon sx={{ fontSize: 30 }} />
+      </Button>
 
       {/* Pied de page */}
       <Box

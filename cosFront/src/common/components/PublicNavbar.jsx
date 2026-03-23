@@ -60,11 +60,6 @@ export default function PublicNavbar({ publicOnly = false, themeVariant = "defau
               <Typography sx={{ fontWeight: 900, fontSize: isDarkHome ? 18 : 17, color: isDarkHome ? "#f8fafc" : "inherit", letterSpacing: "-0.02em" }}>
                 CiblOrgaSport
               </Typography>
-              {isDarkHome && (
-                <Typography sx={{ fontSize: 10, fontWeight: 800, color: appTheme.colors.cyan, textTransform: "uppercase", letterSpacing: "0.14em", lineHeight: 1.2 }}>
-                  Compétitions · Organisation · Résultats
-                </Typography>
-              )}
             </Box>
           </Box>
 
