@@ -9,7 +9,6 @@ import {
 import { USE_HASH_ROUTER } from "../common/utils/spaNavigation";
 import GoogleMapsProvider from "../common/components/GoogleMapsProvider";
 import PrivateRoute from "../common/components/PrivateRoute.jsx";
-import PrivateRoute from "../common/components/PrivateRoute.jsx";
 
 const AppRouter = USE_HASH_ROUTER ? HashRouter : BrowserRouter;
 

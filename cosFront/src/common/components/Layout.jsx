@@ -111,6 +111,7 @@ export default function Layout() {
             {athleteAccessDenied.message}
           </Alert>
         </Snackbar>
+      </Box>
     </Box>
   );
 }

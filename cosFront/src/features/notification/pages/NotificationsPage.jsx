@@ -34,9 +34,13 @@ import {
   textLegibleDark,
   spectatorDarkMenuShell,
 } from "../../spectator/spectatorGlassTheme";
+import appTheme from "../../../common/theme/appTheme";
 
 const NOTIFICATION_TYPE_LABELS = {
   INCIDENT: "Incident",
+  TEAM_PARTICIPATION_VALIDATED: "Équipe",
+  PARTICIPATION_VALIDATED: "Validation",
+  PARTICIPATION_REFUSED: "Refus",
 };
 
 function notificationTypeLabel(type) {
@@ -72,6 +76,8 @@ function formatSentAt(sentAt) {
     full: format(d, "d MMM yyyy · HH:mm", { locale: fr }),
     relative: formatDistanceToNow(d, { addSuffix: true, locale: fr }),
   };
+}
+
 function formatDateTime(sentAt) {
   if (!sentAt) return "—";
   const d = new Date(sentAt);
@@ -100,12 +106,6 @@ function formatRelative(sentAt) {
   return "";
 }
 
-const NOTIFICATION_TYPE_LABELS = {
-  TEAM_PARTICIPATION_VALIDATED: "Équipe",
-  PARTICIPATION_VALIDATED: "Validation",
-  PARTICIPATION_REFUSED: "Refus",
-};
-
 const TYPE_STYLE = {
   TEAM_PARTICIPATION_VALIDATED: {
     bg: "linear-gradient(135deg, #bfdbfe, #93c5fd)",
@@ -133,15 +133,12 @@ export default function NotificationsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isSpectatorRoute = location.pathname.startsWith("/spectator");
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [markingId, setMarkingId] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
-
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const sortedNotifications = useMemo(() => {
