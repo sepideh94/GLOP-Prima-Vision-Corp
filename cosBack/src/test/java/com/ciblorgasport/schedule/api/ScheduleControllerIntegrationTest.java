@@ -119,7 +119,11 @@ class ScheduleControllerIntegrationTest {
     @DisplayName("GET /api/schedule/athlete/competition/{competitionId} -> should return athlete competition schedule")
     void shouldGetAthleteScheduleByCompetition() throws Exception {
         Long competitionId = 44L;
-        when(currentUser.getId()).thenReturn(7L);
+        Long athleteId = 7L;
+
+        when(currentUser.getId()).thenReturn(athleteId);
+
+        when(participationService.isConfirmed(eq(athleteId), eq(competitionId))).thenReturn(true);
 
         AthleteTrialScheduleResponse response = new AthleteTrialScheduleResponse(
                 101L,
@@ -134,7 +138,7 @@ class ScheduleControllerIntegrationTest {
                 "Championnat de France"
         );
 
-        when(scheduleService.getAthleteScheduleByCompetition(eq(7L), eq(competitionId)))
+        when(scheduleService.getAthleteScheduleByCompetition(eq(athleteId), eq(competitionId)))
                 .thenReturn(List.of(response));
         
         when(participationService.isConfirmed(7L, competitionId)).thenReturn(true);
@@ -150,6 +154,7 @@ class ScheduleControllerIntegrationTest {
                 .andExpect(jsonPath("$[0].participantStatus").value("CONFIRMED"))
                 .andExpect(jsonPath("$[0].competitionName").value("Championnat de France"));
 
-        verify(scheduleService).getAthleteScheduleByCompetition(7L, competitionId);
+        verify(participationService).isConfirmed(athleteId, competitionId);
+        verify(scheduleService).getAthleteScheduleByCompetition(athleteId, competitionId);
     }
 }

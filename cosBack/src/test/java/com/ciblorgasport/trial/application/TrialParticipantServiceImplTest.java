@@ -320,4 +320,306 @@ class TrialParticipantServiceImplTest {
         }
     }
 
+    @Nested
+    class DeclareForfeitServiceTests {
+
+        @Test
+        void shouldDeclareForfeitSuccessfully() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(4L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.ACTIVE)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(false);
+            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
+                    .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
+
+            assertDoesNotThrow(() -> trialParticipantService.declareForfeit(4L, 13L));
+
+            assertEquals(TrialParticipantStatus.FORFEIT, participant.getStatus());
+            verify(trialParticipantRepository).save(participant);
+        }
+
+        @Test
+        void shouldThrowWhenTrialParticipantNotFound() {
+            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
+                    .thenReturn(Optional.empty());
+
+            EntityNotFoundException exception = assertThrows(
+                    EntityNotFoundException.class,
+                    () -> trialParticipantService.declareForfeit(4L, 13L)
+            );
+
+            assertEquals("Participation à l'épreuve introuvable", exception.getMessage());
+        }
+
+        @Test
+        void shouldThrowWhenTrialAlreadyStarted() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(4L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.ACTIVE)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(true);
+            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
+                    .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
+
+            IllegalStateException exception = assertThrows(
+                    IllegalStateException.class,
+                    () -> trialParticipantService.declareForfeit(4L, 13L)
+            );
+
+            assertEquals("L'épreuve a déjà commencé.", exception.getMessage());
+        }
+
+        @Test
+        void shouldThrowWhenForfeitAlreadyDeclared() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(4L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.FORFEIT)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(false);
+            when(trialParticipantRepository.findAccessibleByIdForAthlete(4L, 13L))
+                    .thenReturn(Optional.of(participant));
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
+
+            IllegalStateException exception = assertThrows(
+                    IllegalStateException.class,
+                    () -> trialParticipantService.declareForfeit(4L, 13L)
+            );
+
+            assertEquals("Le forfait a déjà été déclaré pour cette épreuve.", exception.getMessage());
+        }
+    }
+
+    @Nested
+    class TrialParticipantEntityTests {
+
+        @Test
+        void shouldDeclareForfeitOnEntity() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(5L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.ACTIVE)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(false);
+
+            assertDoesNotThrow(participant::declareForfeit);
+
+            assertEquals(TrialParticipantStatus.FORFEIT, participant.getStatus());
+            assertNotNull(participant.getUpdatedAt());
+        }
+
+        @Test
+        void shouldThrowWhenDeclaringForfeitOnStartedTrial() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(5L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.ACTIVE)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(true);
+
+            IllegalStateException exception = assertThrows(
+                    IllegalStateException.class,
+                    participant::declareForfeit
+            );
+
+            assertEquals("L'épreuve a déjà commencé.", exception.getMessage());
+        }
+
+        @Test
+        void shouldThrowWhenForfeitAlreadyDeclaredOnEntity() {
+            TrialParticipant participant = TrialParticipant.builder()
+                    .id(5L)
+                    .trial(trial)
+                    .competitorId(13L)
+                    .competitorType(CompetitorType.ATHLETE)
+                    .status(TrialParticipantStatus.FORFEIT)
+                    .build();
+
+            when(trial.hasStarted()).thenReturn(false);
+
+            IllegalStateException exception = assertThrows(
+                    IllegalStateException.class,
+                    participant::declareForfeit
+            );
+
+            assertEquals("Le forfait a déjà été déclaré pour cette épreuve.", exception.getMessage());
+        }
+    }
+
+    @Nested
+    class GetMethodsTests {
+
+        @Test
+        void shouldGetByTrialId() {
+            when(trialRepository.existsById(1L)).thenReturn(true);
+            TrialParticipant tpAthlete = TrialParticipant.builder()
+                    .id(10L).trial(trial).competitorId(13L).competitorType(CompetitorType.ATHLETE).build();
+            TrialParticipant tpTeam = TrialParticipant.builder()
+                    .id(11L).trial(trial).competitorId(21L).competitorType(CompetitorType.TEAM).build();
+
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tpAthlete, tpTeam));
+
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
+
+            Team team = mockEligibleTeam(21L, "Team Alpha", List.of(athlete));
+            when(teamRepository.findById(21L)).thenReturn(Optional.of(team));
+
+            List<TrialParticipantResponse> results = trialParticipantService.getByTrialId(1L);
+
+            assertEquals(2, results.size());
+            assertEquals("Ali Reza", results.get(0).getDisplayName());
+            assertEquals("Team Alpha", results.get(1).getDisplayName());
+        }
+
+        @Test
+        void shouldThrowWhenGetByTrialIdNotFound() {
+            when(trialRepository.existsById(1L)).thenReturn(false);
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> trialParticipantService.getByTrialId(1L));
+            assertEquals("Épreuve introuvable avec l'ID: 1", exception.getMessage());
+        }
+
+        @Test
+        void shouldGetByAthleteId() {
+            TrialParticipant tpAthlete = TrialParticipant.builder()
+                    .id(10L).trial(trial).competitorId(13L).competitorType(CompetitorType.ATHLETE).build();
+            when(trialParticipantRepository.findAllDirectAndTeamTrialParticipations(13L)).thenReturn(List.of(tpAthlete));
+            
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
+
+            List<TrialParticipantResponse> results = trialParticipantService.getByAthleteId(13L);
+            assertEquals(1, results.size());
+            assertEquals("Ali Reza", results.get(0).getDisplayName());
+        }
+    }
+
+    @Nested
+    class RemoveMethodsTests {
+
+        @Test
+        void shouldRemoveAthlete() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.hasStarted()).thenReturn(false);
+
+            TrialParticipant tp = TrialParticipant.builder()
+                    .id(10L).trial(trial).competitorId(13L).competitorType(CompetitorType.ATHLETE).build();
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp));
+
+            assertDoesNotThrow(() -> trialParticipantService.removeAthlete(1L, 13L));
+            verify(trialParticipantRepository).delete(tp);
+        }
+
+        @Test
+        void shouldThrowWhenRemoveAthleteAndTrialStarted() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.hasStarted()).thenReturn(true);
+
+            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> trialParticipantService.removeAthlete(1L, 13L));
+            assertEquals("Série déjà commencée.", exception.getMessage());
+        }
+
+        @Test
+        void shouldRemoveTeam() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.hasStarted()).thenReturn(false);
+
+            TrialParticipant tp = TrialParticipant.builder()
+                    .id(11L).trial(trial).competitorId(21L).competitorType(CompetitorType.TEAM).build();
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of(tp));
+
+            assertDoesNotThrow(() -> trialParticipantService.removeTeam(1L, 21L));
+            verify(trialParticipantRepository).delete(tp);
+        }
+    }
+
+    @Nested
+    class GetEligibleTests {
+
+        @Test
+        void shouldGetEligibleAthletesForQualification() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
+            when(trial.getCompetition().getId()).thenReturn(100L);
+
+            com.ciblorgasport.competition.domain.Participation p = new com.ciblorgasport.competition.domain.Participation();
+            p.setCompetitorType(CompetitorType.ATHLETE);
+            p.setStatus(ParticipationStatus.CONFIRMED);
+            p.setCompetitorId(13L);
+
+            when(participationRepository.findByCompetition_Id(100L)).thenReturn(List.of(p));
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of());
+
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findAllById(List.of(13L))).thenReturn(List.of(athlete));
+
+            List<com.ciblorgasport.athlete.dto.AthleteResponse> results = trialParticipantService.getEligibleAthletes(1L);
+            assertEquals(1, results.size());
+            assertEquals("Ali", results.get(0).getFirstName());
+        }
+
+        @Test
+        void shouldGetEligibleAthletesForFinal() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.getRound().getName()).thenReturn(RoundName.FINALE);
+            when(trial.getCompetition()).thenReturn(new com.ciblorgasport.competition.domain.Competition());
+            when(trial.getTrialName()).thenReturn(com.ciblorgasport.trial.domain.TrialName.HUNDRED_M_FREESTYLE);
+            when(trial.getCategoryGender()).thenReturn(com.ciblorgasport.trial.domain.CategoryGender.MALE);
+
+            when(trialParticipantRepository.findQualifiedCompetitorIds(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
+                    .thenReturn(List.of(13L));
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of());
+
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findAllById(List.of(13L))).thenReturn(List.of(athlete));
+
+            List<com.ciblorgasport.athlete.dto.AthleteResponse> results = trialParticipantService.getEligibleAthletes(1L);
+            assertEquals(1, results.size());
+        }
+
+        @Test
+        void shouldGetEligibleTeamsForQualification() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
+            when(trial.getCompetition().getId()).thenReturn(100L);
+
+            com.ciblorgasport.competition.domain.Participation p = new com.ciblorgasport.competition.domain.Participation();
+            p.setCompetitorType(CompetitorType.TEAM);
+            p.setStatus(ParticipationStatus.CONFIRMED);
+            p.setCompetitorId(21L);
+
+            when(participationRepository.findByCompetition_Id(100L)).thenReturn(List.of(p));
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of());
+
+            Team team = mockEligibleTeam(21L, "Team Alpha", List.of(mockEligibleAthlete(13L, "Ali", "Reza")));
+            when(teamRepository.findAllById(List.of(21L))).thenReturn(List.of(team));
+
+            List<com.ciblorgasport.team.dto.TeamResponse> results = trialParticipantService.getEligibleTeams(1L);
+            assertEquals(1, results.size());
+            assertEquals("Team Alpha", results.get(0).getName());
+        }
+    }
 }

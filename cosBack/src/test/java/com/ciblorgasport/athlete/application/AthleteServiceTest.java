@@ -37,6 +37,18 @@ import com.ciblorgasport.team.application.TeamValidationService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.mock.web.MockMultipartFile;
+import com.ciblorgasport.trial.domain.TrialParticipant;
+import com.ciblorgasport.trial.domain.TrialParticipantStatus;
+import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
+import com.ciblorgasport.storage.application.StorageService;
+import jakarta.persistence.EntityNotFoundException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 @ExtendWith(MockitoExtension.class)
 class AthleteServiceTest {
 
@@ -54,6 +66,10 @@ class AthleteServiceTest {
     private NotificationService notificationService;
     @Mock
     private UserAccountRepository userAccountRepository;
+    @Mock
+    private TrialParticipantRepository trialParticipantRepository;
+    @Mock
+    private StorageService storageService;
 
     @InjectMocks
     private AthleteService athleteService;
@@ -145,5 +161,123 @@ class AthleteServiceTest {
 
         verify(participationRepository, never()).findByCompetitorIdAndCompetitorType(any(), any());
         verify(emailService, never()).sendCommissionerParticipationSubmittedEmail(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("Doit retourner tous les athlètes ordonnés")
+    void getAllAthletes_ShouldReturnList() {
+        when(athleteRepository.findAllByOrderByLastNameAsc()).thenReturn(List.of(testAthlete));
+        
+        var result = athleteService.getAllAthletes();
+        
+        assertEquals(1, result.size());
+        assertEquals("Doe", result.get(0).getLastName());
+    }
+
+    @Test
+    @DisplayName("Doit retourner le profil s'il existe")
+    void getAthleteProfile_ShouldReturnProfile() {
+        when(athleteRepository.findById(1L)).thenReturn(Optional.of(testAthlete));
+        
+        var result = athleteService.getAthleteProfile(1L);
+        
+        assertNotNull(result);
+        assertEquals("Jane", result.getFirstName());
+    }
+
+    @Test
+    @DisplayName("Doit lever EntityNotFoundException si profil inexistant")
+    void getAthleteProfile_NotFound_ShouldThrowException() {
+        when(athleteRepository.findById(99L)).thenReturn(Optional.empty());
+        
+        assertThrows(EntityNotFoundException.class, () -> athleteService.getAthleteProfile(99L));
+    }
+
+    @Test
+    @DisplayName("Doit déclarer forfait à l'épreuve")
+    void declareTrialForfeit_ShouldUpdateStatus() {
+        TrialParticipant trialParticipant = new TrialParticipant();
+        trialParticipant.setId(200L);
+        
+        when(athleteRepository.findById(1L)).thenReturn(Optional.of(testAthlete));
+        when(trialParticipantRepository.findAccessibleByIdForAthlete(200L, 1L))
+            .thenReturn(Optional.of(trialParticipant));
+        when(trialParticipantRepository.save(trialParticipant)).thenReturn(trialParticipant);
+        
+        var result = athleteService.declareTrialForfeit(1L, 200L);
+        
+        assertNotNull(result);
+        assertEquals(TrialParticipantStatus.FORFEIT, trialParticipant.getStatus());
+        verify(trialParticipantRepository).save(trialParticipant);
+    }
+    
+    @Test
+    @DisplayName("Doit uploader le certificat médical et supprimer l'ancien")
+    void uploadMedicalCertificate_ShouldSave() {
+        Document oldDoc = new Document();
+        oldDoc.setId(5L);
+        testAthlete.setMedicalCertificate(oldDoc);
+        
+        Document newDoc = new Document();
+        newDoc.setId(6L);
+        
+        MockMultipartFile file = new MockMultipartFile("file", "cert.pdf", "application/pdf", new byte[0]);
+        
+        when(athleteRepository.findById(1L)).thenReturn(Optional.of(testAthlete));
+        when(storageService.uploadFile(eq("athletes/1/medical-certificate"), any())).thenReturn(newDoc);
+        when(athleteRepository.save(testAthlete)).thenReturn(testAthlete);
+        
+        athleteService.uploadMedicalCertificate(1L, file);
+        
+        verify(storageService).deleteFile(oldDoc);
+        assertEquals(newDoc, testAthlete.getMedicalCertificate());
+        verify(athleteRepository).save(testAthlete);
+    }
+
+    @Test
+    @DisplayName("Doit télécharger le passeport")
+    void downloadPassport_ShouldReturnData() {
+        Document doc = new Document();
+        testAthlete.setPassportDocument(doc);
+        
+        when(athleteRepository.findById(1L)).thenReturn(Optional.of(testAthlete));
+        when(storageService.downloadFile(doc)).thenReturn(new byte[]{1, 2, 3});
+        
+        byte[] data = athleteService.downloadPassport(1L);
+        
+        assertEquals(3, data.length);
+        verify(storageService).downloadFile(doc);
+    }
+
+    @Test
+    @DisplayName("Doit supprimer le passeport")
+    void deletePassport_ShouldRemoveAndSave() {
+        Document doc = new Document();
+        testAthlete.setPassportDocument(doc);
+        
+        when(athleteRepository.findById(1L)).thenReturn(Optional.of(testAthlete));
+        
+        athleteService.deletePassport(1L);
+        
+        verify(storageService).deleteFile(doc);
+        assertTrue(testAthlete.getPassportDocument() == null);
+        verify(athleteRepository).save(testAthlete);
+    }
+
+    @Test
+    @DisplayName("Doit retourner les athlètes par compétition")
+    void getAthletesByCompetition_ShouldReturnFilteredList() {
+        testParticipation.setStatus(ParticipationStatus.CONFIRMED);
+        
+        when(participationRepository.findByCompetition_Id(10L))
+            .thenReturn(List.of(testParticipation));
+            
+        when(athleteRepository.findAllById(List.of(1L)))
+            .thenReturn(List.of(testAthlete));
+            
+        var list = athleteService.getAthletesByCompetition(10L);
+        
+        assertEquals(1, list.size());
+        assertEquals("Doe", list.get(0).getLastName());
     }
 }
