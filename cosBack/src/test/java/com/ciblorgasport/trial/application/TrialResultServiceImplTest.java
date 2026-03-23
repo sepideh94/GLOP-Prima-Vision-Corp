@@ -117,6 +117,8 @@ class TrialResultServiceImplTest {
         assertThat(summary).hasSize(1);
         assertThat(summary.get(0).getCompetitionName()).isEqualTo("Olympics");
         assertThat(summary.get(0).getTrialGroups()).hasSize(1);
+    }
+    
     @Nested
     @DisplayName("getCompetitorResultsByAthleteId")
     class CompetitorResults {

@@ -20,6 +20,8 @@ import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.dto.CreateCommissionnerRequest;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.dto.UserResponse;
+import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.analytics.application.PdfGeneratorService;
 import com.ciblorgasport.volonteer.application.VolonteerCreationService;
 import com.ciblorgasport.volonteer.application.VolonteerImportService;
 import com.ciblorgasport.volonteer.domain.Volonteer;
@@ -32,6 +34,8 @@ class AdminControllerTest {
     private UserAccountService userAccountService;
     private VolonteerImportService volonteerImportService;
     private VolonteerCreationService volonteerCreationService;
+    private AnalyticsService analyticsService;
+    private PdfGeneratorService pdfGeneratorService;
     private AdminController controller;
 
     @BeforeEach
@@ -41,12 +45,16 @@ class AdminControllerTest {
         userAccountService = org.mockito.Mockito.mock(UserAccountService.class);
         volonteerImportService = org.mockito.Mockito.mock(VolonteerImportService.class);
         volonteerCreationService = org.mockito.Mockito.mock(VolonteerCreationService.class);
+        analyticsService = org.mockito.Mockito.mock(AnalyticsService.class);
+        pdfGeneratorService = org.mockito.Mockito.mock(PdfGeneratorService.class);
         controller = new AdminController(
                 commissionnerService,
                 accreditationService,
                 userAccountService,
                 volonteerImportService,
-                volonteerCreationService
+                volonteerCreationService,
+                analyticsService,
+                pdfGeneratorService
         );
     }
 
