@@ -318,4 +318,22 @@ public class EmailServiceImpl implements EmailService {
 
         sendEmail(toEmail, "Participation de votre équipe confirmée - CiblOrgaSport", body);
     }
+
+    @Override
+public void sendCommissionerForfeitDeclaredEmail(String to, String commissionerFirstName, String athleteName) {
+    String subject = "Déclaration de forfait d'un athlète";
+
+    String body = """
+            Bonjour %s,
+
+            L'athlète %s a déclaré forfait pour une épreuve.
+
+            Vous pouvez consulter les informations dans votre espace commissaire.
+
+            Cordialement,
+            L'équipe CiblorgaSport
+            """.formatted(commissionerFirstName, athleteName);
+
+    sendEmail(to, subject, body);
+}
 }
