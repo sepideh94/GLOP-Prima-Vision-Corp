@@ -25,10 +25,11 @@ import AthleteParticipationsModal from "../components/AthleteParticipationsModal
 
 const STATUS_LABELS = {
   PENDING: "En attente",
+  PENDING_VALIDATION: "En attente de validation",
   INVITED: "Invité",
   CONFIRMED: "Confirmé",
   ACCEPTED: "Accepté",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
   COMPLETED: "Terminé",
 };
 
@@ -66,8 +67,9 @@ export default function CommissionerParticipantsPage() {
     if (status === "ACCEPTED") return "ACCEPTED";
     if (status === "CONFIRMED") return "CONFIRMED";
     if (status === "INVITED") return "INVITED";
+    if (status === "PENDING_VALIDATION") return "PENDING_VALIDATION";
     if (status === "PENDING") return "PENDING";
-    if (status === "CANCELLED") return "CANCELLED";
+    if (status === "CANCELED") return "CANCELED";
     if (status === "COMPLETED") return "COMPLETED";
 
     return status;
@@ -94,9 +96,11 @@ export default function CommissionerParticipantsPage() {
           ? "rgba(34,197,94,0.25)"
           : normalized === "INVITED"
           ? "rgba(250,204,21,0.25)"
-          : normalized === "CANCELLED"
+          : normalized === "CANCELED"
           ? "rgba(239,68,68,0.25)"
           : normalized === "PENDING"
+          ? "rgba(250,204,21,0.25)"
+          : normalized === "PENDING_VALIDATION"
           ? "rgba(59,130,246,0.18)"
           : "rgba(148,163,184,0.25)",
       color: appTheme.colors.dark,

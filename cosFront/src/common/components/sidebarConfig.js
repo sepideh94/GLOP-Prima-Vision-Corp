@@ -2,9 +2,13 @@ import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
+import PersonIcon from "@mui/icons-material/Person";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import StadiumIcon from "@mui/icons-material/Stadium";
+import MapIcon from "@mui/icons-material/Map";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 
 const sidebarConfig = {
@@ -41,6 +45,21 @@ const sidebarConfig = {
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
     },
+    {
+      label: "Dashboard & Reporting",
+      icon: DashboardIcon,
+      path: "/admin/dashboard",
+    },
+    {
+      label: "Fan Zones",
+      icon: StadiumIcon,
+      path: "/admin/fan-zones",
+    },
+    {
+      label: "Carte opérations",
+      icon: MapIcon,
+      path: "/admin/map",
+    },
   ],
 
   COMMISSIONNER: [
@@ -65,15 +84,16 @@ const sidebarConfig = {
   ATHLETE: [
     { label: "Tableau de bord", icon: HomeIcon, path: "/athlete" },
     {
-      label: "Compétitions",
+      label: "Mes compétitions",
       icon: EmojiEventsIcon,
       path: "/athlete/competitions",
     },
     {
-      label: "Notifications",
+      label: "Mes notifications",
       icon: NotificationsIcon,
       path: "/notifications",
     },
+    { label: "Mon profil", icon: PersonIcon, path: "/athlete/profile" },
   ],
 
   VOLONTEER: [
@@ -91,6 +111,11 @@ const sidebarConfig = {
       label: "Mon profil",
       icon: PeopleIcon,
       path: "/spectator/profile",
+    },
+    {
+      label: "Carte",
+      icon: MapIcon,
+      path: "/spectator/map",
     },
     {
       label: "Notifications",

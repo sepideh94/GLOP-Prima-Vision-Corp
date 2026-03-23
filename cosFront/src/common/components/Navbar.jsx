@@ -1,4 +1,4 @@
-import { AppBar, Toolbar, Typography, Box, Button, IconButton, Menu, MenuItem } from "@mui/material";
+import { AppBar, Toolbar, Typography, Box, Button, IconButton, Menu, MenuItem, Badge } from "@mui/material";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -9,6 +9,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import appTheme from "../theme/appTheme";
 import { useState } from "react";
+import { useEffect } from "react";
+import notificationService from "../../features/notification/services/notificationService";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -16,6 +18,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const isSpectatorArea = location.pathname.startsWith("/spectator");
   const [anchorEl, setAnchorEl] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const open = Boolean(anchorEl);
 
@@ -47,6 +50,25 @@ export default function Navbar() {
     // UI placeholder (pas encore d'endpoint / page dédiée)
     window.alert("Retrouver des amis : fonctionnalité à venir.");
   };
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let mounted = true;
+    const loadUnread = async () => {
+      try {
+        const count = await notificationService.getUnreadCount();
+        if (mounted) setUnreadCount(count);
+      } catch {
+        if (mounted) setUnreadCount(0);
+      }
+    };
+    loadUnread();
+    const timer = setInterval(loadUnread, 30000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, [user]);
 
   return (
     <AppBar
@@ -80,7 +102,9 @@ export default function Navbar() {
             {isSpectatorArea ? (
               <>
                 <IconButton onClick={handleOpenMenu} sx={{ color: "#020617" }}>
-                  <MenuIcon />
+                  <Badge badgeContent={unreadCount > 99 ? "99+" : unreadCount} color="error">
+                    <MenuIcon />
+                  </Badge>
                 </IconButton>
                 <Menu
                   anchorEl={anchorEl}
@@ -101,7 +125,7 @@ export default function Navbar() {
                     fontSize="small"
                     sx={{ mr: 1, color: appTheme.colors.violet }}
                   />
-                  Mes notifications
+                  Mes notifications {unreadCount > 0 ? `(${unreadCount > 99 ? "99+" : unreadCount})` : ""}
                 </MenuItem>
                   <MenuItem onClick={goFriends}>
                     <PeopleIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.green }} />
