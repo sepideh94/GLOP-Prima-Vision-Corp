@@ -36,6 +36,25 @@ const userService = {
     const res = await api.post(`/api/admin/users/${id}/reset-password`);
     return res.data;
   },
+
+  async downloadCommissionerAccreditation(id) {
+    const res = await api.get(`/api/admin/commissioners/${id}/accreditation`, {
+      responseType: "blob",
+    });
+    return res.data;
+  },
+
+  async validateCommissionerAccreditation(id) {
+    const res = await api.post(`/api/admin/commissioners/${id}/accreditation/validate`);
+    return res.data;
+  },
+
+  async refuseCommissionerAccreditation(id, reason) {
+    const res = await api.post(`/api/admin/commissioners/${id}/accreditation/refuse`, {
+      reason,
+    });
+    return res.data;
+  },
 };
 
 export default userService;

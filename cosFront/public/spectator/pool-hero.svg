@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Ciel clair → eau turquoise (vue bassin en plein jour, pas le fond nuit / lignes sombres) -->
+    <linearGradient id="air" x1="0%" y1="0%" x2="0%" y2="55%">
+      <stop offset="0%" stop-color="#e0f2fe"/>
+      <stop offset="35%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <linearGradient id="water" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="45%" stop-color="#14b8a6"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="78%" cy="18%" r="45%">
+      <stop offset="0%" stop-color="#fffbeb" stop-opacity="0.95"/>
+      <stop offset="25%" stop-color="#fef3c7" stop-opacity="0.45"/>
+      <stop offset="55%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glare" cx="65%" cy="42%" r="35%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="70%" stop-color="#ecfeff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="soft" x="-5%" y="-5%" width="110%" height="110%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1920" height="520" fill="url(#air)"/>
+  <rect y="480" width="1920" height="600" fill="url(#water)"/>
+  <rect width="1920" height="1080" fill="url(#sun)"/>
+  <rect width="1920" height="1080" fill="url(#glare)"/>
+  <!-- Reflets « caustiques » légers à la surface -->
+  <g opacity="0.22" fill="#ffffff" filter="url(#soft)">
+    <ellipse cx="420" cy="620" rx="280" ry="24" transform="rotate(-8 420 620)"/>
+    <ellipse cx="980" cy="580" rx="340" ry="28" transform="rotate(5 980 580)"/>
+    <ellipse cx="1480" cy="640" rx="260" ry="20" transform="rotate(-4 1480 640)"/>
+  </g>
+  <g opacity="0.14" fill="none" stroke="#f0fdfa" stroke-width="3" stroke-linecap="round">
+    <path d="M0 720 Q320 680 640 720 T1280 720 T1920 720"/>
+    <path d="M0 780 Q400 740 800 780 T1600 780"/>
+    <path d="M0 840 Q360 800 720 840 T1440 840"/>
+  </g>
+  <!-- Liseré « bord de bassin » très discret -->
+  <line x1="0" y1="478" x2="1920" y2="478" stroke="#ccfbf1" stroke-opacity="0.5" stroke-width="3"/>
+</svg>

@@ -34,7 +34,7 @@ import com.ciblorgasport.schedule.domain.ScheduleType;
 import com.ciblorgasport.schedule.dto.AthleteTrialScheduleResponse;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
 import com.ciblorgasport.user.domain.UserAccount;
-import com.ciblorgasport.competition.application.ParticipationService; // Import ajouté
+import com.ciblorgasport.competition.application.ParticipationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
@@ -140,6 +140,8 @@ class ScheduleControllerIntegrationTest {
 
         when(scheduleService.getAthleteScheduleByCompetition(eq(athleteId), eq(competitionId)))
                 .thenReturn(List.of(response));
+        
+        when(participationService.isConfirmed(7L, competitionId)).thenReturn(true);
 
         mockMvc.perform(get("/api/schedule/athlete/competition/{competitionId}", competitionId))
                 .andExpect(status().isOk())

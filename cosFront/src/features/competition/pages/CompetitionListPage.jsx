@@ -19,6 +19,7 @@ import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 import CompetitionFormDialog from "./CompetitionFormDialog";
 import CompetitionDetailDialog from "./CompetitionDetailDialog";
 import competitionService from "../services/competitionService";
+import { stripHtmlTags } from "../../../common/utils/htmlUtils";
 
 const formatDate = (value) => {
   if (!value) return "";
@@ -101,7 +102,7 @@ export default function CompetitionListPage() {
     if (!normalizedSearch) return true;
     return (
       (c.name || "").toLowerCase().includes(normalizedSearch) ||
-      (c.description || "").toLowerCase().includes(normalizedSearch) ||
+      stripHtmlTags(c.description).toLowerCase().includes(normalizedSearch) ||
       formatDate(c.startDate).toLowerCase().includes(normalizedSearch) ||
       formatDate(c.endDate).toLowerCase().includes(normalizedSearch) ||
       (c.statusLabel || "").toLowerCase().includes(normalizedSearch)
@@ -275,7 +276,9 @@ export default function CompetitionListPage() {
                   style={{ cursor: "pointer" }}
                 >
                   <td className="fw-bold">{c.name}</td>
-                  <td title={c.description}>{truncateText(c.description, 50)}</td>
+                  <td title={stripHtmlTags(c.description)}>
+                    {truncateText(stripHtmlTags(c.description), 50)}
+                  </td>
                   <td>{formatDate(c.startDate)}</td>
                   <td>{formatDate(c.endDate)}</td>
                   <td>{c.statusLabel}</td>

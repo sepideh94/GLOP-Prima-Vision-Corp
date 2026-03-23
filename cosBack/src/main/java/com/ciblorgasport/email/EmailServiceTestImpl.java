@@ -51,8 +51,18 @@ public class EmailServiceTestImpl implements EmailService {
     @Override
     public void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName) {
     }
-
+    
+    @Override
+    public void sendCommissionerForfeitDeclaredEmail(String to, String commissionerFirstName, String athleteName) {
+    System.out.println("Mock Email: Forfait déclaré par " + athleteName + " envoyé à " + to);
+    }
     @Override
     public void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument, String reason) {
+        System.out.println("Mock Email: Vos documents ont été refusés pour " + athleteName + " (" + toEmail + ")");
+    }
+
+    @Override
+    public void sendTeamParticipationValidatedEmail(String toEmail, String athleteName, String teamName) {
+        System.out.println("Mock Email: Participation de l'équipe " + teamName + " confirmée pour " + athleteName + " (" + toEmail + ")");
     }
 }

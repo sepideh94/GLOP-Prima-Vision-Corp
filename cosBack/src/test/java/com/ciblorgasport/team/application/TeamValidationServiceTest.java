@@ -14,6 +14,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
@@ -30,6 +33,12 @@ class TeamValidationServiceTest {
 
     @Mock
     private ParticipationRepository participationRepository;
+
+    @Mock
+    private EmailService emailService;
+
+    @Mock
+    private NotificationService notificationService;
 
     @InjectMocks
     private TeamValidationService teamValidationService;
@@ -67,6 +76,11 @@ class TeamValidationServiceTest {
         Long athleteId = 10L;
         Long competitionId = 100L;
 
+        when(athlete1.getEmail()).thenReturn("a1@test.com");
+        when(athlete1.getFirstName()).thenReturn("A1");
+        when(athlete2.getEmail()).thenReturn("a2@test.com");
+        when(athlete2.getFirstName()).thenReturn("A2");
+
         when(teamRepository.findAllByMemberId(athleteId)).thenReturn(List.of(team));
         when(participationRepository.findByCompetition_IdAndCompetitorIdAndCompetitorType(
                 competitionId, 5L, CompetitorType.TEAM))
@@ -83,6 +97,10 @@ class TeamValidationServiceTest {
         teamValidationService.validateTeamStatus(athleteId, competitionId);
 
         verify(participationRepository).save(teamParticipation);
+        verify(emailService).sendTeamParticipationValidatedEmail(
+                athlete1.getEmail(), athlete1.getFirstName(), team.getName());
+        verify(emailService).sendTeamParticipationValidatedEmail(
+                athlete2.getEmail(), athlete2.getFirstName(), team.getName());
     }
     
 }

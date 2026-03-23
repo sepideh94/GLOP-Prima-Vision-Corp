@@ -202,30 +202,31 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
   const unitLabel = isTime ? "secondes" : "points";
   const unitAdornment = isTime ? "s" : "pts";
   const performanceChipLabel = isTime ? "Temps" : "Points";
+  const activeParticipants = participants.filter((p) => p.status !== "FORFEIT");
 
-  const hasAnyError = participants.some((p) => Boolean(fieldErrors[p.id]));
+  const hasAnyError = activeParticipants.some((p) => Boolean(fieldErrors[p.id]));
   const isSubmitDisabled =
     loading ||
     simulating ||
     loadingParticipants ||
-    participants.length === 0 ||
+    activeParticipants.length === 0 ||
     hasAnyError ||
     Object.keys(values).length === 0;
 
   const handleSubmit = async () => {
 
-    if (participants.length === 0) {
-      setSubmitError("Aucun participant assigné à cette épreuve.");
+    if (activeParticipants.length === 0) {
+      setSubmitError("Aucun participant actif à scorer pour cette épreuve.");
       return;
     }
 
     const nextErrors = {};
-    participants.forEach((p) => {
+    activeParticipants.forEach((p) => {
       nextErrors[p.id] = validateValue(values[p.id]);
     });
     setFieldErrors(nextErrors);
 
-    const invalidParticipant = participants.find((p) => nextErrors[p.id]);
+    const invalidParticipant = activeParticipants.find((p) => nextErrors[p.id]);
     if (invalidParticipant) {
       setSubmitError(
         `Erreur de saisie pour "${invalidParticipant.displayName}" : ${nextErrors[invalidParticipant.id]}`
@@ -239,7 +240,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
     try {
       const payload = {
         performanceType,
-        results: participants.map((p) => ({
+        results: activeParticipants.map((p) => ({
           trialParticipantId: p.id,
           performanceValue: Number(normalizeNumberInput(values[p.id])),
         })),
@@ -287,7 +288,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
   };
 
   const handleSimulate = async () => {
-    if (participants.length === 0 || hasExistingResults) {
+    if (activeParticipants.length === 0 || hasExistingResults) {
       return;
     }
     setSimulating(true);
@@ -487,9 +488,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                 variant="outlined"
                 size="small"
                 onClick={handleSimulate}
-                disabled={
-                  simulating || loadingParticipants || participants.length === 0
-                }
+                disabled={simulating || loadingParticipants || activeParticipants.length === 0}
                 sx={{
                   mt: { xs: 1, sm: 0 },
                   textTransform: "none",
@@ -531,6 +530,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                 <TableCell sx={{ fontWeight: 900, background: "#fff" }}>
                   Performance ({unitLabel})
                 </TableCell>
+                <TableCell sx={{ fontWeight: 900, background: "#fff" }}>Statut</TableCell>
                 {hasExistingResults && (
                   <TableCell
                     align="right"
@@ -566,29 +566,58 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                   </TableCell>
 
                   <TableCell width={260}>
-                    <TextField
-                      fullWidth
-                      type="number"
-                      inputProps={{
-                        min: 0,
-                        step: 0.01,
-                        inputMode: "decimal",
-                      }}
-                      placeholder={isTime ? "ex: 10.01" : "ex: 9.75"}
-                      label={isTime ? "Temps" : "Points"}
-                      value={values[p.id] || ""}
-                      onChange={(e) => handleChange(p.id, e.target.value)}
-                      disabled={hasExistingResults && rowLocked[p.id]}
-                      error={Boolean(fieldErrors[p.id])}
-                      helperText={fieldErrors[p.id] || " "}
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            {unitAdornment}
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
+                    {p.status === "FORFEIT" ? (
+                      <Typography sx={{ fontWeight: 700, color: "#b91c1c" }}>
+                        Forfait — pas de saisie
+                      </Typography>
+                    ) : (
+                      <TextField
+                        fullWidth
+                        type="number"
+                        inputProps={{
+                          min: 0,
+                          step: 0.01,
+                          inputMode: "decimal",
+                        }}
+                        placeholder={isTime ? "ex: 10.01" : "ex: 9.75"}
+                        label={isTime ? "Temps" : "Points"}
+                        value={values[p.id] || ""}
+                        onChange={(e) => handleChange(p.id, e.target.value)}
+                        disabled={hasExistingResults && rowLocked[p.id]}
+                        error={Boolean(fieldErrors[p.id])}
+                        helperText={fieldErrors[p.id] || " "}
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              {unitAdornment}
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  </TableCell>
+                  <TableCell width={120}>
+                    {p.status === "FORFEIT" ? (
+                      <Chip
+                        label="Forfait"
+                        size="small"
+                        sx={{
+                          backgroundColor: "rgba(239, 68, 68, 0.15)",
+                          color: "#b91c1c",
+                          fontWeight: 700,
+                        }}
+                      />
+                    ) : (
+                      <Chip
+                        label="Actif"
+                        size="small"
+                        sx={{
+                          backgroundColor: "rgba(34, 197, 94, 0.15)",
+                          color: "#15803d",
+                          fontWeight: 700,
+                        }}
+                      />
+                    )}
                   </TableCell>
 
                   {hasExistingResults && (
@@ -602,6 +631,7 @@ export default function TrialResultsDialog({ open, onClose, trial, onSaved }) {
                             [p.id]: !prev[p.id],
                           }))
                         }
+                        disabled={p.status === "FORFEIT"}
                         sx={{
                           minWidth: "auto",
                           px: 1,

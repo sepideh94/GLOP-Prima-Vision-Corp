@@ -3,7 +3,7 @@ import appTheme from "../../../common/theme/appTheme";
 export const STATUS_LABELS = {
   INVITED: "Invité",
   CONFIRMED: "Confirmé",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
 };
 
 export const getStatusStyle = (status) => ({

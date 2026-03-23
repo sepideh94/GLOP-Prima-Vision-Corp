@@ -84,16 +84,36 @@ public class ParticipationService {
     public List<AthleteCompetitionDetailsResponse> getAthleteDashboardCards(Long athleteId) {
         List<Participation> participations = participationRepository.findAllDirectAndTeamParticipations(athleteId);
 
-        return participations.stream()
-                .collect(Collectors.toMap(
-                        p -> p.getCompetition().getId(),
-                        p -> p,
-                        (p1, p2) -> p1
-                ))
-                .values()
-                .stream()
-                .map(AthleteCompetitionDetailsResponse::fromEntity)
-                .collect(Collectors.toList());
+        java.util.Map<Long, List<Participation>> partsByComp = participations.stream()
+                .collect(java.util.stream.Collectors.groupingBy(p -> p.getCompetition().getId()));
+
+        List<AthleteCompetitionDetailsResponse> results = new ArrayList<>();
+
+        for (List<Participation> parts : partsByComp.values()) {
+            Participation individualPart = parts.stream()
+                    .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                    .findFirst()
+                    .orElse(null);
+
+            Participation teamPart = parts.stream()
+                    .filter(p -> p.getCompetitorType() == CompetitorType.TEAM)
+                    .findFirst()
+                    .orElse(null);
+
+            Participation primaryPart = individualPart != null ? individualPart : teamPart;
+            if (primaryPart == null) continue;
+
+            AthleteCompetitionDetailsResponse response = AthleteCompetitionDetailsResponse.fromEntity(primaryPart);
+
+            if (teamPart != null) {
+                response.setTeamStatus(teamPart.getStatus());
+                response.setIsTeamParticipation(true);
+            }
+
+            results.add(response);
+        }
+
+        return results;
     }
 
     @Transactional
@@ -240,7 +260,15 @@ public class ParticipationService {
     }
 
     public boolean isConfirmed(Long athleteId, Long competitionId) {
-        return participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
+        boolean individualConfirmed = participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                 competitionId, athleteId, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED);
+
+        List<Participation> teamParticipations = participationRepository.findTeamParticipationsByAthleteAndCompetition(athleteId, competitionId);
+
+        if (!teamParticipations.isEmpty()) {
+            return teamParticipations.stream().anyMatch(p -> p.getStatus() == ParticipationStatus.CONFIRMED);
+        }
+
+        return individualConfirmed;
     }
 }
