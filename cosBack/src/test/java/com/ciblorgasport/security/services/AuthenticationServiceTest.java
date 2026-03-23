@@ -1,29 +1,32 @@
 package com.ciblorgasport.security.services;
 
+import java.util.Optional;
+import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class AuthenticationServiceTest {
@@ -43,7 +46,10 @@ class AuthenticationServiceTest {
     private EmailService emailService;
     @Mock
     private ActivationTokenRepository activationTokenRepository;
-
+    
+    @Mock
+    private AnalyticsService analyticsService;
+    
     @InjectMocks
     private AuthenticationService authenticationService;
 

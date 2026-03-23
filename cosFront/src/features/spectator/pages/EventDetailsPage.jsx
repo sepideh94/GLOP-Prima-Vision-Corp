@@ -22,6 +22,12 @@ import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
 import competitionFollowService from "../services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
+import CompetitionSwimImage from "../components/CompetitionSwimImage";
+import {
+  competitionStatusColor,
+  competitionStatusLabel,
+  eventStatusChipProps,
+} from "../utils/competitionStatus";
 import HtmlContent from "../../../common/components/HtmlContent";
 
 export default function EventDetailsPage() {
@@ -107,32 +113,6 @@ export default function EventDetailsPage() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status?.toUpperCase()) {
-      case "UPCOMING":
-        return appTheme.colors.cyan;
-      case "ONGOING":
-        return appTheme.colors.green;
-      case "COMPLETED":
-        return appTheme.colors.violet;
-      default:
-        return appTheme.colors.textMuted;
-    }
-  };
-
-  const getStatusLabel = (status) => {
-    switch (status?.toUpperCase()) {
-      case "UPCOMING":
-        return "À venir";
-      case "ONGOING":
-        return "En cours";
-      case "COMPLETED":
-        return "Terminé";
-      default:
-        return status || "Non défini";
-    }
-  };
-
   if (loading) {
     return (
       <Box
@@ -147,6 +127,8 @@ export default function EventDetailsPage() {
       </Box>
     );
   }
+
+  const eventChip = event ? eventStatusChipProps(event) : null;
 
   if (error || !event) {
     return (
@@ -164,9 +146,35 @@ export default function EventDetailsPage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 3, md: 4 } }}>
+    <Box
+      sx={{
+        flex: 1,
+        width: "100%",
+        maxWidth: "100%",
+        minHeight: "100%",
+        display: "flex",
+        flexDirection: "column",
+        px: { xs: 1.5, sm: 2, md: 3 },
+        py: { xs: 2, sm: 2.5, md: 3 },
+        boxSizing: "border-box",
+      }}
+    >
+    <Box
+      sx={{
+        flex: 1,
+        width: "100%",
+        p: { xs: 2, sm: 2.5, md: 4 },
+        background: "rgba(15, 23, 42, 0.42)",
+        backdropFilter: "blur(18px)",
+        WebkitBackdropFilter: "blur(18px)",
+        borderRadius: { xs: 2, md: 3 },
+        boxShadow: "0 8px 32px rgba(2, 6, 23, 0.35)",
+        border: "1px solid rgba(255, 255, 255, 0.14)",
+        boxSizing: "border-box",
+      }}
+    >
       {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3 }} separator="›">
+      <Breadcrumbs sx={{ mb: 3, "& .MuiTypography-root": { color: "rgba(226,232,240,0.92)" } }} separator="›">
         <Link
           component="button"
           variant="body1"
@@ -179,7 +187,7 @@ export default function EventDetailsPage() {
         >
           Événements
         </Link>
-        <Typography color="text.primary">{event.name}</Typography>
+        <Typography sx={{ color: "rgba(248,250,252,0.95)" }}>{event.name}</Typography>
       </Breadcrumbs>
 
       {/* Header */}
@@ -187,9 +195,12 @@ export default function EventDetailsPage() {
         sx={{
           mb: 4,
           p: 4,
-          background: appTheme.gradients.card,
+          background: "rgba(15, 23, 42, 0.5)",
+          backdropFilter: "blur(14px)",
+          WebkitBackdropFilter: "blur(14px)",
           borderRadius: appTheme.radius.lg,
-          boxShadow: appTheme.shadows.card,
+          border: "1px solid rgba(255,255,255,0.12)",
+          boxShadow: "0 16px 40px rgba(2,6,23,0.35)",
         }}
       >
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
@@ -199,7 +210,7 @@ export default function EventDetailsPage() {
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: appTheme.colors.dark,
+                color: "#f8fafc",
               }}
             >
               {event.name}
@@ -208,7 +219,7 @@ export default function EventDetailsPage() {
               <HtmlContent
                 html={event.description}
                 sx={{
-                  color: appTheme.colors.darkSoft,
+                  color: "rgba(226, 232, 240, 0.88)",
                   fontSize: "1.1rem",
                   mb: 2,
                 }}
@@ -216,12 +227,12 @@ export default function EventDetailsPage() {
             )}
           </Box>
           <Chip
-            label={getStatusLabel(event.status)}
+            label={eventChip.label}
             sx={{
-              background: `${getStatusColor(event.status)}20`,
-              color: getStatusColor(event.status),
+              background: `${eventChip.color}24`,
+              color: eventChip.color,
               fontWeight: 600,
-              border: `1px solid ${getStatusColor(event.status)}40`,
+              border: `1px solid ${eventChip.color}55`,
             }}
           />
         </Box>
@@ -230,7 +241,7 @@ export default function EventDetailsPage() {
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <CalendarTodayIcon sx={{ color: appTheme.colors.cyan }} />
-              <Typography sx={{ color: appTheme.colors.darkSoft }}>
+              <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
                 <strong>Début:</strong>{" "}
                 {format(new Date(event.startDate), "d MMMM yyyy", { locale: fr })}
               </Typography>
@@ -238,7 +249,7 @@ export default function EventDetailsPage() {
             {event.endDate && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarTodayIcon sx={{ color: appTheme.colors.violet }} />
-                <Typography sx={{ color: appTheme.colors.darkSoft }}>
+                <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
                   <strong>Fin:</strong>{" "}
                   {format(new Date(event.endDate), "d MMMM yyyy", { locale: fr })}
                 </Typography>
@@ -255,7 +266,8 @@ export default function EventDetailsPage() {
               sx={{
                 fontWeight: 700,
                 mb: 3,
-                color: appTheme.colors.dark,
+                color: "#f8fafc",
+                textShadow: "0 1px 12px rgba(2,6,23,0.35)",
               }}
             >
               Compétitions ({competitions.length})
@@ -264,20 +276,23 @@ export default function EventDetailsPage() {
         {competitions.length === 0 ? (
           <Card
             sx={{
-              background: appTheme.gradients.card,
+              background: "rgba(15, 23, 42, 0.5)",
+              backdropFilter: "blur(12px)",
+              WebkitBackdropFilter: "blur(12px)",
               borderRadius: appTheme.radius.lg,
+              border: "1px solid rgba(255,255,255,0.12)",
               p: 4,
               textAlign: "center",
             }}
           >
-            <Typography sx={{ color: appTheme.colors.textSecondary }}>
+            <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
               Aucune compétition disponible pour cet événement.
             </Typography>
           </Card>
         ) : (
           <Grid container spacing={3}>
             {competitions.map((competition) => (
-              <Grid item xs={12} md={6} lg={4} key={competition.id}>
+              <Grid item xs={12} md={6} key={competition.id}>
                 <Card
                   sx={{
                     background: appTheme.gradients.card,
@@ -285,6 +300,7 @@ export default function EventDetailsPage() {
                     boxShadow: appTheme.shadows.card,
                     border: "1px solid rgba(148, 163, 184, 0.1)",
                     transition: "all 0.3s ease",
+                    overflow: "hidden",
                     "&:hover": {
                       transform: "translateY(-4px)",
                       boxShadow: `0 20px 40px rgba(0,0,0,0.4), 0 0 0 2px ${appTheme.colors.violet}40`,
@@ -296,9 +312,15 @@ export default function EventDetailsPage() {
                     onClick={() =>
                       navigate(`/spectator/competitions/${competition.id}`)
                     }
-                    sx={{ height: "100%", p: 0 }}
+                    sx={{
+                      height: "100%",
+                      p: 0,
+                      alignItems: "stretch",
+                      flexDirection: "column",
+                    }}
                   >
-                    <CardContent sx={{ p: 3 }}>
+                    <CompetitionSwimImage competitionId={competition.id} height={200} />
+                    <CardContent sx={{ p: 3, flex: 1, width: "100%", boxSizing: "border-box" }}>
                       <Box
                         sx={{
                           display: "flex",
@@ -311,14 +333,28 @@ export default function EventDetailsPage() {
                         <EmojiEventsIcon
                           sx={{ fontSize: 32, color: appTheme.colors.violet }}
                         />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-end",
-                            gap: 1,
-                          }}
-                        >
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      flexDirection: "column",
+                                      alignItems: "flex-end",
+                                      gap: 1,
+                                    }}
+                                  >
+                                    <Chip
+                                      label={competitionStatusLabel(
+                                        competition.status,
+                                        competition.statusLabel
+                                      )}
+                                      size="small"
+                                      sx={{
+                                        background: `${competitionStatusColor(competition.status)}20`,
+                                        color: competitionStatusColor(competition.status),
+                                        fontWeight: 600,
+                                        border: `1px solid ${competitionStatusColor(competition.status)}40`,
+                                      }}
+                                    />
+                                                          
                           <Button
                             size="small"
                             variant="text"
@@ -429,6 +465,7 @@ export default function EventDetailsPage() {
           Retour à la liste des événements
         </Button>
       </Box>
+    </Box>
     </Box>
   );
 }

@@ -1,10 +1,16 @@
 package com.ciblorgasport.admin;
 
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -17,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.analytics.application.PdfGeneratorService;
 import com.ciblorgasport.commissionner.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -50,6 +58,13 @@ public class AdminController {
 
     @Autowired
     private final VolonteerCreationService volonteerCreationService;
+    
+    @Autowired
+    private final AnalyticsService analyticsService;
+    
+    @Autowired
+    private final PdfGeneratorService pdfGeneratorService;
+    
 
     @PostMapping("/create-commissaire")
     public ResponseEntity<?> createCommissaire(@RequestBody CreateCommissionnerRequest request) {
@@ -163,4 +178,50 @@ public class AdminController {
                 .contentType(org.springframework.http.MediaType.parseMediaType(contentType))
                 .body(fileData);
     }
+    
+    // ==================== Analytics ====================
+    
+    @GetMapping("/stats")
+    public ResponseEntity<AdminStatsResponse> getDashboardStats(
+            @RequestParam(defaultValue = "7") int days) {
+        
+        return ResponseEntity.ok(analyticsService.getDashboardStats(days));
+    }
+    
+
+    @GetMapping("/report-summary")
+    public ResponseEntity<String> getWeeklyReportSummary() {
+        String summary = analyticsService.generateWeeklyReportSummary();
+        
+        return ResponseEntity.ok(summary);
+    }
+    
+    @PostMapping("/report-download")
+    public ResponseEntity<byte[]> downloadReport(@RequestBody(required = false) ExportReportRequest request) {
+        
+        // 1. Récupérer toutes les stats calculées
+        AdminStatsResponse stats = analyticsService.getDashboardStats(7);
+        
+        // 2. Traiter les images si présentes
+        List<byte[]> imageBytesList = new ArrayList<>();
+        if (request != null && request.getChartImagesBase64() != null) {
+            imageBytesList = request.getChartImagesBase64().stream()
+                    .<byte[]>map((String base64) -> { 
+                        String cleanBase64 = base64.contains(",") ? base64.split(",")[1] : base64;
+                        return Base64.getDecoder().decode(cleanBase64);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // 3. Générer le PDF avec l'objet stats complet
+        byte[] pdfBytes = pdfGeneratorService.generatePdfReport(stats, imageBytesList);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "rapport_expert_ciblorgasport.pdf");
+
+        return ResponseEntity.ok().headers(headers).body(pdfBytes);
+    }
+    
+
 }

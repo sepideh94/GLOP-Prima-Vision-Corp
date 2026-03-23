@@ -11,6 +11,8 @@ import lombok.Data;
 public class PublicCompetitionSummaryResponse {
     private Long competitionId;
     private String competitionName;
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
     private LocalDateTime lastUpdatedAt;
     private List<CompetitionResultsResponse> trialGroups;
 }

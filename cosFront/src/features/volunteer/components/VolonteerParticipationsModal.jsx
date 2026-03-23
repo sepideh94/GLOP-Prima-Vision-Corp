@@ -23,7 +23,7 @@ import scheduleService from "../../schedule/services/scheduleService";
 const STATUS_LABELS = {
   CONFIRMED: "Confirmé",
   PENDING: "En attente",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
 };
 
 const formatDateTime = (dateTimeString) => {

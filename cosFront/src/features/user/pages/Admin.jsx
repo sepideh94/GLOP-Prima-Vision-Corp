@@ -6,7 +6,17 @@ import {
   CardContent,
   CardActionArea,
 } from "@mui/material";
-import { Event, EmojiEvents, People, VolunteerActivism, Schedule, ReportProblem, Stadium, Map } from "@mui/icons-material";
+import {
+  Event,
+  EmojiEvents,
+  People,
+  VolunteerActivism,
+  Schedule,
+  ReportProblem,
+  Assessment,
+  Stadium,
+  Map,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -20,6 +30,13 @@ export default function Admin() {
       icon: <Event sx={{ fontSize: 42 }} />,
       color: appTheme.colors.cyan,
       route: "/events",
+    },
+    {
+      title: "Dashboard et Reporting",
+      subtitle: "Indicateurs, graphiques et export PDF",
+      icon: <Assessment sx={{ fontSize: 42 }} />,
+      color: "#3B82F6",
+      route: "/admin/dashboard",
     },
     {
       title: "Gestion des compétitions et épreuves",
