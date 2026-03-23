@@ -47,6 +47,7 @@ import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
 import PublicResultsPage from "../features/spectator/pages/PublicResultsPage.jsx";
+import PublicCompetitionsPage from "../features/spectator/pages/PublicCompetitionsPage.jsx";
 
 
 export default function App() {
@@ -57,6 +58,7 @@ export default function App() {
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<HomePage />} />
           <Route path="/resultats" element={<PublicResultsPage />} />
+          <Route path="/competitions" element={<PublicCompetitionsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

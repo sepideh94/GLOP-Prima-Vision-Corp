@@ -181,6 +181,8 @@ public class TrialResultServiceImpl implements TrialResultService {
                     return PublicCompetitionSummaryResponse.builder()
                             .competitionId(competition.getId())
                             .competitionName(competition.getName())
+                            .startDate(competition.getStartDate())
+                            .endDate(competition.getEndDate())
                             .lastUpdatedAt(latest)
                             .trialGroups(grouped)
                             .build();

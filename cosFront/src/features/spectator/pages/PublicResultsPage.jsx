@@ -18,6 +18,7 @@ import {
   Paper,
   Button,
   IconButton,
+  Pagination,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -25,6 +26,11 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import appTheme from "../../../common/theme/appTheme";
 import publicResultsService from "../services/publicResultsService";
+import PublicNavbar from "../../../common/components/PublicNavbar";
+import Footer from "../../../common/components/Footer";
+
+const COMPETITIONS_PER_PAGE = 8;
+const TRIALS_PER_PAGE = 5;
 
 export default function PublicResultsPage() {
   const navigate = useNavigate();
@@ -33,6 +39,8 @@ export default function PublicResultsPage() {
   const [resultsByTrial, setResultsByTrial] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [competitionPage, setCompetitionPage] = useState(1);
+  const [trialPage, setTrialPage] = useState(1);
 
   const fetchDiscovery = async () => {
     try {
@@ -40,14 +48,30 @@ export default function PublicResultsPage() {
       setError(null);
       const discovered = await publicResultsService.getCompetitionsWithResults();
       setAvailableCompetitions(discovered);
+      setCompetitionPage(1);
+
+      const pendingIdRaw = sessionStorage.getItem("ciblorga_public_competition_id");
+      const pendingId = pendingIdRaw != null && pendingIdRaw !== "" ? Number(pendingIdRaw) : null;
+      if (pendingId != null && !Number.isNaN(pendingId)) {
+        sessionStorage.removeItem("ciblorga_public_competition_id");
+        const match = discovered.find((c) => Number(c.competitionId) === pendingId);
+        if (match) {
+          setSelectedCompetitionId(match.competitionId);
+          setResultsByTrial(Array.isArray(match?.trialGroups) ? match.trialGroups : []);
+          setTrialPage(1);
+          return;
+        }
+      }
 
       if (discovered.length > 0) {
         const first = discovered[0];
         setSelectedCompetitionId(first.competitionId);
         setResultsByTrial(Array.isArray(first?.trialGroups) ? first.trialGroups : []);
+        setTrialPage(1);
       } else {
         setSelectedCompetitionId(null);
         setResultsByTrial([]);
+        setTrialPage(1);
       }
     } catch (e) {
       setAvailableCompetitions([]);
@@ -71,12 +95,14 @@ export default function PublicResultsPage() {
     const selected = availableCompetitions.find((x) => x.competitionId === competitionId);
     if (selected) {
       setResultsByTrial(Array.isArray(selected.trialGroups) ? selected.trialGroups : []);
+      setTrialPage(1);
       return;
     }
     try {
       setLoading(true);
       const data = await publicResultsService.getCompetitionResults(competitionId);
       setResultsByTrial(Array.isArray(data) ? data : []);
+      setTrialPage(1);
     } catch {
       setResultsByTrial([]);
       setError("Impossible de charger cette compétition pour le moment.");
@@ -143,6 +169,18 @@ export default function PublicResultsPage() {
       null,
     [availableCompetitions, selectedCompetitionId]
   );
+
+  const totalCompetitionPages = Math.max(1, Math.ceil(availableCompetitions.length / COMPETITIONS_PER_PAGE));
+  const pagedCompetitions = useMemo(() => {
+    const start = (competitionPage - 1) * COMPETITIONS_PER_PAGE;
+    return availableCompetitions.slice(start, start + COMPETITIONS_PER_PAGE);
+  }, [availableCompetitions, competitionPage]);
+
+  const totalTrialPages = Math.max(1, Math.ceil(sortedResultsByTrial.length / TRIALS_PER_PAGE));
+  const pagedResultsByTrial = useMemo(() => {
+    const start = (trialPage - 1) * TRIALS_PER_PAGE;
+    return sortedResultsByTrial.slice(start, start + TRIALS_PER_PAGE);
+  }, [sortedResultsByTrial, trialPage]);
 
   const getMedal = (rank) => {
     if (rank === 1) return "🥇";
@@ -285,43 +323,74 @@ export default function PublicResultsPage() {
     <Box
       sx={{
         minHeight: "100vh",
-        py: 6,
+        display: "flex",
+        flexDirection: "column",
         position: "relative",
-        backgroundImage:
-          "url(https://images.unsplash.com/photo-1576610616656-d3aa5d1f4534?auto=format&fit=crop&w=1975&q=80)",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
+        overflow: "hidden",
         "&::before": {
           content: '""',
           position: "absolute",
           inset: 0,
+          backgroundImage: `url(${import.meta.env.BASE_URL}images/home/feature-classement.jpg?v=20250324e)`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(2.5px) saturate(1.08)",
+          transform: "scale(1.03)",
+          opacity: 0.34,
+          zIndex: 0,
+        },
+        "&::after": {
+          content: '""',
+          position: "absolute",
+          inset: 0,
           background:
-            "linear-gradient(135deg, rgba(15, 23, 42, 0.62) 0%, rgba(30, 41, 59, 0.55) 50%, rgba(15, 23, 42, 0.62) 100%)",
+            "linear-gradient(165deg, rgba(224,242,254,0.72) 0%, rgba(255,255,255,0.9) 38%, rgba(237,233,254,0.62) 100%)",
+          zIndex: 0,
         },
       }}
     >
-      <Container maxWidth="lg">
-        <Box sx={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/")}
-            sx={{
-              color: "#E2E8F0",
-              textTransform: "none",
-              fontWeight: 900,
-              px: 2.2,
-              py: 0.9,
-              borderRadius: appTheme.radius.pill,
-              border: "1px solid rgba(34,211,238,0.45)",
-              background: "linear-gradient(135deg, rgba(15,23,42,0.75), rgba(30,41,59,0.65))",
-            }}
-          >
-            Accueil
-          </Button>
+      <PublicNavbar themeVariant="darkHome" />
+      <Box sx={{ flex: 1, pt: "84px", pb: 5, position: "relative", zIndex: 1 }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Stack direction="row" spacing={1}>
+              <Button
+                startIcon={<ArrowBackIcon />}
+                onClick={() => navigate("/")}
+                sx={{
+                  color: "#0f172a",
+                  textTransform: "none",
+                  fontWeight: 900,
+                  px: 2.2,
+                  py: 0.9,
+                  borderRadius: appTheme.radius.pill,
+                  border: "1px solid rgba(14,165,233,0.3)",
+                  background: "rgba(255,255,255,0.88)",
+                  "&:hover": { background: "rgba(255,255,255,1)" },
+                }}
+              >
+                Accueil
+              </Button>
+              <Button
+                onClick={() => navigate("/competitions")}
+                sx={{
+                  color: "#0f172a",
+                  textTransform: "none",
+                  fontWeight: 800,
+                  px: 2,
+                  py: 0.9,
+                  borderRadius: appTheme.radius.pill,
+                  border: "1px solid rgba(167,139,250,0.36)",
+                  background: "rgba(255,255,255,0.88)",
+                  "&:hover": { background: "rgba(255,255,255,1)" },
+                }}
+              >
+                Compétitions
+              </Button>
+            </Stack>
           <IconButton
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            sx={{ color: "#E2E8F0", background: "rgba(15,23,42,0.55)" }}
+            sx={{ color: "#0f172a", background: "rgba(255,255,255,0.88)" }}
           >
             <ArrowForwardIcon sx={{ transform: "rotate(-90deg)" }} />
           </IconButton>
@@ -330,29 +399,25 @@ export default function PublicResultsPage() {
         <Card
           sx={{
             mb: 3,
-            position: "relative",
-            zIndex: 1,
             borderRadius: 4,
-            background:
-              "linear-gradient(145deg, rgba(15,23,42,0.96) 0%, rgba(10,20,52,0.95) 58%, rgba(30,27,75,0.93) 100%)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(56, 189, 248, 0.26)",
-            boxShadow: "0 16px 38px rgba(15, 23, 42, 0.42)",
+            background: "linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.96) 100%)",
+            border: "1px solid rgba(148,163,184,0.2)",
+            boxShadow: "0 10px 26px rgba(15, 23, 42, 0.08)",
           }}
         >
           <CardContent sx={{ p: { xs: 2.5, md: 3.5 } }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.2, mb: 1 }}>
               <EmojiEventsIcon sx={{ color: appTheme.colors.violet }} />
-              <Typography variant="h5" sx={{ fontWeight: 900, color: "#E2E8F0" }}>
+              <Typography variant="h5" sx={{ fontWeight: 900, color: "#0f172a" }}>
                 Résultats & Classements publics
               </Typography>
             </Box>
-            <Typography sx={{ color: "rgba(226,232,240,0.72)", mb: 1.2 }}>
+            <Typography sx={{ color: "#475569", mb: 1.2 }}>
               Explorez les classements officiels des dernières compétitions
             </Typography>
 
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-              {availableCompetitions.map((competition) => (
+              {pagedCompetitions.map((competition) => (
                 <Chip
                   key={competition.competitionId}
                   label={
@@ -367,15 +432,35 @@ export default function PublicResultsPage() {
                     background:
                       selectedCompetitionId === competition.competitionId
                         ? "linear-gradient(135deg, #22D3EE, #3B82F6)"
-                        : "rgba(2, 6, 23, 0.7)",
+                        : "rgba(241,245,249,0.95)",
                     color:
                       selectedCompetitionId === competition.competitionId
                         ? "#08101f"
-                        : "#E2E8F0",
+                        : "#0f172a",
+                    border:
+                      selectedCompetitionId === competition.competitionId
+                        ? "none"
+                        : "1px solid rgba(148,163,184,0.28)",
                   }}
                 />
               ))}
             </Stack>
+            {availableCompetitions.length > COMPETITIONS_PER_PAGE && (
+              <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+                <Pagination
+                  page={competitionPage}
+                  count={totalCompetitionPages}
+                  onChange={(_, page) => setCompetitionPage(page)}
+                  color="primary"
+                  shape="rounded"
+                  size="small"
+                  variant="outlined"
+                  showFirstButton
+                  showLastButton
+                  siblingCount={1}
+                />
+              </Box>
+            )}
             {availableCompetitions.length === 0 && !loading && !error && (
               <Alert severity="info" sx={{ mt: 2 }}>
                 Aucune compétition avec classement public détectée pour le moment.
@@ -385,28 +470,29 @@ export default function PublicResultsPage() {
         </Card>
 
         {loading && (
-          <Box sx={{ position: "relative", zIndex: 1, display: "flex", justifyContent: "center", py: 6 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
             <CircularProgress sx={{ color: appTheme.colors.cyan }} />
           </Box>
         )}
 
         {!loading && error && (
-          <Box sx={{ position: "relative", zIndex: 1 }}>
+          <Box>
             <Alert severity="error">{error}</Alert>
           </Box>
         )}
 
         {!loading && !error && (
-          <Stack spacing={2.2} sx={{ position: "relative", zIndex: 1 }}>
-            <Typography sx={{ color: "rgba(226,232,240,0.8)", fontWeight: 700 }}>
+          <Stack spacing={2.2}>
+            <Typography sx={{ color: "#475569", fontWeight: 700 }}>
               {resultsByTrial.length} épreuve(s) · {totalResults} résultat(s)
             </Typography>
 
-            {sortedResultsByTrial.map((trialGroup) => {
+            {pagedResultsByTrial.map((trialGroup, idx) => {
               const results = Array.isArray(trialGroup?.results) ? trialGroup.results : [];
               const hasTeam = results.some((r) => r?.participant?.competitorType === "TEAM");
               const modeLabel = hasTeam ? "Équipe" : "Individuel";
               const performanceType = results[0]?.performanceType || null;
+              const accent = [appTheme.colors.cyan, appTheme.colors.violet, appTheme.colors.green][idx % 3];
               const performanceLabel =
                 performanceType === "TIME"
                   ? "Temps"
@@ -419,12 +505,12 @@ export default function PublicResultsPage() {
                   key={trialGroup?.trialId}
                   sx={{
                     borderRadius: 3,
-                    background:
-                      "linear-gradient(145deg, rgba(15,23,42,0.98) 0%, rgba(10,20,52,0.96) 58%, rgba(30,27,75,0.95) 100%)",
-                    border: "1px solid rgba(56, 189, 248, 0.22)",
-                    boxShadow: "0 14px 34px rgba(15, 23, 42, 0.38)",
+                    background: "#ffffff",
+                    border: `1px solid ${accent}44`,
+                    boxShadow: `0 10px 26px rgba(15, 23, 42, 0.08), 0 0 0 1px ${accent}18`,
                   }}
                 >
+                  <Box sx={{ height: 5, background: `linear-gradient(90deg, ${accent}, ${appTheme.colors.blue}, ${appTheme.colors.cyan})` }} />
                   <CardContent>
                     <Box
                       sx={{
@@ -437,15 +523,15 @@ export default function PublicResultsPage() {
                       }}
                     >
                       <Box>
-                        <Typography sx={{ fontWeight: 900, fontSize: 17, color: "#E2E8F0" }}>
+                        <Typography sx={{ fontWeight: 900, fontSize: 17, color: "#0f172a" }}>
                           {getDisplayTrialName(trialGroup)}
                         </Typography>
                         {selectedCompetitionId && selectedCompetitionName && (
-                          <Typography sx={{ color: "#67E8F9", fontSize: 12, mb: 0.3, fontWeight: 700 }}>
+                          <Typography sx={{ color: "#0369a1", fontSize: 12, mb: 0.3, fontWeight: 700 }}>
                             {selectedCompetitionName}
                           </Typography>
                         )}
-                        <Typography sx={{ color: "rgba(226,232,240,0.72)", fontSize: 13 }}>
+                        <Typography sx={{ color: "#64748b", fontSize: 13 }}>
                           {getRoundLabel(trialGroup?.roundName || "ROUND")}
                           {trialGroup?.categoryGender
                             ? ` · ${getGenderLabel(trialGroup?.categoryGender)}`
@@ -461,7 +547,7 @@ export default function PublicResultsPage() {
                           trialGroup?.endTime ||
                           trialGroup?.trialEndTime ||
                           trialGroup?.scheduledEndTime) && (
-                          <Typography sx={{ color: "rgba(226,232,240,0.72)", fontSize: 12, mt: 0.4 }}>
+                          <Typography sx={{ color: "#64748b", fontSize: 12, mt: 0.4 }}>
                             {formatDateTime(
                               trialGroup?.startDate && trialGroup?.startHour
                                 ? `${trialGroup.startDate}T${trialGroup.startHour}`
@@ -519,32 +605,32 @@ export default function PublicResultsPage() {
                         <Chip
                           label={modeLabel}
                           size="small"
-                          sx={{ background: "rgba(167,139,250,0.18)", color: "#DDD6FE", fontWeight: 700 }}
+                          sx={{ background: "rgba(167,139,250,0.18)", color: "#5b21b6", fontWeight: 700 }}
                         />
                         <Chip
                           label={performanceLabel}
                           size="small"
-                          sx={{ background: "rgba(134,239,172,0.14)", color: "#BBF7D0", fontWeight: 700 }}
+                          sx={{ background: "rgba(34,211,238,0.18)", color: "#0c4a6e", fontWeight: 700 }}
                         />
                       </Stack>
                     </Box>
 
                     {results.length === 0 ? (
-                      <Typography sx={{ color: appTheme.colors.textSecondary }}>
+                      <Typography sx={{ color: "#64748b" }}>
                         Aucun résultat enregistré pour cette épreuve.
                       </Typography>
                     ) : (
                       <TableContainer
                         component={Paper}
                         elevation={0}
-                        sx={{ borderRadius: 2, background: "rgba(2, 6, 23, 0.35)" }}
+                        sx={{ borderRadius: 2, background: "#f8fafc", border: "1px solid rgba(148,163,184,0.2)" }}
                       >
                         <Table size="small">
                           <TableHead>
                             <TableRow>
-                              <TableCell sx={{ fontWeight: 900, color: "#E2E8F0" }}>Rang</TableCell>
-                              <TableCell sx={{ fontWeight: 900, color: "#E2E8F0" }}>Participant</TableCell>
-                              <TableCell sx={{ fontWeight: 900, color: "#E2E8F0" }}>Performance</TableCell>
+                              <TableCell sx={{ fontWeight: 900, color: "#0f172a" }}>Rang</TableCell>
+                              <TableCell sx={{ fontWeight: 900, color: "#0f172a" }}>Participant</TableCell>
+                              <TableCell sx={{ fontWeight: 900, color: "#0f172a" }}>Performance</TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
@@ -557,12 +643,12 @@ export default function PublicResultsPage() {
                               return (
                                 <TableRow key={result.id}>
                                   <TableCell sx={{ width: 76 }}>
-                                    <Typography sx={{ fontWeight: 800, color: "#E2E8F0" }}>
+                                    <Typography sx={{ fontWeight: 800, color: "#0f172a" }}>
                                       {getMedal(result.rank)}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>
-                                    <Typography sx={{ fontWeight: 700, color: "#E2E8F0" }}>
+                                    <Typography sx={{ fontWeight: 700, color: "#0f172a" }}>
                                       {result?.participant?.displayName || "Participant inconnu"}
                                     </Typography>
                                     {isTeam && members.length > 0 && (
@@ -570,7 +656,7 @@ export default function PublicResultsPage() {
                                         sx={{
                                           mt: 0.3,
                                           fontSize: "0.8rem",
-                                          color: "rgba(226,232,240,0.72)",
+                                          color: "#64748b",
                                         }}
                                       >
                                         {members
@@ -585,7 +671,7 @@ export default function PublicResultsPage() {
                                   </TableCell>
                                   <TableCell>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                      <Typography sx={{ fontWeight: 900, color: "#E2E8F0" }}>
+                                      <Typography sx={{ fontWeight: 900, color: "#0f172a" }}>
                                         {result.performance}
                                       </Typography>
                                       {result.tie && (
@@ -604,9 +690,26 @@ export default function PublicResultsPage() {
                 </Card>
               );
             })}
+            {sortedResultsByTrial.length > TRIALS_PER_PAGE && (
+              <Box sx={{ display: "flex", justifyContent: "center", pt: 0.5 }}>
+                <Pagination
+                  page={trialPage}
+                  count={totalTrialPages}
+                  onChange={(_, page) => setTrialPage(page)}
+                  color="primary"
+                  shape="rounded"
+                  variant="outlined"
+                  showFirstButton
+                  showLastButton
+                  siblingCount={1}
+                />
+              </Box>
+            )}
           </Stack>
         )}
       </Container>
+      </Box>
+      <Footer />
     </Box>
   );
 }
