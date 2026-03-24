@@ -4,13 +4,13 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
@@ -41,9 +41,7 @@ public class AuthenticationService {
     private final ActivationTokenRepository activationTokenRepository;
 
     private final AnalyticsService analyticsService;
-    
-    @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")
-    private String appBaseUrl;
+    private final FrontendUrlBuilder frontendUrlBuilder;
 
     private String normalizeEmail(String email) {
     	
@@ -91,17 +89,17 @@ public class AuthenticationService {
                 .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
 
         if (at.isUsed()) {
-            return appBaseUrl + "/login?activated=true&already=true";
+            return frontendUrlBuilder.path("/login?activated=true&already=true");
         }
 
         if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return appBaseUrl + "/login?activated=false&reason=token_expired";
+            return frontendUrlBuilder.path("/login?activated=false&reason=token_expired");
         }
 
         UserAccount user = at.getUser();
 
         if (user.isActive()) {
-            return appBaseUrl + "/login?activated=true&already=true";
+            return frontendUrlBuilder.path("/login?activated=true&already=true");
         }
 
         user.setActive(true);
@@ -110,7 +108,7 @@ public class AuthenticationService {
         at.setUsed(true);
         activationTokenRepository.save(at);
 
-        return appBaseUrl + "/login?activated=true";
+        return frontendUrlBuilder.path("/login?activated=true");
     }
 
     public JwtAuthenticationResponse signin(SignInRequest request) {

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, Link} from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../common/contexts/AuthContext';
 import authService from '../../../common/api/authService';
 import { consumeSpectatorSignupWelcomeName } from '../../../common/utils/spectatorWelcomeName';
@@ -7,8 +7,21 @@ import { consumeSpectatorSignupWelcomeName } from '../../../common/utils/spectat
 const HOME_IMAGES_VERSION = "20250324e";
 const HERO_IMG = `${import.meta.env.BASE_URL}images/home/hero-natation.jpg?v=${HOME_IMAGES_VERSION}`;
 
+/** Évite les redirections ouvertes (open redirect) : uniquement chemins internes relatifs. */
+function safeInternalNextPath(next) {
+  if (!next || typeof next !== "string") return null;
+  const t = next.trim();
+  if (!t.startsWith("/") || t.startsWith("//")) return null;
+  const lower = t.toLowerCase();
+  if (lower.startsWith("http:") || lower.startsWith("https:") || lower.startsWith("javascript:") || lower.startsWith("data:")) {
+    return null;
+  }
+  return t;
+}
+
 const LoginPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -17,6 +30,21 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  const activationBanner = useMemo(() => {
+    const activated = searchParams.get("activated");
+    const already = searchParams.get("already");
+    const reason = searchParams.get("reason");
+    if (activated === "true") {
+      return already === "true"
+        ? { type: "info", text: "Ce compte est déjà activé. Vous pouvez vous connecter." }
+        : { type: "success", text: "Compte activé avec succès. Vous pouvez vous connecter." };
+    }
+    if (activated === "false" && reason === "token_expired") {
+      return { type: "warning", text: "Le lien d'activation a expiré. Inscrivez-vous à nouveau ou contactez le support." };
+    }
+    return null;
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({
@@ -107,6 +135,29 @@ return (
           </p>
 
           {error && <div style={styles.error}>{error}</div>}
+
+          {activationBanner && (
+            <div
+              style={{
+                ...styles.banner,
+                background:
+                  activationBanner.type === "success"
+                    ? "rgba(34,197,94,0.15)"
+                    : activationBanner.type === "warning"
+                      ? "rgba(250,204,21,0.2)"
+                      : "rgba(59,130,246,0.12)",
+                borderColor:
+                  activationBanner.type === "success"
+                    ? "rgba(34,197,94,0.45)"
+                    : activationBanner.type === "warning"
+                      ? "rgba(234,179,8,0.5)"
+                      : "rgba(59,130,246,0.35)",
+                color: "#0f172a",
+              }}
+            >
+              {activationBanner.text}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={styles.form}>
             <label htmlFor="login-email" style={styles.label}>Adresse email</label>
@@ -381,6 +432,15 @@ const styles = {
     border: "1px solid #fca5a5",
     color: "#ef4444",
     fontSize: "13px",
+  },
+  banner: {
+    marginBottom: "14px",
+    padding: "12px 14px",
+    borderRadius: "12px",
+    border: "1px solid",
+    fontSize: "0.95rem",
+    fontWeight: 800,
+    lineHeight: 1.45,
   },
   eyeButton: {
   position: "absolute",

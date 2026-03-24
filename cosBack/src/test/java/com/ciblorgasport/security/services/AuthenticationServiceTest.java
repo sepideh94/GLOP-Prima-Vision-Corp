@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -23,9 +24,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
@@ -62,6 +63,9 @@ class AuthenticationServiceTest {
     
     @Mock
     private AnalyticsService analyticsService;
+
+    @Mock
+    private FrontendUrlBuilder frontendUrlBuilder;
     
     @InjectMocks
     private AuthenticationService authenticationService;
@@ -71,7 +75,8 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(authenticationService, "appBaseUrl", "http://localhost:3000");
+        lenient().when(frontendUrlBuilder.path(anyString()))
+                .thenAnswer(invocation -> "http://localhost:3000" + invocation.getArgument(0));
 
         user = Spectator.builder()
                 .firstName("John")

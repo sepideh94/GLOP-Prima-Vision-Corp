@@ -11,7 +11,11 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ciblorgasport.config.FrontendUrlBuilder;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -20,6 +24,9 @@ class EmailServiceImplTest {
     @Mock
     private JavaMailSender mailSender;
 
+    @Mock
+    private FrontendUrlBuilder frontendUrlBuilder;
+
     @InjectMocks
     private EmailServiceImpl service;
 
@@ -27,7 +34,8 @@ class EmailServiceImplTest {
     void setUp() {
         ReflectionTestUtils.setField(service, "from", "noreply@cos.com");
         ReflectionTestUtils.setField(service, "apiBaseUrl", "http://localhost:8083");
-        ReflectionTestUtils.setField(service, "appBaseUrl", "http://localhost:3000");
+        lenient().when(frontendUrlBuilder.path(anyString()))
+                .thenAnswer(invocation -> "http://localhost:3000" + invocation.getArgument(0));
     }
 
     private SimpleMailMessage captureMessage() {
@@ -83,7 +91,7 @@ class EmailServiceImplTest {
         assertThat(msg.getText())
             .contains("Bonjour Alice")
             .contains("http://localhost:3000/reset-password?token=token-ath")
-            .contains("http://localhost:3000/auth/athlete-invite?next=/athlete/competitions");
+            .contains("http://localhost:3000/login?next=/athlete/competitions");
     }
 
     @Test
@@ -96,7 +104,7 @@ class EmailServiceImplTest {
         assertThat(msg.getText())
             .contains("Bonjour Bob")
             .contains("http://localhost:3000/reset-password?token=token-volo")
-            .contains("http://localhost:3000/auth/volonteer-invite?next=/volonteer/dashboard");
+            .contains("http://localhost:3000/login?next=/volunteer");
     }
 
     @Test
@@ -121,7 +129,7 @@ class EmailServiceImplTest {
         assertThat(msg.getSubject()).isEqualTo("Votre accréditation a été validée - CiblOrgaSport");
         assertThat(msg.getText())
             .contains("Bonjour Paul")
-            .contains("http://localhost:3000/login");
+            .contains("http://localhost:3000/login?next=/commissioner");
     }
 
     @Test
@@ -134,7 +142,7 @@ class EmailServiceImplTest {
         assertThat(msg.getText())
             .contains("Bonjour Paul")
             .contains("Document flou")
-            .contains("http://localhost:3000/login");
+            .contains("http://localhost:3000/login?next=/commissioner");
     }
 
     @Test
@@ -147,7 +155,7 @@ class EmailServiceImplTest {
         assertThat(msg.getText())
             .contains("Bonjour Admin")
             .contains("Le commissaire Paul Comm")
-            .contains("http://localhost:3000/login");
+            .contains("http://localhost:3000/login?next=/admin/users");
     }
 
     @Test
@@ -160,7 +168,7 @@ class EmailServiceImplTest {
         assertThat(msg.getText())
             .contains("Bonjour Paul")
             .contains("L'athlète Alice Ath")
-            .contains("http://localhost:3000/commissioner/participations");
+            .contains("http://localhost:3000/login?next=/commissioner/participants");
     }
 
     @Test
@@ -172,7 +180,7 @@ class EmailServiceImplTest {
         assertThat(msg.getSubject()).isEqualTo("Vos documents ont été validés - CiblOrgaSport");
         assertThat(msg.getText())
             .contains("Bonjour Alice Ath")
-            .contains("http://localhost:3000/athlete/competitions");
+            .contains("http://localhost:3000/login?next=/athlete/competitions");
     }
 
     @Test
@@ -186,7 +194,7 @@ class EmailServiceImplTest {
             .contains("Bonjour Alice Ath")
             .contains("Document concerné : Certif")
             .contains("Motif du refus : \"Périmé\"")
-            .contains("http://localhost:3000/athlete/profile");
+            .contains("http://localhost:3000/login?next=/athlete/profile");
     }
 
     @Test

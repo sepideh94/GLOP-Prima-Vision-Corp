@@ -2,10 +2,10 @@ package com.ciblorgasport.notification.application;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.Incident;
@@ -26,9 +26,7 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
     private final SpectatorIncidentRecipientResolver spectatorIncidentRecipientResolver;
     private final NotificationService notificationService;
     private final EmailService emailService;
-
-    @Value("${app.base-url:http://localhost:3000}")
-    private String appBaseUrl;
+    private final FrontendUrlBuilder frontendUrlBuilder;
 
     @Override
     public void notifyIncidentCreated(Incident incident) {
@@ -127,7 +125,7 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
     }
 
     private String buildIncidentLink(Incident incident) {
-        return appBaseUrl;
+        return frontendUrlBuilder.path("/login?next=/notifications");
     }
 
     private String safeIncidentTitle(Incident incident) {

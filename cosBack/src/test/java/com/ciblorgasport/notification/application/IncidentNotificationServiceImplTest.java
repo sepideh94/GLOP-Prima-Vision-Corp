@@ -1,6 +1,5 @@
 package com.ciblorgasport.notification.application;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 
@@ -8,9 +7,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.athlete.domain.Athlete;
+import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.incident.domain.ImpactLevel;
 import com.ciblorgasport.incident.domain.Incident;
@@ -47,14 +49,15 @@ class IncidentNotificationServiceImplTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private FrontendUrlBuilder frontendUrlBuilder;
+
     @InjectMocks
     private IncidentNotificationServiceImpl incidentNotificationService;
 
     @BeforeEach
-    void setUp() throws Exception {
-        Field field = IncidentNotificationServiceImpl.class.getDeclaredField("appBaseUrl");
-        field.setAccessible(true);
-        field.set(incidentNotificationService, "http://localhost:3000");
+    void setUp() {
+        lenient().when(frontendUrlBuilder.path(anyString())).thenReturn("http://localhost:3000");
     }
 
     @Test
