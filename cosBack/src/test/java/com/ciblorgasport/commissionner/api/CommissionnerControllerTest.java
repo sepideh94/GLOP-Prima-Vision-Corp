@@ -5,6 +5,8 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -448,6 +450,15 @@ class CommissionnerControllerTest {
             athlete.setLastName("Athlete");
             athlete.setEmail("refused@example.com");
             athlete.setPassword("password123");
+            com.ciblorgasport.storage.domain.Document passport = com.ciblorgasport.storage.domain.Document.builder()
+                    .fileName("passport.pdf")
+                    .s3Key("athletes/refused/passport.pdf")
+                    .bucketName("bucket-test")
+                    .contentType("application/pdf")
+                    .fileSize(300L)
+                    .uploadedAt(LocalDateTime.now())
+                    .build();
+            athlete.setPassportDocument(passport);
             athlete = athleteRepository.save(athlete);
 
             // Créer une participation
@@ -456,6 +467,8 @@ class CommissionnerControllerTest {
             participation.setCompetitorType(com.ciblorgasport.competition.domain.CompetitorType.ATHLETE);
             participation.setCompetition(testCompetition);
             participation.setStatus(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING_VALIDATION);
+            participation.setCharterAccepted(true);
+            participation.setCharterAcceptedAt(LocalDateTime.now());
             participation = participationRepository.save(participation);
 
             String payload = """
@@ -473,6 +486,41 @@ class CommissionnerControllerTest {
             // Check if status changed
             com.ciblorgasport.competition.domain.Participation updated = participationRepository.findById(participation.getId()).orElseThrow();
             assertEquals(com.ciblorgasport.competition.domain.ParticipationStatus.PENDING, updated.getStatus());
+            assertEquals(false, updated.isCharterAccepted());
+            assertEquals(null, updated.getCharterAcceptedAt());
+
+            com.ciblorgasport.athlete.domain.Athlete updatedAthlete = athleteRepository.findById(athlete.getId()).orElseThrow();
+            assertEquals(null, updatedAthlete.getPassportDocument());
+
+            verify(storageService).deleteFile(any(com.ciblorgasport.storage.domain.Document.class));
+            verify(emailService).sendAthleteParticipationRefusedEmail(
+                    org.mockito.ArgumentMatchers.anyString(),
+                    org.mockito.ArgumentMatchers.anyString(),
+                    org.mockito.ArgumentMatchers.anyString(),
+                    org.mockito.ArgumentMatchers.anyString());
+            verify(notificationService).createSystemNotification(
+                    any(),
+                    any(),
+                    org.mockito.ArgumentMatchers.anyString(),
+                    org.mockito.ArgumentMatchers.anyString(),
+                    org.mockito.ArgumentMatchers.anyString());
+        }
+
+        @Test
+        @WithMockUser(roles = "SPECTATOR")
+        @DisplayName("Doit interdire le refus de participation pour un spectateur")
+        void refuseParticipation_AsSpectator_ShouldReturnForbidden() throws Exception {
+            String payload = """
+                {
+                    "rejectedDocument": "PASSPORT",
+                    "reason": "Document illisible"
+                }
+                """;
+
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/commissioner/participations/999/refuse")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .content(payload))
+                    .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isForbidden());
         }
     }
 }
