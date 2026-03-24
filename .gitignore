@@ -4,5 +4,12 @@ nul
 # Dependencies
 node_modules/
 
-# Claude Code
+# Local AI/tooling folders
 .claude/
+
+# Error and runtime logs
+*.log
+logs/
+
+hs_err_pid*
+replay_pid*

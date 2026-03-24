@@ -8,6 +8,7 @@ import {
   Typography,
   Divider,
 } from "@mui/material";
+import HtmlContent from "../../../common/components/HtmlContent";
 import EventIcon from "@mui/icons-material/Event";
 import appTheme from "../../../common/theme/appTheme";
 
@@ -61,7 +62,12 @@ export default function CompetitionDetailDialog({ open, onClose, competition, cu
           <Divider sx={{ mb: 2 }} />
 
           <DetailRow label="Nom" value={competition.name} />
-          <DetailRow label="Description" value={competition.description} />
+          {competition.description && (
+            <Box sx={{ py: 1.5, borderBottom: "1px solid #e0e0e0" }}>
+              <Typography sx={{ fontWeight: 600, color: "#555", mb: 0.5 }}>Description</Typography>
+              <HtmlContent html={competition.description} />
+            </Box>
+          )}
           <DetailRow label="Date de début" value={formatDate(competition.startDate)} />
           <DetailRow label="Date de fin" value={formatDate(competition.endDate)} />
           <DetailRow label="Statut" value={competition.statusLabel} />

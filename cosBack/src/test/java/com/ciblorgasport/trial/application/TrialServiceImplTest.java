@@ -18,6 +18,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
@@ -270,7 +272,7 @@ class TrialServiceImplTest {
     @DisplayName("Should get trial by id successfully")
     void testGetTrialById_Success() {
         
-        when(trialRepository.findById(1L)).thenReturn(Optional.of(testTrial));
+        when(trialRepository.findOneWithAssociationsById(1L)).thenReturn(Optional.of(testTrial));
 
         
         TrialResponse result = trialService.getById(1L);
@@ -280,22 +282,21 @@ class TrialServiceImplTest {
         assertEquals(1L, result.getId());
         assertEquals("100m nage libre - Finale", result.getName());
         assertEquals(TrialName.HUNDRED_M_FREESTYLE, result.getTrialName());
-        verify(trialRepository, times(1)).findById(1L);
+        verify(trialRepository, times(1)).findOneWithAssociationsById(1L);
     }
 
     @Test
     @DisplayName("Should throw exception when getting non-existent trial")
     void testGetTrialById_NotFound() {
         
-        when(trialRepository.findById(999L)).thenReturn(Optional.empty());
+        when(trialRepository.findOneWithAssociationsById(999L)).thenReturn(Optional.empty());
 
         
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            trialService.getById(999L);
-        });
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () -> trialService.getById(999L));
 
-        assertTrue(exception.getMessage().contains("Épreuve introuvable avec l'ID: 999"));
-        verify(trialRepository, times(1)).findById(999L);
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        assertTrue(ex.getReason().contains("Épreuve introuvable avec l'ID: 999"));
+        verify(trialRepository, times(1)).findOneWithAssociationsById(999L);
     }
 
     @Test
@@ -308,7 +309,7 @@ class TrialServiceImplTest {
         trial2.setSite(testSite);
 
         List<Trial> trials = Arrays.asList(testTrial, trial2);
-        when(trialRepository.findAll()).thenReturn(trials);
+        when(trialRepository.findAllWithAssociations()).thenReturn(trials);
 
         
         List<TrialResponse> result = trialService.getAll();
@@ -318,14 +319,14 @@ class TrialServiceImplTest {
         assertEquals(2, result.size());
         assertEquals("100m nage libre - Finale", result.get(0).getName());
         assertEquals("200m Sprint", result.get(1).getName());
-        verify(trialRepository, times(1)).findAll();
+        verify(trialRepository, times(1)).findAllWithAssociations();
     }
 
     @Test
     @DisplayName("Should return empty list when no trials exist")
     void testGetAllTrials_EmptyList() {
         
-        when(trialRepository.findAll()).thenReturn(Arrays.asList());
+        when(trialRepository.findAllWithAssociations()).thenReturn(Arrays.asList());
 
         
         List<TrialResponse> result = trialService.getAll();
@@ -333,7 +334,7 @@ class TrialServiceImplTest {
         
         assertNotNull(result);
         assertTrue(result.isEmpty());
-        verify(trialRepository, times(1)).findAll();
+        verify(trialRepository, times(1)).findAllWithAssociations();
     }
 
     @Test

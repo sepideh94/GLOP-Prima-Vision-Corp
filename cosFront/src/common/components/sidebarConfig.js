@@ -2,9 +2,14 @@ import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import PeopleIcon from "@mui/icons-material/People";
+import PersonIcon from "@mui/icons-material/Person";
 import VolunteerActivismIcon from "@mui/icons-material/VolunteerActivism";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import DashboardIcon from "@mui/icons-material/Dashboard";
+import StadiumIcon from "@mui/icons-material/Stadium";
+import MapIcon from "@mui/icons-material/Map";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 
 const sidebarConfig = {
   ADMIN: [
@@ -26,6 +31,11 @@ const sidebarConfig = {
       path: "/admin/incidents",
     },
     {
+      label: "Notifications",
+      icon: NotificationsIcon,
+      path: "/notifications",
+    },
+    {
       label: "Gestion des utilisateurs",
       icon: PeopleIcon,
       path: "/admin/users",
@@ -34,6 +44,21 @@ const sidebarConfig = {
       label: "Planning",
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
+    },
+    {
+      label: "Dashboard & Reporting",
+      icon: DashboardIcon,
+      path: "/admin/dashboard",
+    },
+    {
+      label: "Fan Zones",
+      icon: StadiumIcon,
+      path: "/admin/fan-zones",
+    },
+    {
+      label: "Carte opérations",
+      icon: MapIcon,
+      path: "/admin/map",
     },
   ],
 
@@ -49,14 +74,34 @@ const sidebarConfig = {
       icon: PeopleIcon,
       path: "/commissioner/participants",
     },
+    {
+      label: "Notifications",
+      icon: NotificationsIcon,
+      path: "/notifications",
+    },
   ],
 
   ATHLETE: [
     { label: "Tableau de bord", icon: HomeIcon, path: "/athlete" },
     {
-      label: "Compétitions",
+      label: "Mes compétitions",
       icon: EmojiEventsIcon,
       path: "/athlete/competitions",
+    },
+    {
+      label: "Mes notifications",
+      icon: NotificationsIcon,
+      path: "/notifications",
+    },
+    { label: "Mon profil", icon: PersonIcon, path: "/athlete/profile" },
+  ],
+
+  VOLONTEER: [
+    { label: "Accueil", icon: HomeIcon, path: "/volunteer" },
+    {
+      label: "Notifications",
+      icon: NotificationsIcon,
+      path: "/notifications",
     },
   ],
 
@@ -66,6 +111,16 @@ const sidebarConfig = {
       label: "Mon profil",
       icon: PeopleIcon,
       path: "/spectator/profile",
+    },
+    {
+      label: "Carte",
+      icon: MapIcon,
+      path: "/spectator/map",
+    },
+    {
+      label: "Notifications",
+      icon: NotificationsIcon,
+      path: "/spectator/notifications",
     },
   ],
 

@@ -21,12 +21,14 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
 
 export default function TrialResultsViewDialog({ open, onClose, trial }) {
 
   const [results, setResults] = useState([]);
+  const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -36,10 +38,14 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
     setLoading(true);
     setError(null);
 
-    trialService.getResults(trial.id)
-      .then(setResults)
+    Promise.all([trialService.getResults(trial.id), trialService.getParticipants(trial.id)])
+      .then(([resultsData, participantsData]) => {
+        setResults(Array.isArray(resultsData) ? resultsData : []);
+        setParticipants(Array.isArray(participantsData) ? participantsData : []);
+      })
       .catch((e) => {
         setResults([]);
+        setParticipants([]);
         const status = e?.response?.status;
         if (status === 401) {
           setError("Session expirée. Veuillez vous reconnecter.");
@@ -65,6 +71,17 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
     if (rank === 3) return "🥉";
     return rank;
   };
+  const withDisplayRank = (rows) =>
+    rows.map((row, index, arr) => {
+      if (index === 0) return { ...row, displayRank: 1 };
+      const prev = arr[index - 1];
+      const isSameRankAsPrev =
+        row?.rank != null && prev?.rank != null && row.rank === prev.rank;
+      return {
+        ...row,
+        displayRank: isSameRankAsPrev ? prev.displayRank : index + 1,
+      };
+    });
 
   const performanceType = results?.[0]?.performanceType || null;
   const performanceLabel =
@@ -73,6 +90,12 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       : performanceType === "POINTS"
       ? "Points"
       : null;
+
+  const hasTeamResults =
+    Array.isArray(results) &&
+    results.some((r) => r?.participant?.competitorType === "TEAM");
+  const modeLabel =
+    trial?.mode === "TEAM" || hasTeamResults ? "Équipe" : "Individuel";
 
   const lastUpdated = results.find((r) => r.updatedAt) || null;
 
@@ -87,6 +110,33 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       .filter((r) => r.tie || (rankCounts[String(r.rank ?? "")] || 0) > 1)
       .map((r) => r.rank)
   );
+  const normalizedResults = results.map((r) =>
+    r?.participant?.status === "FORFEIT"
+      ? { ...r, rank: null, tie: false, isForfeitNoResult: true }
+      : r
+  );
+  const rankedRows = withDisplayRank(
+    normalizedResults.filter((r) => r?.participant?.status !== "FORFEIT")
+  );
+  const forfeitRowsWithResult = normalizedResults.filter(
+    (r) => r?.participant?.status === "FORFEIT"
+  );
+  const resultByParticipantId = new Map(
+    results
+      .filter((r) => r?.participant?.id)
+      .map((r) => [r.participant.id, r])
+  );
+  const forfeitedWithoutResultRows = participants
+    .filter((p) => p.status === "FORFEIT" && !resultByParticipantId.has(p.id))
+    .map((p) => ({
+      id: `forfeit-${p.id}`,
+      rank: null,
+      tie: false,
+      performance: "Forfait",
+      participant: p,
+      isForfeitNoResult: true,
+    }));
+  const displayRows = [...rankedRows, ...forfeitRowsWithResult, ...forfeitedWithoutResultRows];
 
   return (
     <Dialog
@@ -141,14 +191,41 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
         </Box>
 
         {performanceLabel && (
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+            <Chip
+              label={`Performance : ${performanceLabel}`}
+              size="small"
+              sx={{
+                fontWeight: 800,
+                borderRadius: appTheme.radius.pill,
+                background: "rgba(34, 211, 238, 0.14)",
+                border: "1px solid rgba(34, 211, 238, 0.35)",
+              }}
+            />
+            <Chip
+              label={modeLabel}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                borderRadius: appTheme.radius.pill,
+                background: "rgba(167, 139, 250, 0.17)",
+                color: "#DDD6FE",
+                border: "1px solid rgba(167, 139, 250, 0.42)",
+              }}
+            />
+          </Box>
+        )}
+
+        {!performanceLabel && (
           <Chip
-            label={`Performance : ${performanceLabel}`}
+            label={modeLabel}
             size="small"
             sx={{
-              fontWeight: 800,
+              fontWeight: 700,
               borderRadius: appTheme.radius.pill,
-              background: "rgba(34, 211, 238, 0.14)",
-              border: "1px solid rgba(34, 211, 238, 0.35)",
+              background: "rgba(167, 139, 250, 0.17)",
+              color: "#DDD6FE",
+              border: "1px solid rgba(167, 139, 250, 0.42)",
             }}
           />
         )}
@@ -185,7 +262,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
           </Box>
-        ) : results.length === 0 ? (
+        ) : displayRows.length === 0 ? (
           <Paper
             elevation={0}
             sx={{
@@ -200,7 +277,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
               Aucun résultat enregistré
             </Typography>
             <Typography sx={{ color: "text.secondary", fontSize: 13 }}>
-              Saisissez d’abord les performances, puis revenez consulter le classement.
+              Les résultats de cette épreuve ne sont pas encore publiés.
             </Typography>
           </Paper>
         ) : (
@@ -226,11 +303,11 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
 
             <TableBody>
 
-              {results.map((r, index) => (
+              {displayRows.map((r) => (
                 <TableRow
                   key={r.id}
                   sx={
-                    tiedRanks.has(r.rank)
+                    !r.isForfeitNoResult && tiedRanks.has(r.rank)
                       ? {
                           background: "rgba(250, 204, 21, 0.10)",
                           "&:hover": { background: "rgba(250, 204, 21, 0.14)" },
@@ -242,7 +319,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
                   {/* RANK + MÉDAILLE */}
                   <TableCell>
                     <Typography fontWeight={700}>
-                      {getMedal(r.rank)}
+                      {r.displayRank ? getMedal(r.displayRank) : "—"}
                     </Typography>
                   </TableCell>
 
@@ -264,11 +341,28 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
                   {/* PERFORMANCE */}
                   <TableCell>
                     <Stack direction="row" alignItems="center" spacing={1}>
-                      <Typography sx={{ fontWeight: 800 }}>
-                        {r.performance}
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          color: r.participant?.status === "FORFEIT" ? "#b91c1c" : "inherit",
+                        }}
+                      >
+                        {r.participant?.status === "FORFEIT" ? "Forfait" : r.performance}
                       </Typography>
 
-                      {tiedRanks.has(r.rank) && (
+                      {r.participant?.status === "FORFEIT" && (
+                        <Chip
+                          label="Forfait"
+                          size="small"
+                          sx={{
+                            backgroundColor: "rgba(239, 68, 68, 0.15)",
+                            color: "#b91c1c",
+                            fontWeight: 700,
+                          }}
+                        />
+                      )}
+
+                      {!r.isForfeitNoResult && tiedRanks.has(r.rank) && (
                         <Chip
                           label="Ex æquo"
                           size="small"
@@ -294,6 +388,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       <DialogActions sx={{ p: 2 }}>
         <Button
           onClick={onClose}
+          startIcon={<VisibilityIcon sx={{ fontSize: 18 }} />}
           sx={{
             textTransform: "none",
             fontWeight: 700,

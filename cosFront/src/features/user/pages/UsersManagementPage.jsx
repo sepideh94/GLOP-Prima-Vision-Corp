@@ -31,14 +31,14 @@ import {
 import {
   Add as AddIcon,
   ArrowBack as ArrowBackIcon,
-  Visibility as VisibilityIcon,
-  Block as BlockIcon,
-  CheckCircle as CheckCircleIcon,
-  LockReset as LockResetIcon,
+  Description as DescriptionIcon,
+  TaskAlt as TaskAltIcon,
+  Cancel as CancelIcon,
 } from "@mui/icons-material";
 import appTheme from "../../../common/theme/appTheme";
 import userService from "../services/userService";
 import CommissionerFormDialog from "../components/CommissionerFormDialog";
+import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -50,18 +50,22 @@ export default function UsersManagementPage() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [openForm, setOpenForm] = useState(false);
-  const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
-  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [confirmAction, setConfirmAction] = useState(null);
-  const [confirmActionType, setConfirmActionType] = useState(null);
+  const [openRefuseAccreditationDialog, setOpenRefuseAccreditationDialog] = useState(false);
+  const [refuseReason, setRefuseReason] = useState("");
+  const [accreditationAvailability, setAccreditationAvailability] = useState({});
+  const [validatedAccreditations, setValidatedAccreditations] = useState({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [previewName, setPreviewName] = useState("");
 
   // Filtres et recherche
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     loadUsers();
@@ -80,10 +84,10 @@ export default function UsersManagementPage() {
       // L'endpoint retourne une liste simple d'utilisateurs (List<UserResponse>)
       if (Array.isArray(response)) {
         setUsers(response);
-        setTotalPages(Math.ceil(response.length / ITEMS_PER_PAGE));
+        await preloadAccreditationAvailability(response);
       } else {
         setUsers([]);
-        setTotalPages(1);
+        setAccreditationAvailability({});
       }
     } catch (err) {
       console.error("Erreur lors du chargement des utilisateurs:", err);
@@ -96,6 +100,27 @@ export default function UsersManagementPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const preloadAccreditationAvailability = async (userList) => {
+    const commissioners = (userList || []).filter((u) => isCommissionerRole(u.role));
+    if (commissioners.length === 0) {
+      setAccreditationAvailability({});
+      return;
+    }
+
+    const checks = await Promise.all(
+      commissioners.map(async (u) => {
+        try {
+          await userService.downloadCommissionerAccreditation(u.id);
+          return [u.id, true];
+        } catch {
+          return [u.id, false];
+        }
+      })
+    );
+
+    setAccreditationAvailability(Object.fromEntries(checks));
   };
 
   const handleOpenCreate = () => {
@@ -188,83 +213,87 @@ export default function UsersManagementPage() {
     }
   };
 
-  const handleViewDetails = async (user) => {
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
+    setError(null);
+    setSuccessMessage(null);
+  };
+
+  const isCommissionerRole = (role) => {
+    const value = (role || "").toUpperCase();
+    return value === "COMMISSIONER" || value === "ROLE_COMMISSIONER" || value === "COMMISSIONNER" || value === "ROLE_COMMISSIONNER";
+  };
+
+  const handleViewAccreditation = async (user) => {
     try {
-      const details = await userService.getUserDetails(user.id);
-      setSelectedUser(details);
-      setOpenDetailsDialog(true);
+      setPreviewLoading(true);
+      setPreviewError("");
+      const blob = await userService.downloadCommissionerAccreditation(user.id);
+      setPreviewBlob(blob);
+      setPreviewName(`accreditation-commissioner-${user.id}`);
+      setPreviewOpen(true);
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: true }));
+    } catch (err) {
+      setAccreditationAvailability((prev) => ({ ...prev, [user.id]: false }));
+      setPreviewError(
+        "Impossible d'ouvrir le document d'accréditation (aucun document soumis pour ce commissaire)."
+      );
+      setPreviewOpen(true);
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleValidateAccreditation = async (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Validation impossible : aucun document CEN soumis par ce commissaire.");
+      setOpenSnackbar(true);
+      return;
+    }
+    try {
+      await userService.validateCommissionerAccreditation(user.id);
+      setValidatedAccreditations((prev) => ({ ...prev, [user.id]: true }));
+      setSuccessMessage("Accréditation validée avec succès.");
+      setOpenSnackbar(true);
     } catch (err) {
       setError(
-        err.response?.data?.message || "Erreur lors du chargement des détails",
+        err.response?.data?.message ||
+          "Erreur lors de la validation de l'accréditation."
       );
       setOpenSnackbar(true);
     }
   };
 
-  const handleToggleStatus = (user) => {
-    const userRole = (user.role || "").toUpperCase();
-    if (userRole === "ADMIN" || userRole === "ROLE_ADMIN") {
-      setError("Le compte administrateur ne peut pas être désactivé");
+  const handleOpenRefuseAccreditation = (user) => {
+    if (!accreditationAvailability[user.id]) {
+      setError("Refus impossible : aucun document CEN soumis par ce commissaire.");
       setOpenSnackbar(true);
       return;
     }
     setSelectedUser(user);
-    setConfirmActionType("toggle");
-    setConfirmAction(() => async () => {
-      try {
-        const isActive = user.isAccountActive;
-        await userService.toggleUserStatus(user.id, !isActive);
-        setSuccessMessage(
-          isActive
-            ? "Utilisateur désactivé avec succès"
-            : "Utilisateur activé avec succès",
-        );
-        setOpenSnackbar(true);
-        loadUsers();
-      } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            "Erreur lors de la modification du statut",
-        );
-        setOpenSnackbar(true);
-      }
-    });
-    setOpenConfirmDialog(true);
+    setRefuseReason("");
+    setOpenRefuseAccreditationDialog(true);
   };
 
-  const handleResetPassword = (user) => {
-    setSelectedUser(user);
-    setConfirmActionType("reset");
-    setConfirmAction(() => async () => {
-      try {
-        await userService.resetPassword(user.id);
-        setSuccessMessage("Mot de passe réinitialisé avec succès");
-        setOpenSnackbar(true);
-      } catch (err) {
-        setError(
-          err.response?.data?.message ||
-            "Erreur lors de la réinitialisation du mot de passe",
-        );
-        setOpenSnackbar(true);
-      }
-    });
-    setOpenConfirmDialog(true);
-  };
-
-  const handleConfirmAction = async () => {
-    if (confirmAction) {
-      await confirmAction();
+  const handleSubmitRefuseAccreditation = async () => {
+    if (!selectedUser || !refuseReason.trim()) return;
+    try {
+      await userService.refuseCommissionerAccreditation(
+        selectedUser.id,
+        refuseReason.trim()
+      );
+      setSuccessMessage("Accréditation refusée et motif envoyé au commissaire.");
+      setOpenSnackbar(true);
+      setOpenRefuseAccreditationDialog(false);
+      setSelectedUser(null);
+      setRefuseReason("");
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Erreur lors du refus de l'accréditation."
+      );
+      setOpenSnackbar(true);
     }
-    setOpenConfirmDialog(false);
-    setSelectedUser(null);
-    setConfirmAction(null);
-    setConfirmActionType(null);
-  };
-
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-    setError(null);
-    setSuccessMessage(null);
   };
 
   const getRoleLabel = (role) => {
@@ -277,8 +306,9 @@ export default function UsersManagementPage() {
       ROLE_COMMISSIONNER: "Commissaire",
       ATHLETE: "Athlète",
       ROLE_ATHLETE: "Athlète",
-      VOLUNTEER: "Volontaire",
-      ROLE_VOLUNTEER: "Volontaire",
+      // Backend utilise `ROLE_VOLONTEER` (avec O) et pas `ROLE_VOLUNTEER`
+      VOLONTEER: "Volontaires",
+      ROLE_VOLONTEER: "Volontaires",
       SPECTATOR: "Spectateur",
       ROLE_SPECTATOR: "Spectateur",
     };
@@ -449,7 +479,7 @@ export default function UsersManagementPage() {
             <MenuItem value="ADMIN">Administrateur</MenuItem>
             <MenuItem value="COMMISSIONNER">Commissaire</MenuItem>
             <MenuItem value="ATHLETE">Athlète</MenuItem>
-            <MenuItem value="VOLONTEER">Volontaire</MenuItem>
+            <MenuItem value="VOLONTEER">Volontaires</MenuItem>
             <MenuItem value="SPECTATOR">Spectateur</MenuItem>
           </Select>
         </FormControl>
@@ -549,61 +579,80 @@ export default function UsersManagementPage() {
                         {getStatusChip(user.isAccountActive)}
                       </TableCell>
                       <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                          <Tooltip title="Voir les détails (bientôt disponible)">
-                            <span>
-                              <IconButton
-                                size="small"
-                                disabled
-                                sx={{
-                                  color: appTheme.colors.cyan,
-                                  opacity: 0.5,
-                                }}
-                              >
-                                <VisibilityIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip
-                            title={
-                              user.isAccountActive
-                                ? "Désactiver (bientôt disponible)"
-                                : "Activer (bientôt disponible)"
-                            }
+                        {isCommissionerRole(user.role) && (
+                          <Typography
+                            sx={{
+                              fontSize: 12.5,
+                              fontWeight: 800,
+                              color: accreditationAvailability[user.id] ? "#16a34a" : "#dc2626",
+                              mb: 0.8,
+                            }}
                           >
-                            <span>
-                              <IconButton
-                                size="small"
-                                disabled
-                                sx={{
-                                  color: user.isAccountActive
-                                    ? "#ef4444"
-                                    : "#22c55e",
-                                  opacity: 0.5,
-                                }}
+                            {accreditationAvailability[user.id]
+                              ? "Document CEN: Reçu"
+                              : "Document CEN: Non reçu"}
+                          </Typography>
+                        )}
+                        <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                          {isCommissionerRole(user.role) && (
+                            <>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Voir document d'accréditation"
+                                    : "Aucun document CEN soumis"
+                                }
                               >
-                                {user.isAccountActive ? (
-                                  <BlockIcon fontSize="small" />
-                                ) : (
-                                  <CheckCircleIcon fontSize="small" />
-                                )}
-                              </IconButton>
-                            </span>
-                          </Tooltip>
-                          <Tooltip title="Réinitialiser le mot de passe (bientôt disponible)">
-                            <span>
-                              <IconButton
-                                size="small"
-                                disabled
-                                sx={{
-                                  color: appTheme.colors.violet,
-                                  opacity: 0.5,
-                                }}
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleViewAccreditation(user)}
+                                  sx={{ color: appTheme.colors.cyan }}
+                                >
+                                  <DescriptionIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  validatedAccreditations[user.id]
+                                    ? "Accréditation déjà validée"
+                                    : accreditationAvailability[user.id]
+                                    ? "Valider l'accréditation"
+                                    : "Validation indisponible sans document CEN"
+                                }
                               >
-                                <LockResetIcon fontSize="small" />
-                              </IconButton>
-                            </span>
-                          </Tooltip>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id] || !!validatedAccreditations[user.id]}
+                                    onClick={() => handleValidateAccreditation(user)}
+                                    sx={{
+                                      color: validatedAccreditations[user.id] ? "#94a3b8" : "#22c55e",
+                                    }}
+                                  >
+                                    <TaskAltIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip
+                                title={
+                                  accreditationAvailability[user.id]
+                                    ? "Refuser l'accréditation"
+                                    : "Refus indisponible sans document CEN"
+                                }
+                              >
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={!accreditationAvailability[user.id]}
+                                    onClick={() => handleOpenRefuseAccreditation(user)}
+                                    sx={{ color: "#ef4444" }}
+                                  >
+                                    <CancelIcon fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                            </>
+                          )}
                         </Box>
                       </TableCell>
                     </TableRow>
@@ -632,78 +681,43 @@ export default function UsersManagementPage() {
         </>
       )}
 
-      {/* DIALOG DÉTAILS */}
       <Dialog
-        open={openDetailsDialog}
-        onClose={() => setOpenDetailsDialog(false)}
+        open={openRefuseAccreditationDialog}
+        onClose={() => setOpenRefuseAccreditationDialog(false)}
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>Détails de l'utilisateur</DialogTitle>
+        <DialogTitle>Refuser l'accréditation commissaire</DialogTitle>
         <DialogContent>
-          {selectedUser && (
-            <Box
-              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
-            >
-              <Typography>
-                <strong>Nom:</strong> {selectedUser.firstName}{" "}
-                {selectedUser.lastName}
-              </Typography>
-              <Typography>
-                <strong>Email:</strong> {selectedUser.email}
-              </Typography>
-              <Typography>
-                <strong>Rôle:</strong> {getRoleLabel(selectedUser.role)}
-              </Typography>
-              <Typography>
-                <strong>Statut:</strong>{" "}
-                {selectedUser.isAccountActive ? "Actif" : "Inactif"}
-              </Typography>
-              {selectedUser.createdAt && (
-                <Typography>
-                  <strong>Créé le:</strong>{" "}
-                  {new Date(selectedUser.createdAt).toLocaleDateString("fr-FR")}
-                </Typography>
-              )}
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDetailsDialog(false)}>Fermer</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* DIALOG DE CONFIRMATION */}
-      <Dialog
-        open={openConfirmDialog}
-        onClose={() => setOpenConfirmDialog(false)}
-      >
-        <DialogTitle>Confirmation</DialogTitle>
-        <DialogContent>
-          <Typography>
-            {selectedUser &&
-              (confirmActionType === "toggle"
-                ? `Êtes-vous sûr de vouloir ${
-                    selectedUser.isAccountActive ? "désactiver" : "activer"
-                  } cet utilisateur ?`
-                : "Êtes-vous sûr de vouloir réinitialiser le mot de passe de cet utilisateur ?")}
+          <Typography sx={{ mb: 1.5 }}>
+            Merci d'indiquer le motif qui sera envoyé au commissaire.
           </Typography>
+          <TextField
+            fullWidth
+            multiline
+            minRows={3}
+            label="Motif du refus"
+            value={refuseReason}
+            onChange={(e) => setRefuseReason(e.target.value)}
+            placeholder="Ex: document illisible, merci d'envoyer une version plus nette."
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenConfirmDialog(false)}>Annuler</Button>
+          <Button onClick={() => setOpenRefuseAccreditationDialog(false)}>Annuler</Button>
           <Button
-            onClick={handleConfirmAction}
+            onClick={handleSubmitRefuseAccreditation}
+            disabled={!refuseReason.trim()}
             sx={{
               textTransform: "none",
               fontWeight: 700,
               px: 3,
               py: 1.1,
               borderRadius: appTheme.radius.pill,
-              background: "linear-gradient(135deg, #22D3EE, #3B82F6)",
-              color: appTheme.colors.dark,
+              background: "linear-gradient(135deg,#ef4444,#dc2626)",
+              color: "#fff",
             }}
           >
-            Confirmer
+            Confirmer le refus
           </Button>
         </DialogActions>
       </Dialog>
@@ -730,6 +744,22 @@ export default function UsersManagementPage() {
           {error || successMessage}
         </Alert>
       </Snackbar>
+
+      <UploadedFilePreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBlob(null);
+          setPreviewError("");
+          setPreviewName("");
+        }}
+        title="Document d’accréditation CEN"
+        fileBlob={previewBlob}
+        fileName={previewName}
+        contentType={previewBlob?.type || ""}
+        loading={previewLoading}
+        error={previewError}
+      />
     </Box>
   );
 }

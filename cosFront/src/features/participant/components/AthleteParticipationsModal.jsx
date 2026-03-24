@@ -28,13 +28,19 @@ const getStatusChip = (status) => {
       return <Chip label="Invité" color="warning" size="small" />;
     case "PENDING":
       return <Chip label="En attente" color="info" size="small" />;
-    case "CANCELLED":
+    case "PENDING_VALIDATION":
+      return <Chip label="En attente de validation" color="warning" size="small" />;
+    case "CANCELED":
       return <Chip label="Annulé" color="error" size="small" />;
     default:
       return <Chip label={status || "Inconnu"} size="small" />;
   }
 };
 
+/**
+ * Liste en lecture seule des participations.
+ * La validation et la visualisation des documents se font sur CommissionerParticipantsPage.
+ */
 export default function AthleteParticipationsModal({ open, onClose, athlete }) {
   const [participations, setParticipations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -83,8 +89,12 @@ export default function AthleteParticipationsModal({ open, onClose, athlete }) {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell><strong>Compétition</strong></TableCell>
-                  <TableCell><strong>Statut</strong></TableCell>
+                  <TableCell>
+                    <strong>Compétition</strong>
+                  </TableCell>
+                  <TableCell>
+                    <strong>Statut</strong>
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
