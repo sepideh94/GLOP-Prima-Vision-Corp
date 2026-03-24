@@ -25,6 +25,7 @@ import static org.springframework.http.HttpHeaders.CONTENT_DISPOSITION;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.analytics.application.PdfGeneratorService;
+import com.ciblorgasport.analytics.dto.SectionVisitCount;
 import com.ciblorgasport.commissionner.CommissionnerCreationService;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
@@ -221,6 +222,16 @@ public class AdminController {
         headers.setContentDispositionFormData("attachment", "rapport_expert_ciblorgasport.pdf");
 
         return ResponseEntity.ok().headers(headers).body(pdfBytes);
+    }
+    
+    @GetMapping("/stats/consultations")
+    public ResponseEntity<List<SectionVisitCount>> getMostConsultedSections() {
+        return ResponseEntity.ok(analyticsService.getMostConsultedSections());
+    }
+
+    @GetMapping("/stats/consultations-by-role")
+    public ResponseEntity<List<SectionVisitCount>> getMostConsultedSectionsByRole(@RequestParam("role") String role) {
+        return ResponseEntity.ok(analyticsService.getMostConsultedSectionsByRole(role));
     }
     
 
