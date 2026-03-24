@@ -48,6 +48,10 @@ services:
       # Expéditeur + base URL pour liens
       MAIL_FROM: ${MAIL_FROM}
       APP_BASE_URL: ${APP_BASE_URL}
+      # URL publique du backend (lien d'activation dans les mails → /api/auth/activate)
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:8083}
+      # Aligné sur le front Docker (HashRouter en prod) : liens du type https://domaine/#/login
+      APP_FRONTEND_HASH_ROUTER: ${APP_FRONTEND_HASH_ROUTER:-true}
 
       # S3/MinIO Storage
       S3_ENDPOINT: ${S3_ENDPOINT:-http://minio:9000}

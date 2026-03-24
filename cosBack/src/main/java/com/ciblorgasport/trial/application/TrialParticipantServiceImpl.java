@@ -10,9 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.commissionner.CommissionerRepository;
+import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
+import com.ciblorgasport.email.EmailService;
+import com.ciblorgasport.notification.application.NotificationService;
+import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.dto.TeamResponse;
 import com.ciblorgasport.team.infrastructure.TeamRepository;
@@ -38,6 +43,9 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     private final AthleteRepository athleteRepository;
     private final TeamRepository teamRepository;
     private final ParticipationRepository participationRepository;
+    private final CommissionerRepository commissionerRepository;
+    private final EmailService emailService;
+    private final NotificationService notificationService;
 
     private boolean isAthleteEligible(Athlete athlete) {
         return athlete != null && athlete.isActive() && athlete.isProfileComplete();
@@ -180,8 +188,30 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 .findAccessibleByIdForAthlete(trialParticipantId, athleteId)
                 .orElseThrow(() -> new EntityNotFoundException("Participation à l'épreuve introuvable"));
 
+        Athlete athlete = athleteRepository.findById(athleteId)
+                .orElseThrow(() -> new EntityNotFoundException("Athlète introuvable"));
+
         participant.declareForfeit();
         trialParticipantRepository.save(participant);
+
+        List<Commissionner> commissionners = commissionerRepository.findAll();
+        String athleteName = athlete.getFirstName() + " " + athlete.getLastName();
+
+        for (Commissionner c : commissionners) {
+            emailService.sendCommissionerForfeitDeclaredEmail(
+                    c.getEmail(),
+                    c.getFirstName(),
+                    athleteName
+            );
+
+            notificationService.createSystemNotification(
+                    c,
+                    NotificationType.ATHLETE_FORFEIT_DECLARED,
+                    "Forfait déclaré",
+                    "L'athlète " + athleteName + " a déclaré forfait pour une épreuve.",
+                    "/commissioner/competitions"
+            );
+        }
     }
 
     @Transactional(readOnly = true)

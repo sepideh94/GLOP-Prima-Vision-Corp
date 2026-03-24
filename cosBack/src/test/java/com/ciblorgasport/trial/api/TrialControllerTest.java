@@ -2,6 +2,8 @@ package com.ciblorgasport.trial.api;
 
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -25,9 +27,11 @@ import com.ciblorgasport.trial.application.TrialService;
 import com.ciblorgasport.trial.dto.AthleteSummary;
 import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
+import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(TrialController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("TrialController — résultats & participants")
 class TrialControllerTest {
@@ -40,6 +44,80 @@ class TrialControllerTest {
     @MockitoBean private TrialResultService trialResultService;
     @MockitoBean private JwtService jwtService;
     @MockitoBean private UserAccountService userAccountService;
+
+    // =========================================================================
+    // CREATE / READ / UPDATE
+    // =========================================================================
+
+    @Test
+    @DisplayName("POST /api/trials — 201")
+    void shouldCreateTrial() throws Exception {
+        given(trialService.create(org.mockito.ArgumentMatchers.any()))
+                .willReturn(TrialResponse.builder().id(11L).name("100m").build());
+
+        String body = """
+                {
+                  "trialName": "FIFTY_M_FREESTYLE",
+                  "startDate": "2026-03-20",
+                  "startHour": "10:00:00",
+                  "endDate": "2026-03-20",
+                  "endHour": "11:00:00",
+                  "mode": "INDIVIDUAL",
+                  "categoryGender": "MALE",
+                  "siteId": 1,
+                  "competitionId": 1
+                }
+                """;
+
+        mockMvc.perform(post("/api/trials").contentType("application/json").content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(11));
+    }
+
+    @Test
+    @DisplayName("GET /api/trials — avec/sans competitionId")
+    void shouldGetTrialsWithAndWithoutCompetitionFilter() throws Exception {
+        given(trialService.getAll()).willReturn(List.of(TrialResponse.builder().id(1L).name("A").build()));
+        given(trialService.getByCompetitionId(99L)).willReturn(List.of(TrialResponse.builder().id(2L).name("B").build()));
+
+        mockMvc.perform(get("/api/trials"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1));
+
+        mockMvc.perform(get("/api/trials").param("competitionId", "99"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(2));
+    }
+
+    @Test
+    @DisplayName("GET/PUT /api/trials/{id}")
+    void shouldGetAndUpdateTrial() throws Exception {
+        given(trialService.getById(7L)).willReturn(TrialResponse.builder().id(7L).name("Old").build());
+        given(trialService.update(org.mockito.ArgumentMatchers.eq(7L), org.mockito.ArgumentMatchers.any()))
+                .willReturn(TrialResponse.builder().id(7L).name("New").build());
+
+        mockMvc.perform(get("/api/trials/{id}", 7L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(7));
+
+        String body = """
+                {
+                  "trialName": "FIFTY_M_FREESTYLE",
+                  "startDate": "2026-03-20",
+                  "startHour": "10:00:00",
+                  "endDate": "2026-03-20",
+                  "endHour": "11:00:00",
+                  "mode": "INDIVIDUAL",
+                  "categoryGender": "MALE",
+                  "siteId": 1,
+                  "competitionId": 1
+                }
+                """;
+
+        mockMvc.perform(put("/api/trials/{id}", 7L).contentType("application/json").content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("New"));
+    }
 
     // =========================================================================
     // GET /api/trials/{id}/results

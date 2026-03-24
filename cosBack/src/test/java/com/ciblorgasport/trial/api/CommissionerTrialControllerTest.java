@@ -59,6 +59,7 @@ import com.ciblorgasport.user.application.UserAccountService;
  * utilise les exceptions common.exception pour tester le handler correctement.
  */
 @WebMvcTest(CommissionerTrialController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import({SecurityDisabledConfig.class, GlobalExceptionHandler.class})
 @DisplayName("CommissionerTrialController — enregistrement des résultats")
 class CommissionerTrialControllerTest {

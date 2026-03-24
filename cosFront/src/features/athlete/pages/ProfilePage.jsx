@@ -23,6 +23,7 @@ import {
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import ArticleIcon from "@mui/icons-material/Article";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -30,6 +31,7 @@ import { fr } from "date-fns/locale";
 import * as yup from "yup";
 import athleteProfileService from "../services/athleteProfileService";
 import { useAuth } from "../../../common/contexts/AuthContext";
+import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 const PROFILE_HERO =
   "https://images.unsplash.com/photo-1530549387789-4c1017266635?auto=format&fit=crop&w=2000&q=78";
@@ -118,6 +120,12 @@ export default function ProfilePage() {
   const [charterModalOpen, setCharterModalOpen] = useState(false);
   const [countries, setCountries] = useState([]);
   const [loadingCountries, setLoadingCountries] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewBlob, setPreviewBlob] = useState(null);
+  const [previewTitle, setPreviewTitle] = useState("");
+  const [previewFileName, setPreviewFileName] = useState("");
 
   // Vérifier que l'utilisateur est un athlète
   useEffect(() => {
@@ -218,6 +226,30 @@ export default function ProfilePage() {
   const handleFileChange = (field, file) => {
     if (file) {
       handleChange(field, file);
+    }
+  };
+
+  const openFilePreview = async (type) => {
+    setPreviewError("");
+    setPreviewLoading(true);
+    try {
+      if (type === "passport") {
+        const blob = await athleteProfileService.downloadPassportBlob();
+        setPreviewBlob(blob);
+        setPreviewTitle("Passeport / CNI");
+        setPreviewFileName("passeport");
+      } else {
+        const blob = await athleteProfileService.downloadMedicalCertificateBlob();
+        setPreviewBlob(blob);
+        setPreviewTitle("Certificat médical");
+        setPreviewFileName("certificat-medical");
+      }
+      setPreviewOpen(true);
+    } catch {
+      setPreviewError("Impossible d'afficher le document pour le moment.");
+      setPreviewOpen(true);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -544,6 +576,16 @@ export default function ProfilePage() {
                   : "Choisir un fichier"}
               </Button>
             </label>
+            {formData.passportFile && (
+              <Button
+                variant="text"
+                startIcon={<VisibilityIcon />}
+                onClick={() => openFilePreview("passport")}
+                sx={{ mt: 1, textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
+              >
+                Visualiser le document
+              </Button>
+            )}
             {errors.passportFile && (
               <Typography variant="caption" color="error" sx={{ mt: 0.5, fontWeight: 700 }}>
                 {errors.passportFile}
@@ -587,6 +629,16 @@ export default function ProfilePage() {
                   : "Choisir un fichier"}
               </Button>
             </label>
+            {formData.medicalCertificateFile && (
+              <Button
+                variant="text"
+                startIcon={<VisibilityIcon />}
+                onClick={() => openFilePreview("medical")}
+                sx={{ mt: 1, textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
+              >
+                Visualiser le document
+              </Button>
+            )}
             {errors.medicalCertificateFile && (
               <Typography variant="caption" color="error" sx={{ mt: 0.5, fontWeight: 700 }}>
                 {errors.medicalCertificateFile}
@@ -769,6 +821,23 @@ export default function ProfilePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <UploadedFilePreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBlob(null);
+          setPreviewError("");
+          setPreviewTitle("");
+          setPreviewFileName("");
+        }}
+        title={previewTitle || "Visualisation du document"}
+        fileBlob={previewBlob}
+        fileName={previewFileName}
+        contentType={previewBlob?.type || ""}
+        loading={previewLoading}
+        error={previewError}
+      />
     </Box>
   );
 }

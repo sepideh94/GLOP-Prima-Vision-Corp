@@ -7,11 +7,14 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.config.FrontendUrlBuilder;
+
 @Service
 @Profile("!test")
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private final FrontendUrlBuilder frontendUrlBuilder;
 
     @Value("${mail.from}")
     private String from;
@@ -19,11 +22,16 @@ public class EmailServiceImpl implements EmailService {
     @Value("${api.base-url:http://localhost:8083}")
     private String apiBaseUrl;
 
-    @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")
-    private String appBaseUrl;
-
-    public EmailServiceImpl(JavaMailSender mailSender) {
+    public EmailServiceImpl(JavaMailSender mailSender, FrontendUrlBuilder frontendUrlBuilder) {
         this.mailSender = mailSender;
+        this.frontendUrlBuilder = frontendUrlBuilder;
+    }
+
+    private String apiBaseNoSlash() {
+        if (apiBaseUrl == null || apiBaseUrl.isBlank()) {
+            return "http://localhost:8083";
+        }
+        return apiBaseUrl.replaceAll("/$", "");
     }
 
     private String hello(String firstName) {
@@ -41,7 +49,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendActivationEmail(String to, String firstName, String token) {
-        String link = apiBaseUrl + "/api/auth/activate?token=" + token;
+        // Lien vers l’API (redirect HTTP 302 vers le front) — API_BASE_URL doit être joignable depuis l’extérieur.
+        String link = apiBaseNoSlash() + "/api/auth/activate?token=" + token;
 
         sendEmail(
                 to,
@@ -59,7 +68,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendPasswordResetEmail(String to, String firstName, String token) {
-        String link = appBaseUrl + "/reset-password?token=" + token;
+        String link = frontendUrlBuilder.path("/reset-password?token=" + token);
 
         sendEmail(
                 to,
@@ -76,7 +85,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendCommissionnerInviteEmail(String to, String firstName, String token) {
-        String link = appBaseUrl + "/reset-password?token=" + token;
+        String link = frontendUrlBuilder.path("/reset-password?token=" + token);
 
         sendEmail(
                 to,
@@ -93,8 +102,8 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendAthleteInviteEmail(String to, String firstName, String token) {
-        String resetLink = appBaseUrl + "/reset-password?token=" + token;
-        String competitionsLink = appBaseUrl + "/auth/athlete-invite?next=/athlete/competitions";
+        String resetLink = frontendUrlBuilder.path("/reset-password?token=" + token);
+        String competitionsLink = frontendUrlBuilder.path("/login?next=/athlete/competitions");
 
         sendEmail(
                 to,
@@ -119,9 +128,9 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendVolonteerInviteEmail(String to, String firstName, String token) {
-        String resetLink = appBaseUrl + "/reset-password?token=" + token;
+        String resetLink = frontendUrlBuilder.path("/reset-password?token=" + token);
 
-        String volonteerLink = appBaseUrl + "/auth/volonteer-invite?next=/volonteer/dashboard";
+        String volonteerLink = frontendUrlBuilder.path("/login?next=/volunteer");
 
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setFrom(from);
@@ -165,7 +174,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendAccreditationValidatedEmail(String to, String firstName) {
-        String loginLink = appBaseUrl + "/login";
+        String loginLink = frontendUrlBuilder.path("/login?next=/commissioner");
 
         String body = """
                 Bonjour %s,
@@ -185,7 +194,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendAccreditationRefusedEmail(String to, String firstName, String reason) {
-        String loginLink = appBaseUrl + "/login";
+        String loginLink = frontendUrlBuilder.path("/login?next=/commissioner");
 
         String body = """
                 Bonjour %s,
@@ -206,7 +215,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendAdminAccreditationSubmittedEmail(String toAdminEmail, String adminFirstName,
             String commissionnerName) {
-        String loginLink = appBaseUrl + "/login";
+        String loginLink = frontendUrlBuilder.path("/login?next=/admin/users");
 
         String body = """
                 Bonjour %s,
@@ -228,7 +237,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendCommissionerParticipationSubmittedEmail(String toEmail, String commissionnerName,
             String athleteName) {
-        String link = appBaseUrl + "/commissioner/participations";
+        String link = frontendUrlBuilder.path("/login?next=/commissioner/participants");
 
         String body = """
                 Bonjour %s,
@@ -250,7 +259,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendAthleteParticipationValidatedEmail(String toEmail, String athleteName) {
-        String link = appBaseUrl + "/athlete/competitions";
+        String link = frontendUrlBuilder.path("/login?next=/athlete/competitions");
 
         String body = """
                 Bonjour %s,
@@ -272,7 +281,7 @@ public class EmailServiceImpl implements EmailService {
     @Override
     public void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument,
             String reason) {
-        String link = appBaseUrl + "/athlete/profile";
+        String link = frontendUrlBuilder.path("/login?next=/athlete/profile");
 
         String body = """
                 Bonjour %s,
@@ -299,7 +308,7 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendTeamParticipationValidatedEmail(String toEmail, String athleteName, String teamName) {
-        String link = appBaseUrl + "/athlete/competitions";
+        String link = frontendUrlBuilder.path("/login?next=/athlete/competitions");
 
         String body = """
                 Bonjour %s,
@@ -318,4 +327,22 @@ public class EmailServiceImpl implements EmailService {
 
         sendEmail(toEmail, "Participation de votre équipe confirmée - CiblOrgaSport", body);
     }
+
+    @Override
+public void sendCommissionerForfeitDeclaredEmail(String to, String commissionerFirstName, String athleteName) {
+    String subject = "Déclaration de forfait d'un athlète";
+
+    String body = """
+            Bonjour %s,
+
+            L'athlète %s a déclaré forfait pour une épreuve.
+
+            Vous pouvez consulter les informations dans votre espace commissaire.
+
+            Cordialement,
+            L'équipe CiblorgaSport
+            """.formatted(commissionerFirstName, athleteName);
+
+    sendEmail(to, subject, body);
+}
 }

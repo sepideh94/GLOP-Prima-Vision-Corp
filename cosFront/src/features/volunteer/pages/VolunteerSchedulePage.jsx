@@ -22,14 +22,14 @@ const STATUS_LABELS = {
   UPCOMING: "À venir",
   IN_PROGRESS: "En cours",
   COMPLETED: "Terminé",
-  CANCELLED: "Annulé",
+  CANCELED: "Annulé",
 };
 
 const STATUS_COLORS = {
   UPCOMING: "#f59e0b",
   IN_PROGRESS: "#22d3ee",
   COMPLETED: "#16a34a",
-  CANCELLED: "#ef4444",
+  CANCELED: "#ef4444",
 };
 
 const formatDateTime = (dateTimeString) => {

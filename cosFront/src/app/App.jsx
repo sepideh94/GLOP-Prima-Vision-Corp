@@ -1,7 +1,16 @@
 import AuthProvider from "../common/contexts/AuthContext";
+import {
+  BrowserRouter,
+  HashRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { USE_HASH_ROUTER } from "../common/utils/spaNavigation";
 import GoogleMapsProvider from "../common/components/GoogleMapsProvider";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import PrivateRoute from "../common/components/PrivateRoute.jsx";
+
+const AppRouter = USE_HASH_ROUTER ? HashRouter : BrowserRouter;
 
 import Layout from "../common/components/Layout";
 
@@ -43,6 +52,7 @@ import AthleteCompetitionsPage from
 import ProfilePage from "../features/athlete/pages/ProfilePage.jsx";
 import AthleteSchedulePage from "../features/athlete/pages/AthleteSchedulePage.jsx";
 import AdminCreateSchedulePage from "../features/schedule/pages/AdminCreateSchedulePage.jsx";
+import AdminDashboardPage from "../features/dashboard/pages/AdminDashboardPage.jsx";
 import AdminFanZonePage from "../features/map/pages/AdminFanZonePage.jsx";
 import AdminMapPage from "../features/map/pages/AdminMapPage.jsx";
 
@@ -50,6 +60,7 @@ import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
 import PublicResultsPage from "../features/spectator/pages/PublicResultsPage.jsx";
+import PublicCompetitionsPage from "../features/spectator/pages/PublicCompetitionsPage.jsx";
 import SpectatorMapPage from "../features/map/pages/SpectatorMapPage.jsx";
 
 
@@ -57,11 +68,12 @@ export default function App() {
   return (
     <GoogleMapsProvider>
     <AuthProvider>
-      <BrowserRouter>
+      <AppRouter>
         <Routes>
           {/* PUBLIC ROUTES */}
           <Route path="/" element={<HomePage />} />
           <Route path="/resultats" element={<PublicResultsPage />} />
+          <Route path="/competitions" element={<PublicCompetitionsPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -110,6 +122,10 @@ export default function App() {
               <Route
                 path="/admin/schedules/create"
                 element={<AdminCreateSchedulePage />}
+              />
+              <Route
+                path="/admin/dashboard"
+                element={<AdminDashboardPage />}
               />
               <Route
                 path="/admin/fan-zones"
@@ -173,7 +189,7 @@ export default function App() {
           {/* FALLBACK */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
+      </AppRouter>
     </AuthProvider>
     </GoogleMapsProvider>
   );

@@ -17,6 +17,7 @@ import {
   TableRow,
   TableCell,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import appTheme from "../../../common/theme/appTheme";
@@ -220,6 +221,7 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
                     <TableCell sx={{ fontWeight: 700 }}>#</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Participant</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Type</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Statut</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -229,6 +231,29 @@ export default function TrialDetailDialog({ open, onClose, trial, competition })
                       <TableCell>{p.displayName}</TableCell>
                       <TableCell>
                         {p.competitorType === "TEAM" ? "Équipe" : "Athlète"}
+                      </TableCell>
+                      <TableCell>
+                        {p.status === "FORFEIT" ? (
+                          <Chip
+                            label="Forfait"
+                            size="small"
+                            sx={{
+                              backgroundColor: "rgba(239, 68, 68, 0.15)",
+                              color: "#b91c1c",
+                              fontWeight: 700,
+                            }}
+                          />
+                        ) : (
+                          <Chip
+                            label="Actif"
+                            size="small"
+                            sx={{
+                              backgroundColor: "rgba(34, 197, 94, 0.15)",
+                              color: "#15803d",
+                              fontWeight: 700,
+                            }}
+                          />
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import appTheme from "../../../common/theme/appTheme";
 import commissionerAccreditationService from "../services/commissionerAccreditationService";
+import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 export default function Commissioner() {
   const navigate = useNavigate();
@@ -26,6 +27,10 @@ export default function Commissioner() {
   const [uploadSuccess, setUploadSuccess] = useState("");
   const [accreditationStatusLoading, setAccreditationStatusLoading] = useState(true);
   const [hasAccreditationDocument, setHasAccreditationDocument] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewBlob, setPreviewBlob] = useState(null);
 
   const sections = [
     {
@@ -59,17 +64,6 @@ export default function Commissioner() {
   useEffect(() => {
     refreshAccreditationStatus();
   }, []);
-
-  const openBlob = (blob, filename) => {
-    const blobUrl = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(blobUrl);
-  };
 
   const handleChooseAccreditation = () => {
     setUploadError("");
@@ -105,8 +99,10 @@ export default function Commissioner() {
     setUploadError("");
     setUploadSuccess("");
     try {
+      setPreviewLoading(true);
       const blob = await commissionerAccreditationService.downloadMyAccreditation();
-      openBlob(blob, "accreditation-cen");
+      setPreviewBlob(blob);
+      setPreviewOpen(true);
       setHasAccreditationDocument(true);
     } catch (err) {
       setHasAccreditationDocument(false);
@@ -114,6 +110,9 @@ export default function Commissioner() {
         err.response?.data?.message ||
           "Aucun document d'accréditation disponible pour le moment."
       );
+    }
+    finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -350,6 +349,21 @@ export default function Commissioner() {
         hidden
         accept=".pdf,.png,.jpg,.jpeg"
         onChange={handleAccreditationUpload}
+      />
+
+      <UploadedFilePreviewModal
+        open={previewOpen}
+        onClose={() => {
+          setPreviewOpen(false);
+          setPreviewBlob(null);
+          setPreviewError("");
+        }}
+        title="Document d’accréditation CEN"
+        fileBlob={previewBlob}
+        fileName="accreditation-cen"
+        contentType={previewBlob?.type || ""}
+        loading={previewLoading}
+        error={previewError}
       />
     </Box>
   );

@@ -4,12 +4,13 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
 import com.ciblorgasport.security.ActivationTokenRepository;
@@ -17,7 +18,7 @@ import com.ciblorgasport.security.TokenType;
 import com.ciblorgasport.security.dto.JwtAuthenticationResponse;
 import com.ciblorgasport.security.dto.SignInRequest;
 import com.ciblorgasport.security.dto.SignUpRequest;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.user.application.UserAccountService;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
@@ -39,8 +40,8 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final ActivationTokenRepository activationTokenRepository;
 
-    @Value("${app.base-url:${APP_BASE_URL:http://localhost:3000}}")
-    private String appBaseUrl;
+    private final AnalyticsService analyticsService;
+    private final FrontendUrlBuilder frontendUrlBuilder;
 
     private String normalizeEmail(String email) {
     	
@@ -88,17 +89,17 @@ public class AuthenticationService {
                 .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
 
         if (at.isUsed()) {
-            return appBaseUrl + "/login?activated=true&already=true";
+            return frontendUrlBuilder.path("/login?activated=true&already=true");
         }
 
         if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-            return appBaseUrl + "/login?activated=false&reason=token_expired";
+            return frontendUrlBuilder.path("/login?activated=false&reason=token_expired");
         }
 
         UserAccount user = at.getUser();
 
         if (user.isActive()) {
-            return appBaseUrl + "/login?activated=true&already=true";
+            return frontendUrlBuilder.path("/login?activated=true&already=true");
         }
 
         user.setActive(true);
@@ -107,7 +108,7 @@ public class AuthenticationService {
         at.setUsed(true);
         activationTokenRepository.save(at);
 
-        return appBaseUrl + "/login?activated=true";
+        return frontendUrlBuilder.path("/login?activated=true");
     }
 
     public JwtAuthenticationResponse signin(SignInRequest request) {
@@ -117,7 +118,10 @@ public class AuthenticationService {
 
         var user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
-
+        
+        //log suivi des indicateurs
+        analyticsService.logAction(user.getEmail(), "LOGIN", "Connexion réussie");
+        
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
 

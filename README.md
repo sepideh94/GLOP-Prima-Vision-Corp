@@ -7,6 +7,8 @@
 - [Technologies utilisées](#technologies-utilisées)
 - [Fonctionnalités](#fonctionnalités)
 - [Installation et lancement](#installation-et-lancement)
+- [Configuration](#configuration)
+- [Liens des e-mails (activation, invitations)](#liens-des-e-mails-activation-invitations)
 - [Identifiants de connexion](#identifiants-de-connexion)
 - [Tests](#tests)
 - [Structure du projet](#structure-du-projet)
@@ -313,6 +315,23 @@ Vous pouvez personnaliser l'application via des variables d'environnement dans `
 - `DB_PASSWORD` : Mot de passe PostgreSQL (défaut: `postgres123`)
 - `CORS_ALLOWED_ORIGINS` : Origines autorisées pour CORS
 - `VITE_API_BASE_URL` : URL de l'API backend pour le frontend
+- `APP_BASE_URL` : URL **publique** du site (frontend), utilisée pour les liens et redirections générés par le backend (ex. après activation de compte)
+- `API_BASE_URL` : URL **publique** de l’API (backend), utilisée notamment pour le **lien d’activation** dans les e-mails (`GET …/api/auth/activate?token=…`) — doit être joignable depuis le navigateur de l’utilisateur
+- `APP_FRONTEND_HASH_ROUTER` : si `true`, le backend construit les liens vers le front au format `https://votredomaine/#/chemin` (HashRouter). À aligner avec le mode de routage du build front (voir ci-dessous)
+
+### Liens des e-mails (activation, invitations)
+
+Les e-mails (activation de compte, réinitialisation de mot de passe, invitations commissaire / athlète / volontaire, etc.) contiennent des URLs générées côté **backend**. Pour qu’un clic ouvre la **bonne page**, les variables suivantes doivent être cohérentes entre elles et avec le déploiement réel :
+
+| Variable | Rôle |
+|----------|------|
+| **`API_BASE_URL`** | Base utilisée pour le lien d’**activation** : `{API_BASE_URL}/api/auth/activate?token=…`. Le navigateur appelle cette URL ; le backend active le compte puis **redirige** vers le front (`APP_BASE_URL` + chemin). Si cette URL est interne ou incorrecte, le lien dans le mail ne fonctionnera pas. |
+| **`APP_BASE_URL`** | Base du **frontend** (sans slash final de préférence, selon config). Sert aux redirections après activation et aux liens directs vers des pages (connexion, pages avec `?next=…`, etc.). |
+| **`APP_FRONTEND_HASH_ROUTER`** | Quand elle vaut `true`, les chemins vers le SPA incluent le hash : `…/#/login?…`. Quand elle vaut `false`, les URLs sont du type `…/login?…` (adapté à un **BrowserRouter** derrière un reverse-proxy qui renvoie `index.html` pour les routes). |
+
+**Côté frontend**, en build de production, le routage utilise par défaut un **HashRouter** sauf si vous définissez explicitement `VITE_USE_HASH_ROUTER=false` au build (voir `cosFront` / `spaNavigation.js`). **`APP_FRONTEND_HASH_ROUTER` doit refléter le même choix** que ce build, sinon les liens des mails pointeront vers des URLs que l’application ne sait pas interpréter.
+
+En production, renseignez au minimum `APP_BASE_URL` et `API_BASE_URL` avec les **URLs publiques** vues par les utilisateurs (HTTPS, bons hôtes/ports). Référence Docker : `docker-compose.yml` et `docker-compose.prod.yml` (ex. `APP_FRONTEND_HASH_ROUTER: "true"` en prod si le front est en hash routing).
 
 ### Ports par défaut
 
