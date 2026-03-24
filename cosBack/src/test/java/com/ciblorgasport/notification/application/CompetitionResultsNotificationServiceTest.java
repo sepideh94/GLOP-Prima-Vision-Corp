@@ -19,7 +19,7 @@ import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.notification.dto.NotificationRecipient;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.trial.domain.Trial;
 
 @ExtendWith(MockitoExtension.class)
