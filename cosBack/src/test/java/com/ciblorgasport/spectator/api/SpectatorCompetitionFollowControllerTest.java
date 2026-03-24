@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -34,6 +35,7 @@ import com.ciblorgasport.spectator.dto.CompetitionFollowResponse;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(SpectatorCompetitionFollowController.class)
+@ActiveProfiles("test")
 @Import({SecurityDisabledConfig.class, GlobalExceptionHandler.class})
 @DisplayName("SpectatorCompetitionFollowController")
 class SpectatorCompetitionFollowControllerTest {

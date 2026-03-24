@@ -2,7 +2,6 @@ package com.ciblorgasport.trial.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
@@ -19,7 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ciblorgasport.common.model.Status;
+import com.ciblorgasport.notification.application.CompetitionResultsNotificationService;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
@@ -43,6 +42,8 @@ class RecordTrialResultsUseCaseTest {
     private ResultRepository resultRepository;
     @Mock
     private RankingService rankingService;
+    @Mock
+    private CompetitionResultsNotificationService competitionResultsNotificationService;
 
     @InjectMocks
     private RecordTrialResultsUseCase useCase;
