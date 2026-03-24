@@ -40,6 +40,27 @@ function setupMocks(page) {
     page.route('**/api/admin/report-summary', (route) =>
       route.fulfill({ status: 200, contentType: 'text/plain', body: MOCK_SUMMARY })
     ),
+    page.route('**/api/admin/stats/consultations', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { section: "Calendrier Épreuves", visitCount: 150 },
+          { section: "Résultats Natation", visitCount: 85 },
+          { section: "Plan du Site", visitCount: 20 },
+        ]),
+      })
+    ),
+    page.route('**/api/admin/stats/consultations-by-role**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { section: "Espace_Athlete", visitCount: 120 },
+          { section: "Calendrier", visitCount: 75 },
+        ]),
+      })
+    ),
     page.route('**/api/admin/report-download', (route) => {
       if (route.request().method() !== 'POST') {
         route.continue();
@@ -169,6 +190,12 @@ test.describe('Admin Dashboard', () => {
     await page.route('**/api/admin/report-summary', (route) =>
       route.fulfill({ status: 200, contentType: 'text/plain', body: MOCK_SUMMARY })
     );
+    await page.route('**/api/admin/stats/consultations', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+    );
+    await page.route('**/api/admin/stats/consultations-by-role**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+    );
 
     await page.goto('/admin/dashboard');
     await page.waitForLoadState('networkidle');
@@ -183,6 +210,12 @@ test.describe('Admin Dashboard', () => {
     );
     await page.route('**/api/admin/report-summary', (route) =>
       route.fulfill({ status: 200, contentType: 'text/plain', body: MOCK_SUMMARY })
+    );
+    await page.route('**/api/admin/stats/consultations', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
+    );
+    await page.route('**/api/admin/stats/consultations-by-role**', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) })
     );
 
     await page.goto('/admin/dashboard');

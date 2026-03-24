@@ -3,6 +3,9 @@ package com.ciblorgasport.analytics.application;
 import com.ciblorgasport.admin.AdminStatsResponse;
 import com.ciblorgasport.admin.ChartPointResponse;
 import com.ciblorgasport.analytics.domain.SystemLog;
+import com.ciblorgasport.analytics.dto.SectionVisitCount;
+import com.ciblorgasport.analytics.dto.SectionVisitCountView;
+import com.ciblorgasport.analytics.infrastructure.PageVisitRepository;
 import com.ciblorgasport.analytics.infrastructure.SystemLogRepository;
 import com.ciblorgasport.incident.infrastructure.IncidentRepository;
 import com.ciblorgasport.volonteer.infrastructure.VolonteerRepository;
@@ -14,8 +17,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,6 +31,7 @@ public class AnalyticsService {
     private final SystemLogRepository logRepository;
     private final IncidentRepository incidentRepository;
     private final VolonteerRepository volonteerRepository;
+    private final PageVisitRepository pageVisitRepository;
 
     /**
      * Enregistre une trace d'activité dans le système.
@@ -60,6 +67,74 @@ public class AnalyticsService {
      */
     public long getActiveIncidentsCount() {
         return incidentRepository.count();
+    }
+
+    public List<SectionVisitCount> getMostConsultedSections() {
+        return normalizeSectionBuckets(pageVisitRepository.findMostConsultedSections());
+    }
+
+    public List<SectionVisitCount> getMostConsultedSectionsByRole(String role) {
+        return normalizeSectionBuckets(pageVisitRepository.findMostConsultedSectionsByRole(role));
+    }
+
+    private List<SectionVisitCount> normalizeSectionBuckets(List<SectionVisitCount> rawSections) {
+        if (rawSections == null || rawSections.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, Long> merged = new LinkedHashMap<>();
+        for (SectionVisitCount row : rawSections) {
+            String normalizedSection = normalizeSectionName(row.getSection());
+            long count = row.getVisitCount() != null ? row.getVisitCount() : 0L;
+            merged.merge(normalizedSection, count, Long::sum);
+        }
+
+        return merged.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue(Comparator.reverseOrder()))
+                .map(entry -> new SectionVisitCountView(entry.getKey(), entry.getValue()))
+                .collect(Collectors.toList());
+    }
+
+    private String normalizeSectionName(String rawSection) {
+        if (rawSection == null || rawSection.isBlank()) {
+            return "Section Inconnue";
+        }
+
+        String canonical = rawSection
+                .trim()
+                .replace('_', ' ')
+                .replace('-', ' ')
+                .replaceAll("\\s+", " ")
+                .toUpperCase(Locale.ROOT);
+
+        return switch (canonical) {
+            case "PROFIL ATHLETE" -> "Profil Athlete";
+            case "GESTION EPREUVES" -> "Gestion Epreuves";
+            case "VALIDATION DOSSIERS" -> "Validation Dossiers";
+            case "ESPACE ADMIN" -> "Espace Admin";
+            case "ESPACE ATHLETE" -> "Espace Athlete";
+            case "ESPACE VOLONTAIRE", "ESPACE VOLONTEER" -> "Espace Volontaire";
+            case "ESPACE COMMISSAIRE", "ESPACE COMMISSIONER", "ESPACE COMMISSIONNER" -> "Espace Commissaire";
+            case "ESPACE EQUIPE", "ESPACE TEAM" -> "Espace Equipe";
+            case "STATISTIQUES" -> "Statistiques";
+            case "NOTIFICATIONS" -> "Notifications";
+            default -> toTitleCase(canonical);
+        };
+    }
+
+    private String toTitleCase(String input) {
+        String[] parts = input.toLowerCase(Locale.ROOT).split(" ");
+        StringBuilder out = new StringBuilder();
+        for (String part : parts) {
+            if (part.isBlank()) {
+                continue;
+            }
+            if (!out.isEmpty()) {
+                out.append(' ');
+            }
+            out.append(Character.toUpperCase(part.charAt(0))).append(part.substring(1));
+        }
+        return out.isEmpty() ? "Section Inconnue" : out.toString();
     }
     
     public String generateWeeklyReportSummary() {

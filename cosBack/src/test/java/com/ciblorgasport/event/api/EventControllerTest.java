@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(EventController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 class EventControllerTest {
 

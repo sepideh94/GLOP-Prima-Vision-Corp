@@ -26,8 +26,10 @@ import com.ciblorgasport.trial.application.TrialResultService;
 import com.ciblorgasport.trial.dto.ResultResponse;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
 import com.ciblorgasport.user.application.UserAccountService;
+import org.springframework.test.context.ActiveProfiles;
 
 @WebMvcTest(AthleteResultsController.class)
+@ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("AthleteResultsController")
 class AthleteResultsControllerTest {
