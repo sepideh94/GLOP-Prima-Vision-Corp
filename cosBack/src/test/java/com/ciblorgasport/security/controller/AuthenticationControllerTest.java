@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthenticationController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @AutoConfigureMockMvc(addFilters = false)
 class AuthenticationControllerTest {
 

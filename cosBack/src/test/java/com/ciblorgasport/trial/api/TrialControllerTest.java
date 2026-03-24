@@ -31,6 +31,7 @@ import com.ciblorgasport.trial.dto.TrialResponse;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(TrialController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("TrialController — résultats & participants")
 class TrialControllerTest {

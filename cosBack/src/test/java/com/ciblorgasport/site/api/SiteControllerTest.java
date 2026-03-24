@@ -27,6 +27,7 @@ import com.ciblorgasport.site.dto.SiteResponse;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(SiteController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("SiteController")
 class SiteControllerTest {

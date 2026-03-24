@@ -27,6 +27,7 @@ import com.ciblorgasport.trial.round.dto.RoundResponse;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(RoundController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("RoundController")
 class RoundControllerTest {

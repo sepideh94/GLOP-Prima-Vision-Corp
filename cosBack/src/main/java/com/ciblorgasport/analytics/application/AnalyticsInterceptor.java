@@ -15,8 +15,10 @@ import com.ciblorgasport.analytics.infrastructure.PageVisitRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 public class AnalyticsInterceptor implements HandlerInterceptor {
 

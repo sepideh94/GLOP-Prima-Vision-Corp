@@ -28,6 +28,7 @@ import com.ciblorgasport.security.services.JwtService;
 import com.ciblorgasport.user.application.UserAccountService;
 
 @WebMvcTest(NotificationController.class)
+@org.springframework.test.context.ActiveProfiles("test")
 @Import(SecurityDisabledConfig.class)
 @DisplayName("NotificationController")
 class NotificationControllerTest {
