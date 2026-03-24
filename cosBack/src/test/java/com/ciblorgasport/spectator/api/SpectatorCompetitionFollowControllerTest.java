@@ -28,7 +28,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.ciblorgasport.common.exception.GlobalExceptionHandler;
 import com.ciblorgasport.config.SecurityDisabledConfig;
 import com.ciblorgasport.security.services.JwtService;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.spectator.application.CompetitionFollowService;
 import com.ciblorgasport.spectator.dto.CompetitionFollowResponse;
 import com.ciblorgasport.user.application.UserAccountService;
