@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -124,5 +125,67 @@ class IncidentFlowIntegrationTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void resolveIncident_shouldUpdateStatusAndTriggerResolvedNotification() throws Exception {
+        Admin admin = Admin.builder()
+                .firstName("Root")
+                .lastName("Admin")
+                .email("admin_resolve@cos.com")
+                .password("x")
+                .build();
+        admin = (Admin) userRepo.save(admin);
+
+        Event event = new Event();
+        event.setName("Incident resolve event");
+        event.setDescription("desc");
+        event.setStartDate(LocalDateTime.now().plusDays(1));
+        event.setEndDate(LocalDateTime.now().plusDays(2));
+        event = eventRepo.save(event);
+
+        String createBody = """
+                {
+                  "title": "Incident à résoudre",
+                  "description": "Test resolve",
+                  "impactLevels": ["TOUS"],
+                  "eventId": %d,
+                  "competitionId": null,
+                  "siteId": null,
+                  "trialId": null
+                }
+                """.formatted(event.getId());
+
+        var adminAuth = new UsernamePasswordAuthenticationToken(admin, null, admin.getAuthorities());
+        mockMvc.perform(post("/api/incidents")
+                        .with(authentication(adminAuth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(createBody))
+                .andExpect(status().is2xxSuccessful());
+
+        Long incidentId = incidentRepo.findByEvent_Id(event.getId()).stream()
+                .findFirst()
+                .orElseThrow()
+                .getId();
+
+        String statusBody = """
+                {
+                  "status": "RESOLU"
+                }
+                """;
+
+        mockMvc.perform(patch("/api/incidents/" + incidentId + "/status")
+                        .with(authentication(adminAuth))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(statusBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(incidentId))
+                .andExpect(jsonPath("$.status").value("RESOLU"));
+
+        com.ciblorgasport.incident.domain.Incident updated = incidentRepo.findById(incidentId).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(updated.getStatus())
+                .isEqualTo(com.ciblorgasport.incident.domain.IncidentStatus.RESOLU);
+
+        verify(incidentNotificationService).notifyIncidentResolved(any());
     }
 }
