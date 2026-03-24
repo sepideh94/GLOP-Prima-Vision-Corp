@@ -1,7 +1,10 @@
 package com.ciblorgasport.athlete.application;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -10,6 +13,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
@@ -54,42 +58,36 @@ public class AthleteService {
     }
 
     @Transactional
-    public List<AthleteResponse> getAthletesByCompetition(Long competitionId) {
-        List<Long> athleteIds;
-        try {
-            List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
+    public List<CompetitionAthleteResponse> getAthletesByCompetition(Long competitionId) {
+        List<Participation> participations = participationRepository.findByCompetition_Id(competitionId);
 
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:afterFindByCompetitionId\",\"message\":\"participations size\",\"data\":{\"size\":\""
-                    + participations.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
+        List<Participation> athleteParticipations = participations.stream()
+                .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
+                .toList();
 
-            athleteIds = participations.stream()
-                    .filter(p -> p.getCompetitorType() == CompetitorType.ATHLETE)
-                    .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
-                    .map(Participation::getCompetitorId)
-                    .distinct()
-                    .toList();
+        List<Long> athleteIds = athleteParticipations.stream()
+                .map(Participation::getCompetitorId)
+                .distinct()
+                .toList();
 
-        } catch (Throwable t) {
-            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:findByCompetitionId\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\""
-                    + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            throw t;
-        }
+        Map<Long, Athlete> athleteById = athleteRepository.findAllById(athleteIds).stream()
+                .collect(Collectors.toMap(Athlete::getId, a -> a));
 
-        System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:athleteIds\",\"message\":\"confirmed athleteIds size\",\"data\":{\"size\":\""
-                + athleteIds.size() + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-
-        try {
-            return athleteRepository.findAllById(athleteIds).stream()
-                    .map(AthleteResponse::fromEntity)
-                    .sorted((a, b) -> a.getLastName().compareToIgnoreCase(b.getLastName()))
-                    .collect(Collectors.toList());
-        } catch (Throwable t) {
-            String m = (t.getMessage() != null ? t.getMessage().replace("\"", "'").replace("\n", " ") : "null");
-            System.err.println("[DEBUG] {\"location\":\"AthleteService.getAthletesByCompetition:stream\",\"message\":\"exception\",\"data\":{\"exceptionClass\":\""
-                    + t.getClass().getName() + "\",\"message\":\"" + m + "\"},\"timestamp\":" + System.currentTimeMillis() + "}");
-            throw t;
-        }
+        return athleteParticipations.stream()
+                .map(p -> {
+                    Athlete athlete = athleteById.get(p.getCompetitorId());
+                    if (athlete == null) {
+                        return null;
+                    }
+                    return CompetitionAthleteResponse.builder()
+                            .athlete(AthleteResponse.fromEntity(athlete))
+                            .status(p.getStatus())
+                            .participationId(p.getId())
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .sorted(Comparator.comparing(r -> r.getAthlete().getLastName(), String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
     }
 
     @Transactional

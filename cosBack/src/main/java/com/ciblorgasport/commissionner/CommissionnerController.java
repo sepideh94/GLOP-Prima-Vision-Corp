@@ -200,9 +200,9 @@ public class CommissionnerController {
     }
 
     @GetMapping("/competitions/{competitionId}/athletes")
-    public ResponseEntity<List<AthleteResponse>> getAthletesByCompetition(
+    public ResponseEntity<List<CompetitionAthleteResponse>> getAthletesByCompetition(
             @PathVariable("competitionId") Long competitionId) {
-        List<AthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
+        List<CompetitionAthleteResponse> athletes = athleteService.getAthletesByCompetition(competitionId);
         return ResponseEntity.ok(athletes);
     }
 

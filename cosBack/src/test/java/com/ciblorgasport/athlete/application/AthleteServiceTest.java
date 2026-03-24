@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteProfileUpdateRequest;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
 import com.ciblorgasport.commissionner.CommissionerRepository;
 import com.ciblorgasport.commissionner.Commissionner;
@@ -265,19 +266,21 @@ class AthleteServiceTest {
     }
 
     @Test
-    @DisplayName("Doit retourner les athlètes par compétition")
+    @DisplayName("Doit retourner tous les athlètes inscrits à la compétition avec statut et participation")
     void getAthletesByCompetition_ShouldReturnFilteredList() {
-        testParticipation.setStatus(ParticipationStatus.CONFIRMED);
-        
+        testParticipation.setStatus(ParticipationStatus.INVITED);
+
         when(participationRepository.findByCompetition_Id(10L))
             .thenReturn(List.of(testParticipation));
-            
+
         when(athleteRepository.findAllById(List.of(1L)))
             .thenReturn(List.of(testAthlete));
-            
-        var list = athleteService.getAthletesByCompetition(10L);
-        
+
+        List<CompetitionAthleteResponse> list = athleteService.getAthletesByCompetition(10L);
+
         assertEquals(1, list.size());
-        assertEquals("Doe", list.get(0).getLastName());
+        assertEquals("Doe", list.get(0).getAthlete().getLastName());
+        assertEquals(ParticipationStatus.INVITED, list.get(0).getStatus());
+        assertEquals(100L, list.get(0).getParticipationId());
     }
 }

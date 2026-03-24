@@ -28,6 +28,7 @@ import com.ciblorgasport.athlete.application.AthleteCreationService;
 import com.ciblorgasport.athlete.application.AthleteImportService;
 import com.ciblorgasport.athlete.application.AthleteService;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
+import com.ciblorgasport.athlete.dto.CompetitionAthleteResponse;
 import com.ciblorgasport.commissionner.CommissionnerAccreditationService;
 import com.ciblorgasport.commissionner.CommissionnerController;
 import com.ciblorgasport.competition.application.CompetitionService;
@@ -151,10 +152,10 @@ class CommissionnerControllerUnitTest {
 
     @Test
     void testGetAthletesByCompetition() {
-        AthleteResponse ar = mock(AthleteResponse.class);
-        when(athleteService.getAthletesByCompetition(1L)).thenReturn(List.of(ar));
+        CompetitionAthleteResponse car = mock(CompetitionAthleteResponse.class);
+        when(athleteService.getAthletesByCompetition(1L)).thenReturn(List.of(car));
 
-        ResponseEntity<List<AthleteResponse>> res = controller.getAthletesByCompetition(1L);
+        ResponseEntity<List<CompetitionAthleteResponse>> res = controller.getAthletesByCompetition(1L);
         assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 

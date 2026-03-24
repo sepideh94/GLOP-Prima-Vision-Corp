@@ -14,4 +14,6 @@ import lombok.NoArgsConstructor;
 public class CompetitionAthleteResponse {
     private AthleteResponse athlete;
     private ParticipationStatus status;
+    /** Identifiant de la participation (validation / refus côté commissaire). */
+    private Long participationId;
 }

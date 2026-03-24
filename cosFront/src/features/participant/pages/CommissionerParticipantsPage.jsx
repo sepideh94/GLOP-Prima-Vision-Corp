@@ -61,6 +61,46 @@ const STATUS_FILTER_OPTIONS = [
   { value: "CONFIRMED", label: "Confirmé" },
 ];
 
+/** Statut affiché en vue « toutes compétitions » quand l’athlète a plusieurs participations */
+const STATUS_DISPLAY_PRIORITY = [
+  "PENDING_VALIDATION",
+  "INVITED",
+  "PENDING",
+  "CONFIRMED",
+  "ACCEPTED",
+  "CANCELED",
+  "COMPLETED",
+];
+
+function normalizeStatus(status) {
+  if (!status) return null;
+
+  if (status === "ACCEPTED") return "ACCEPTED";
+  if (status === "CONFIRMED") return "CONFIRMED";
+  if (status === "INVITED") return "INVITED";
+  if (status === "PENDING_VALIDATION") return "PENDING_VALIDATION";
+  if (status === "PENDING") return "PENDING";
+  if (status === "CANCELED") return "CANCELED";
+  if (status === "COMPLETED") return "COMPLETED";
+
+  return status;
+}
+
+function pickDisplayStatusFromParticipations(participations) {
+  if (!participations?.length) return null;
+  const normalized = participations.map((p) => normalizeStatus(p.status)).filter(Boolean);
+  for (const p of STATUS_DISPLAY_PRIORITY) {
+    if (normalized.includes(p)) return p;
+  }
+  return normalized[0] ?? null;
+}
+
+function toParticipationId(raw) {
+  if (raw === undefined || raw === null || raw === "") return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export default function CommissionerParticipantsPage() {
   const [athletes, setAthletes] = useState([]);
   const [competitions, setCompetitions] = useState([]);
@@ -105,20 +145,6 @@ export default function CommissionerParticipantsPage() {
     }
   }, []);
 
-  const normalizeStatus = (status) => {
-    if (!status) return null;
-
-    if (status === "ACCEPTED") return "ACCEPTED";
-    if (status === "CONFIRMED") return "CONFIRMED";
-    if (status === "INVITED") return "INVITED";
-    if (status === "PENDING_VALIDATION") return "PENDING_VALIDATION";
-    if (status === "PENDING") return "PENDING";
-    if (status === "CANCELED") return "CANCELED";
-    if (status === "COMPLETED") return "COMPLETED";
-
-    return status;
-  };
-
   const translateStatus = (status) => {
     const normalized = normalizeStatus(status);
     return STATUS_LABELS[normalized] || "Non défini";
@@ -158,67 +184,60 @@ export default function CommissionerParticipantsPage() {
     try {
       if (!selectedCompetition) {
         const data = await athleteService.getAllAthletes();
-        const normalized = (data || []).map((a) => ({
-          athlete: a,
-          status: null,
-          participationId: null,
-        }));
-        setAthletes(normalized);
+        const enriched = await Promise.all(
+          (data || []).map(async (a) => {
+            try {
+              const participations = await athleteService.getAthleteParticipations(a.id);
+              const normalizedList = (participations || [])
+                .map((p) => normalizeStatus(p.status))
+                .filter(Boolean);
+              const participationStatuses = [...new Set(normalizedList)];
+              const displayStatus = pickDisplayStatusFromParticipations(participations);
+              const pendingValidation = (participations || []).find(
+                (p) => normalizeStatus(p.status) === "PENDING_VALIDATION"
+              );
+              const reviewParticipationId = toParticipationId(
+                pendingValidation?.participationId ?? pendingValidation?.id
+              );
+              return {
+                athlete: a,
+                status: displayStatus,
+                participationId: reviewParticipationId,
+                participationStatuses,
+              };
+            } catch (err) {
+              console.error(`Erreur récupération participations athlète ${a.id}:`, err);
+              return {
+                athlete: a,
+                status: null,
+                participationId: null,
+                participationStatuses: [],
+              };
+            }
+          })
+        );
+        setAthletes(enriched);
         return;
       }
 
       const data = await athleteService.getAthletesByCompetition(selectedCompetition);
-
-      const athletesFromCompetition = data || [];
-
-      const hasDirectStatus = athletesFromCompetition.some((item) => item?.status);
-
-      if (hasDirectStatus) {
-        const mapped = athletesFromCompetition.map((item) => {
-          const athleteData = item?.athlete ?? item;
-          return {
-            athlete: athleteData,
-            status: item.status ?? null,
-            participationId: item.participationId ?? item.participation?.id ?? null,
-          };
-        });
-        setAthletes(mapped);
-        return;
-      }
-
-      const enrichedAthletes = await Promise.all(
-        athletesFromCompetition.map(async (item) => {
-          const athleteData = item?.athlete ?? item;
-
-          try {
-            const participations = await athleteService.getAthleteParticipations(athleteData.id);
-
-            const currentParticipation = (participations || []).find((p) => {
-              const competitionId =
-                p.competitionId ?? p.competition?.id ?? p.idCompetition ?? p.competitionID;
-
-              return String(competitionId) === String(selectedCompetition);
-            });
-
-            return {
-              athlete: athleteData,
-              status: currentParticipation?.status || null,
-              participationId:
-                currentParticipation?.participationId ?? currentParticipation?.id ?? null,
-            };
-          } catch (err) {
-            console.error(`Erreur récupération participations athlète ${athleteData.id}:`, err);
-
-            return {
-              athlete: athleteData,
-              status: null,
-              participationId: null,
-            };
-          }
-        })
-      );
-
-      setAthletes(enrichedAthletes);
+      const mapped = (data || []).map((item) => {
+        const athleteData = item?.athlete ?? item;
+        const s = normalizeStatus(item?.status ?? null);
+        const rawPid =
+          item?.participationId ??
+          item?.participation?.id ??
+          item?.participationID ??
+          item?.idParticipation ??
+          null;
+        return {
+          athlete: athleteData,
+          status: s,
+          participationId: toParticipationId(rawPid),
+          participationStatuses: s ? [s] : [],
+        };
+      });
+      setAthletes(mapped);
     } catch (err) {
       console.error(err);
       setError("Impossible de charger les athlètes");
@@ -257,8 +276,8 @@ export default function CommissionerParticipantsPage() {
 
     if (statusFilter !== "ALL") {
       list = list.filter((item) => {
-        const s = normalizeStatus(item?.status);
-        return s === statusFilter;
+        const statuses = item.participationStatuses ?? [];
+        return statuses.includes(statusFilter);
       });
     }
 
@@ -330,9 +349,8 @@ export default function CommissionerParticipantsPage() {
     }
   };
 
-  const handleOpenRefuseDialog = (participationId, athleteId) => {
+  const handleOpenRefuseDialog = (participationId) => {
     setRefuseParticipationId(participationId);
-    setRefuseAthleteId(athleteId);
     setRejectedDocument("PASSPORT");
     setRefuseReason("");
     setRefuseDialogOpen(true);
@@ -436,7 +454,7 @@ export default function CommissionerParticipantsPage() {
               <TableCell sx={{ fontWeight: 700, color: appTheme.colors.textPrimary }}>Nom</TableCell>
               <TableCell sx={{ fontWeight: 700, color: appTheme.colors.textPrimary }}>Email</TableCell>
               <TableCell sx={{ fontWeight: 700, color: appTheme.colors.textPrimary, textAlign: "center" }}>
-                {selectedCompetition ? "Statut" : "—"}
+                Statut
               </TableCell>
               <TableCell sx={{ fontWeight: 700, color: appTheme.colors.textPrimary }}>Actions</TableCell>
             </TableRow>
@@ -465,10 +483,12 @@ export default function CommissionerParticipantsPage() {
                 const athleteData = item.athlete ?? item;
                 const status = item?.status ?? null;
                 const participationId = item?.participationId ?? null;
-                const canReview =
-                  !!selectedCompetition &&
-                  participationId &&
-                  normalizeStatus(status) === "PENDING_VALIDATION";
+                const hasMedical = !!athleteData.hasMedicalCertificate;
+                const hasPassportDoc = !!athleteData.hasPassport;
+                const isPendingValidation = normalizeStatus(status) === "PENDING_VALIDATION";
+                const canReview = !!participationId && isPendingValidation;
+                const actionBusy =
+                  participationId != null && actionLoadingId === participationId;
 
                 return (
                   <TableRow key={athleteData.id ?? index} hover>
@@ -479,7 +499,7 @@ export default function CommissionerParticipantsPage() {
                     </TableCell>
                     <TableCell>{athleteData.email}</TableCell>
                     <TableCell align="center">
-                      {selectedCompetition ? (
+                      {status ? (
                         <span style={getStatusStyle(status)}>{translateStatus(status)}</span>
                       ) : (
                         <Typography variant="body2" color="text.secondary">
@@ -489,52 +509,78 @@ export default function CommissionerParticipantsPage() {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap", alignItems: "center" }}>
-                        <Tooltip title="Voir certificat médical">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenMedical(athleteData.id)}
-                            sx={{ color: appTheme.colors.cyan }}
-                          >
-                            <DescriptionIcon fontSize="small" />
-                          </IconButton>
+                        <Tooltip title={hasMedical ? "Voir certificat médical" : "Aucun certificat médical"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={!hasMedical}
+                              onClick={() => hasMedical && handleOpenMedical(athleteData.id)}
+                              sx={{
+                                color: hasMedical ? appTheme.colors.cyan : "#94a3b8",
+                              }}
+                            >
+                              <DescriptionIcon fontSize="small" />
+                            </IconButton>
+                          </span>
                         </Tooltip>
-                        <Tooltip title="Voir passeport / CNI">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenPassport(athleteData.id)}
-                            sx={{ color: "#8b5cf6" }}
-                          >
-                            <BadgeIcon fontSize="small" />
-                          </IconButton>
+                        <Tooltip title={hasPassportDoc ? "Voir passeport / CNI" : "Aucun passeport / CNI"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={!hasPassportDoc}
+                              onClick={() => hasPassportDoc && handleOpenPassport(athleteData.id)}
+                              sx={{
+                                color: hasPassportDoc ? "#8b5cf6" : "#94a3b8",
+                              }}
+                            >
+                              <BadgeIcon fontSize="small" />
+                            </IconButton>
+                          </span>
                         </Tooltip>
-                        {selectedCompetition && (
-                          <>
-                            <Tooltip title={canReview ? "Valider la participation" : "Validation uniquement si statut « à valider »"}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  disabled={!canReview || actionLoadingId === participationId}
-                                  onClick={() => handleValidateParticipation(participationId)}
-                                  sx={{ color: canReview ? "#22c55e" : "#94a3b8" }}
-                                >
-                                  <TaskAltIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <Tooltip title={canReview ? "Refuser la participation" : "Refus uniquement si statut « à valider »"}>
-                              <span>
-                                <IconButton
-                                  size="small"
-                                  disabled={!canReview || actionLoadingId === participationId}
-                                  onClick={() => handleOpenRefuseDialog(participationId)}
-                                  sx={{ color: canReview ? "#ef4444" : "#94a3b8" }}
-                                >
-                                  <CancelIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </>
-                        )}
+                        <Tooltip
+                          title={
+                            canReview
+                              ? "Valider la participation"
+                              : isPendingValidation && !participationId
+                                ? "Identifiant de participation manquant — rechargez la page ou ouvrez le détail des participations"
+                                : "Uniquement lorsque le statut est « en attente de validation »"
+                          }
+                        >
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={!canReview || actionBusy}
+                              onClick={() => handleValidateParticipation(participationId)}
+                              sx={{
+                                color: canReview ? "#22c55e" : "#94a3b8",
+                              }}
+                            >
+                              <TaskAltIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                        <Tooltip
+                          title={
+                            canReview
+                              ? "Refuser la participation"
+                              : isPendingValidation && !participationId
+                                ? "Identifiant de participation manquant — rechargez la page ou ouvrez le détail des participations"
+                                : "Uniquement lorsque le statut est « en attente de validation »"
+                          }
+                        >
+                          <span>
+                            <IconButton
+                              size="small"
+                              disabled={!canReview || actionBusy}
+                              onClick={() => handleOpenRefuseDialog(participationId)}
+                              sx={{
+                                color: canReview ? "#ef4444" : "#94a3b8",
+                              }}
+                            >
+                              <CancelIcon fontSize="small" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
                         <Tooltip title="Voir les participations">
                           <IconButton
                             size="small"
