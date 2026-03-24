@@ -36,7 +36,7 @@ const getStatusChip = (status) => {
       return <Chip label="En attente" color="info" size="small" />;
     case "PENDING_VALIDATION":
       return <Chip label="En attente de validation" color="warning" size="small" />;
-    case "CANCELLED":
+    case "CANCELED":
       return <Chip label="Annulé" color="error" size="small" />;
     default:
       return <Chip label={status || "Inconnu"} size="small" />;

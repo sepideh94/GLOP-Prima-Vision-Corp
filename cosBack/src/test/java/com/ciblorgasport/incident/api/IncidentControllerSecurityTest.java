@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.admin.Admin;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.event.infrastructure.EventRepository;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 import com.ciblorgasport.user.infrastructure.UserAccountRepository;
 
 @SpringBootTest

@@ -3,6 +3,9 @@ package com.ciblorgasport.competition.application;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,6 +13,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +31,7 @@ import com.ciblorgasport.competition.domain.Participation;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.domain.CompetitorType;
+import com.ciblorgasport.competition.dto.AthleteCompetitionDetailsResponse;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.notification.application.NotificationService;
@@ -191,5 +196,45 @@ class ParticipationServiceTest {
         assertThrows(EntityNotFoundException.class, () -> {
             participationService.validateParticipation(999L, true);
         });
+    }
+
+    @Test
+    @DisplayName("isConfirmed retourne true quand la participation de l'athlète est confirmée")
+    void isConfirmed_ReturnsTrue() {
+        when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
+                10L, 1L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED)).thenReturn(true);
+
+        boolean result = participationService.isConfirmed(1L, 10L);
+
+        assertTrue(result);
+        verify(participationRepository).existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
+                10L, 1L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("isConfirmed retourne false quand la participation athlète n'est pas confirmée")
+    void isConfirmed_ReturnsFalse() {
+        when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
+                10L, 1L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED)).thenReturn(false);
+
+        boolean result = participationService.isConfirmed(1L, 10L);
+
+        assertFalse(result);
+        verify(participationRepository).existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
+                10L, 1L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED);
+    }
+
+    @Test
+    @DisplayName("getAthleteDashboardCards retourne les cartes correctement avec dedoublonnage")
+    void getAthleteDashboardCards_Success() {
+        when(participationRepository.findAllDirectAndTeamParticipations(testAthlete.getId()))
+                .thenReturn(List.of(testParticipation));
+
+        List<AthleteCompetitionDetailsResponse> cards = participationService.getAthleteDashboardCards(testAthlete.getId());
+
+        assertNotNull(cards);
+        assertEquals(1, cards.size());
+        assertEquals(100L, cards.get(0).getParticipationId());
+        verify(participationRepository).findAllDirectAndTeamParticipations(testAthlete.getId());
     }
 }

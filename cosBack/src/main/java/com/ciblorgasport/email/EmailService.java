@@ -26,4 +26,6 @@ public interface EmailService {
     void sendAthleteParticipationRefusedEmail(String toEmail, String athleteName, String rejectedDocument, String reason);
     
     void sendTeamParticipationValidatedEmail(String to, String athleteName, String teamName);
+    
+    void sendCommissionerForfeitDeclaredEmail(String to, String commissionerFirstName, String athleteName);
 }

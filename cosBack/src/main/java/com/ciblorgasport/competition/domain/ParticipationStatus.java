@@ -8,5 +8,5 @@ public enum ParticipationStatus {
     PENDING_VALIDATION,
     INVITED,
     CONFIRMED,
-    CANCELLED
+    CANCELED
 }

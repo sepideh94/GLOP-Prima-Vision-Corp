@@ -1,5 +1,6 @@
 import axios from "axios";
 import { AUTH_LOGOUT_EVENT } from "../contexts/AuthContext";
+import { spaFullUrl } from "../utils/spaNavigation";
 
 /** Émis lors d’un 403 sur planning / épreuves athlète (voir doc workflow validation). */
 export const ATHLETE_PLANNING_ACCESS_DENIED_EVENT = "ciblorgasport:athlete-planning-access-denied";
@@ -27,6 +28,14 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (config.data instanceof FormData && config.headers) {
+      if (typeof config.headers.delete === "function") {
+        config.headers.delete("Content-Type");
+      } else {
+        delete config.headers["Content-Type"];
+      }
+    }
+
     // Ne pas ajouter le token pour les routes publiques
     const publicRoutes = ["/api/auth/signin", "/api/auth/signup", "/api/auth/forgot-password", "/api/auth/forgot-password/complete", "/api/countries"];
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
@@ -56,7 +65,7 @@ api.interceptors.response.use(
       // Utiliser un délai pour permettre au contexte de se mettre à jour
       // avant de rediriger
       setTimeout(() => {
-        window.location.href = "/login";
+        window.location.href = spaFullUrl("/login");
       }, 100);
     }
 

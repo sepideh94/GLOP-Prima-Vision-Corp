@@ -24,7 +24,7 @@ import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.incident.domain.IncidentStatus;
 import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.notification.dto.NotificationRecipient;
-import com.ciblorgasport.spectator.Spectator;
+import com.ciblorgasport.spectator.domain.Spectator;
 
 @ExtendWith(MockitoExtension.class)
 class IncidentNotificationServiceImplTest {
