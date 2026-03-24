@@ -9,5 +9,7 @@ public enum NotificationType {
     PARTICIPATION_REFUSED,
     TEAM_PARTICIPATION_VALIDATED,
     INCIDENT,
-    ATHLETE_FORFEIT_DECLARED
+    ATHLETE_FORFEIT_DECLARED,
+    /** Classement / résultats publiés pour une épreuve d'une compétition suivie */
+    COMPETITION_RESULTS
 }

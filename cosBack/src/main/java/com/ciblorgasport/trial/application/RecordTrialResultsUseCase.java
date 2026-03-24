@@ -17,6 +17,7 @@ import com.ciblorgasport.trial.domain.result.Result;
 import com.ciblorgasport.trial.domain.result.input.ManualResultInputStrategy;
 import com.ciblorgasport.trial.domain.result.input.ResultInputDto;
 import com.ciblorgasport.trial.domain.result.input.ResultInputStrategy;
+import com.ciblorgasport.notification.application.CompetitionResultsNotificationService;
 import com.ciblorgasport.trial.infrastructure.ResultRepository;
 import com.ciblorgasport.trial.infrastructure.TrialParticipantRepository;
 import com.ciblorgasport.trial.infrastructure.TrialRepository;
@@ -51,6 +52,7 @@ public class RecordTrialResultsUseCase {
     private final TrialParticipantRepository   trialParticipantRepository;
     private final ResultRepository             resultRepository;
     private final RankingService               rankingService;
+    private final CompetitionResultsNotificationService competitionResultsNotificationService;
 
     /**
      * Enregistre les résultats depuis une saisie manuelle du commissaire.
@@ -60,7 +62,7 @@ public class RecordTrialResultsUseCase {
         Trial trial = loadCompletedTrialOrThrow(trialId);
         List<TrialParticipant> participants = trialParticipantRepository.findByTrialId(trialId);
         ResultInputStrategy strategy = new ManualResultInputStrategy(inputs, participants, performanceType);
-        return rankAndSave(trial, strategy);
+        return rankAndSave(trial, strategy, false);
     }
 
     /**
@@ -98,7 +100,11 @@ public class RecordTrialResultsUseCase {
             r.setUpdatedAt(now);
         });
 
-        return resultRepository.saveAll(ranked);
+        List<Result> saved = resultRepository.saveAll(ranked);
+        if (!saved.isEmpty()) {
+            competitionResultsNotificationService.notifyFollowers(trial, true);
+        }
+        return saved;
     }
 
     /**
@@ -107,7 +113,7 @@ public class RecordTrialResultsUseCase {
     @Transactional
     public List<Result> execute(Long trialId, ResultInputStrategy inputStrategy) {
         Trial trial = loadCompletedTrialOrThrow(trialId);
-        return rankAndSave(trial, inputStrategy);
+        return rankAndSave(trial, inputStrategy, false);
     }
 
     // -------------------------------------------------------------------------
@@ -123,9 +129,15 @@ public class RecordTrialResultsUseCase {
         return trial;
     }
 
-    private List<Result> rankAndSave(Trial trial, ResultInputStrategy strategy) {
+    private List<Result> rankAndSave(Trial trial, ResultInputStrategy strategy, boolean forceResultsUpdatedNotification) {
+        long countBefore = resultRepository.countByTrial_Id(trial.getId());
         List<Result> rawResults = strategy.collect(trial);
         List<Result> ranked     = rankingService.rank(rawResults);
-        return resultRepository.saveAll(ranked);
+        List<Result> saved = resultRepository.saveAll(ranked);
+        if (!saved.isEmpty()) {
+            boolean updated = forceResultsUpdatedNotification || countBefore > 0;
+            competitionResultsNotificationService.notifyFollowers(trial, updated);
+        }
+        return saved;
     }
 }

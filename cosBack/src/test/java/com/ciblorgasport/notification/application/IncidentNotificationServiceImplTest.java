@@ -22,6 +22,7 @@ import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.incident.domain.ImpactLevel;
+import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.incident.domain.Incident;
 import com.ciblorgasport.incident.domain.IncidentStatus;
 import com.ciblorgasport.notification.domain.NotificationType;
@@ -42,6 +43,9 @@ class IncidentNotificationServiceImplTest {
 
     @Mock
     private SpectatorIncidentRecipientResolver spectatorIncidentRecipientResolver;
+
+    @Mock
+    private CompetitionFollowerRecipientResolver competitionFollowerRecipientResolver;
 
     @Mock
     private NotificationService notificationService;
@@ -86,6 +90,8 @@ class IncidentNotificationServiceImplTest {
         when(athleteIncidentRecipientResolver.resolve(incident)).thenReturn(List.of(recipient));
 
         incidentNotificationService.notifyIncidentCreated(incident);
+
+        verify(competitionFollowerRecipientResolver, never()).resolveFollowers(any());
 
         verify(notificationService, times(1)).createNotification(
                 eq(athlete),
@@ -161,6 +167,7 @@ class IncidentNotificationServiceImplTest {
         verify(commissionnerIncidentRecipientResolver, never()).resolve();
         verify(volonteerIncidentRecipientResolver, never()).resolve(any());
         verify(spectatorIncidentRecipientResolver, never()).resolve();
+        verify(competitionFollowerRecipientResolver, never()).resolveFollowers(any());
     }
 
     @Test
@@ -190,6 +197,7 @@ class IncidentNotificationServiceImplTest {
 
         incidentNotificationService.notifyIncidentCreated(incident);
 
+        verify(competitionFollowerRecipientResolver, never()).resolveFollowers(any());
         verify(spectatorIncidentRecipientResolver, times(1)).resolve();
         verify(athleteIncidentRecipientResolver, never()).resolve(any());
         verify(commissionnerIncidentRecipientResolver, never()).resolve();
@@ -230,7 +238,83 @@ class IncidentNotificationServiceImplTest {
         verify(commissionnerIncidentRecipientResolver, never()).resolve();
         verify(volonteerIncidentRecipientResolver, never()).resolve(any());
         verify(spectatorIncidentRecipientResolver, never()).resolve();
+        verify(competitionFollowerRecipientResolver, never()).resolveFollowers(any());
         verify(notificationService, never()).createNotification(any(), any(), any(), any(), any(), any(), any());
         verify(emailService, never()).sendIncidentNotificationEmail(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void shouldNotifyCompetitionFollowersEvenWhenImpactIsAthleteOnly() {
+        Spectator follower = Spectator.builder()
+                .id(30L)
+                .firstName("Fan")
+                .lastName("Club")
+                .email("fan@test.com")
+                .build();
+
+        Competition competition = new Competition();
+        competition.setId(7L);
+
+        NotificationRecipient followerRecipient = new NotificationRecipient(
+                follower,
+                "fan@test.com",
+                "Fan Club"
+        );
+
+        Incident incident = Incident.builder()
+                .id(5L)
+                .title("Retard bus")
+                .description("Navette en retard")
+                .status(IncidentStatus.EN_COURS)
+                .impactLevels(Set.of(ImpactLevel.ATHLETE))
+                .competition(competition)
+                .build();
+
+        when(competitionFollowerRecipientResolver.resolveFollowers(7L)).thenReturn(List.of(followerRecipient));
+        when(athleteIncidentRecipientResolver.resolve(incident)).thenReturn(List.of());
+
+        incidentNotificationService.notifyIncidentCreated(incident);
+
+        verify(competitionFollowerRecipientResolver, times(1)).resolveFollowers(7L);
+        verify(notificationService, times(1)).createNotification(
+                eq(follower),
+                eq(incident),
+                eq(NotificationType.INCIDENT),
+                eq("[Incident] Retard bus"),
+                eq("Un nouvel incident a été déclaré. Titre : Retard bus | Description : Navette en retard"),
+                eq("http://localhost:3000"),
+                eq("EN_COURS")
+        );
+    }
+
+    @Test
+    void shouldNotBroadcastToAllSpectatorsWhenSpectatorImpactButCompetitionLinked() {
+        Spectator follower = Spectator.builder()
+                .id(31L)
+                .firstName("A")
+                .lastName("B")
+                .email("ab@test.com")
+                .build();
+
+        Competition competition = new Competition();
+        competition.setId(8L);
+
+        when(competitionFollowerRecipientResolver.resolveFollowers(8L)).thenReturn(List.of(
+                new NotificationRecipient(follower, "ab@test.com", "A B")
+        ));
+
+        Incident incident = Incident.builder()
+                .id(6L)
+                .title("Alerte")
+                .description("Détails")
+                .status(IncidentStatus.EN_COURS)
+                .impactLevels(Set.of(ImpactLevel.SPECTATOR))
+                .competition(competition)
+                .build();
+
+        incidentNotificationService.notifyIncidentCreated(incident);
+
+        verify(spectatorIncidentRecipientResolver, never()).resolve();
+        verify(notificationService, times(1)).createNotification(any(), eq(incident), any(), any(), any(), any(), any());
     }
 }

@@ -1,6 +1,8 @@
 package com.ciblorgasport.notification.application;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,7 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
     private final CommissionnerIncidentRecipientResolver commissionnerIncidentRecipientResolver;
     private final VolonteerIncidentRecipientResolver volonteerIncidentRecipientResolver;
     private final SpectatorIncidentRecipientResolver spectatorIncidentRecipientResolver;
+    private final CompetitionFollowerRecipientResolver competitionFollowerRecipientResolver;
     private final NotificationService notificationService;
     private final EmailService emailService;
     private final FrontendUrlBuilder frontendUrlBuilder;
@@ -72,38 +75,62 @@ public class IncidentNotificationServiceImpl implements IncidentNotificationServ
         }
 
         String link = buildIncidentLink(incident);
+        Set<Long> notifiedUserIds = new HashSet<>();
+
+        Long competitionId = IncidentCompetitionResolver.resolveCompetitionId(incident);
+        if (competitionId != null) {
+            List<NotificationRecipient> competitionFollowers = competitionFollowerRecipientResolver.resolveFollowers(competitionId);
+            sendToRecipients(incident, competitionFollowers, title, message, link, notifiedUserIds);
+        }
 
         if (incident.getImpactLevels().contains(ImpactLevel.ATHLETE)
                 || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
             List<NotificationRecipient> athleteRecipients = athleteIncidentRecipientResolver.resolve(incident);
-            sendToRecipients(incident, athleteRecipients, title, message, link);
+            sendToRecipients(incident, athleteRecipients, title, message, link, notifiedUserIds);
         }
 
         if (incident.getImpactLevels().contains(ImpactLevel.COMMISSIONNER)
                 || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
             List<NotificationRecipient> commissionnerRecipients = commissionnerIncidentRecipientResolver.resolve();
-            sendToRecipients(incident, commissionnerRecipients, title, message, link);
+            sendToRecipients(incident, commissionnerRecipients, title, message, link, notifiedUserIds);
         }
 
         if (incident.getImpactLevels().contains(ImpactLevel.VOLONTEER)
                 || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
             List<NotificationRecipient> volonteerRecipients = volonteerIncidentRecipientResolver.resolve(incident);
-            sendToRecipients(incident, volonteerRecipients, title, message, link);
+            sendToRecipients(incident, volonteerRecipients, title, message, link, notifiedUserIds);
         }
 
         if (incident.getImpactLevels().contains(ImpactLevel.SPECTATOR)
                 || incident.getImpactLevels().contains(ImpactLevel.TOUS)) {
-            List<NotificationRecipient> spectatorRecipients = spectatorIncidentRecipientResolver.resolve();
-            sendToRecipients(incident, spectatorRecipients, title, message, link);
+            if (competitionId == null) {
+                List<NotificationRecipient> spectatorRecipients = spectatorIncidentRecipientResolver.resolve();
+                sendToRecipients(incident, spectatorRecipients, title, message, link, notifiedUserIds);
+            }
         }
     }
 
-    private void sendToRecipients(Incident incident, List<NotificationRecipient> recipients, String title, String message, String link) {
+    private void sendToRecipients(
+            Incident incident,
+            List<NotificationRecipient> recipients,
+            String title,
+            String message,
+            String link,
+            Set<Long> notifiedUserIds
+    ) {
         if (recipients == null || recipients.isEmpty()) {
             return;
         }
 
         for (NotificationRecipient recipient : recipients) {
+            Long userId = recipient.user() == null ? null : recipient.user().getId();
+            if (userId != null && notifiedUserIds.contains(userId)) {
+                continue;
+            }
+            if (userId != null) {
+                notifiedUserIds.add(userId);
+            }
+
             notificationService.createNotification(
                     recipient.user(),
                     incident,

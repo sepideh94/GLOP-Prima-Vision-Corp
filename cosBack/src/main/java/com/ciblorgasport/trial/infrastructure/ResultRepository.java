@@ -15,6 +15,8 @@ import com.ciblorgasport.trial.round.domain.RoundName;
 
 public interface ResultRepository extends JpaRepository<Result, Long> {
 
+    long countByTrial_Id(Long trialId);
+
     List<Result> findByTrialIdOrderByRankAsc(Long trialId);
 
     List<Result> findByTrialParticipantIdIn(List<Long> participantIds);

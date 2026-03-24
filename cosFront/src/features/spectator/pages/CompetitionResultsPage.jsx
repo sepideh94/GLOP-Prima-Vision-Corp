@@ -23,8 +23,10 @@ import {
   Tabs,
   Tab,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
@@ -33,6 +35,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
+import competitionFollowService from "../services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
 import { getSpectatorDisplayFirstName } from "../../../common/utils/spectatorWelcomeName";
 import { SPECTATOR_MENU_GLASS_DECOR } from "../swimmingVisuals";
@@ -147,9 +150,41 @@ export default function CompetitionResultsPage() {
   const [resultsLoaded, setResultsLoaded] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
+  const [following, setFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
+  const [followError, setFollowError] = useState(null);
 
   useEffect(() => {
     loadCompetitionData();
+  }, [competitionId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const id = Number(competitionId);
+    if (!Number.isFinite(id)) return;
+    setFollowStatusLoaded(false);
+    (async () => {
+      try {
+        const status = await competitionFollowService.getStatus(id);
+        if (!cancelled) {
+          setFollowing(Boolean(status?.following));
+          setFollowError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setFollowing(false);
+          if (err.response?.status !== 403) {
+            setFollowError("Statut d'abonnement indisponible.");
+          }
+        }
+      } finally {
+        if (!cancelled) setFollowStatusLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [competitionId]);
 
   useEffect(() => {
@@ -210,6 +245,31 @@ export default function CompetitionResultsPage() {
   const openTrialResults = (trial) => {
     setSelectedTrial(trial);
     setResultsDialogOpen(true);
+  };
+
+  const toggleFollow = async () => {
+    const id = Number(competitionId);
+    if (!Number.isFinite(id)) return;
+    setFollowLoading(true);
+    setFollowError(null);
+    try {
+      if (following) {
+        await competitionFollowService.unfollow(id);
+        setFollowing(false);
+      } else {
+        await competitionFollowService.follow(id);
+        setFollowing(true);
+      }
+    } catch (err) {
+      const status = err.response?.status;
+      setFollowError(
+        status === 404
+          ? "Compétition introuvable."
+          : "Impossible de mettre à jour l'abonnement."
+      );
+    } finally {
+      setFollowLoading(false);
+    }
   };
 
   const prettifyEnum = (value) => {
@@ -494,9 +554,11 @@ export default function CompetitionResultsPage() {
             justifyContent: "space-between",
             alignItems: "flex-start",
             mb: 2,
+            gap: 2,
+            flexWrap: "wrap",
           }}
         >
-          <Box>
+          <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
             <Typography
               variant="h4"
               sx={{
@@ -519,16 +581,54 @@ export default function CompetitionResultsPage() {
               />
             )}
           </Box>
-          <Chip
-            label={competitionStatusLabel(competition.status, competition.statusLabel)}
-            sx={{
-              background: `${competitionStatusColor(competition.status)}20`,
-              color: competitionStatusColor(competition.status),
-              fontWeight: 600,
-              border: `1px solid ${competitionStatusColor(competition.status)}40`,
-            }}
-          />
+          <Stack direction="row" spacing={1} alignItems="flex-start" flexWrap="wrap">
+            <Tooltip
+              title="Recevoir les notifications d’incidents et de classements pour cette compétition (e-mail et centre de notifications)."
+              placement="bottom"
+            >
+              <span>
+                <Button
+                  variant={following ? "contained" : "outlined"}
+                  size="medium"
+                  startIcon={<NotificationsActiveIcon />}
+                  disabled={!followStatusLoaded || followLoading}
+                  onClick={toggleFollow}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    borderRadius: appTheme.radius.pill,
+                    ...(following
+                      ? {
+                          background: `${appTheme.colors.violet}`,
+                          color: "#fff",
+                          "&:hover": { background: `${appTheme.colors.violet}dd` },
+                        }
+                      : {
+                          borderColor: `${appTheme.colors.violet}66`,
+                          color: appTheme.colors.violet,
+                        }),
+                  }}
+                >
+                  {followLoading ? "…" : following ? "Abonné" : "Suivre les notifications"}
+                </Button>
+              </span>
+            </Tooltip>
+            <Chip
+              label={competitionStatusLabel(competition.status, competition.statusLabel)}
+              sx={{
+                background: `${competitionStatusColor(competition.status)}20`,
+                color: competitionStatusColor(competition.status),
+                fontWeight: 600,
+                border: `1px solid ${competitionStatusColor(competition.status)}40`,
+              }}
+            />
+          </Stack>
         </Box>
+        {followError && (
+          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFollowError(null)}>
+            {followError}
+          </Alert>
+        )}
 
         {competition.startDate && (
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
