@@ -5,7 +5,7 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import PersonIcon from "@mui/icons-material/Person";
 import PeopleIcon from "@mui/icons-material/People";
 import NotificationsIcon from "@mui/icons-material/Notifications";
-import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import appTheme from "../theme/appTheme";
 import { useState } from "react";
@@ -28,6 +28,11 @@ export default function Navbar() {
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
+  };
+
+  const goFollowedCompetitions = () => {
+    handleCloseMenu();
+    navigate("/spectator?mode=favorites");
   };
 
   const goProfile = () => {
@@ -107,11 +112,7 @@ export default function Navbar() {
                   onClose={handleCloseMenu}
                   PaperProps={{ sx: { minWidth: 240 } }}
                 >
-                  <MenuItem
-                    component={RouterLink}
-                    to="/spectator?mode=favorites"
-                    onClick={handleCloseMenu}
-                  >
+                  <MenuItem onClick={goFollowedCompetitions}>
                     <FavoriteIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.violet }} />
                     Compétitions suivies
                   </MenuItem>

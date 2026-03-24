@@ -1,33 +1,5 @@
 import api from "../../../common/api/axiosInstance";
 
-const TICKET_PATH = "/api/spectator/profile/ticket";
-
-function fileExtensionFromContentType(contentType) {
-  const ct = String(contentType || "").toLowerCase();
-  if (ct.includes("pdf")) return ".pdf";
-  if (ct.includes("png")) return ".png";
-  if (ct.includes("jpeg") || ct.includes("jpg")) return ".jpg";
-  if (ct.includes("webp")) return ".webp";
-  return "";
-}
-
-function parseFilenameFromContentDisposition(disposition) {
-  if (!disposition) return null;
-  const utf8 = /filename\*=UTF-8''([^;\s]+)/i.exec(disposition);
-  if (utf8) {
-    try {
-      return decodeURIComponent(utf8[1]);
-    } catch {
-      return utf8[1];
-    }
-  }
-  const ascii = /filename="([^"]+)"/i.exec(disposition);
-  if (ascii) return ascii[1];
-  const loose = /filename=([^;\s]+)/i.exec(disposition);
-  if (loose) return loose[1].replace(/"/g, "");
-  return null;
-}
-
 const spectatorProfileService = {
   // Changer le mot de passe
   async changePassword(oldPassword, newPassword) {
@@ -99,52 +71,6 @@ const spectatorProfileService = {
   isCompetitionFavorite(competitionId) {
     const favorites = this.getCompetitionFavorites();
     return favorites.includes(String(competitionId));
-  },
-
-  /**
-   * Indique si un billet est stocké (évite de télécharger tout le fichier : statut HTTP uniquement).
-   */
-  async hasStoredTicket() {
-    const res = await api.get(TICKET_PATH, {
-      responseType: "blob",
-      validateStatus: (status) => status === 200 || status === 404,
-    });
-    return res.status === 200;
-  },
-
-  /** Upload multipart : champ `file` (ne pas définir Content-Type manuellement). */
-  async uploadTicket(file) {
-    const formData = new FormData();
-    formData.append("file", file);
-    await api.post(TICKET_PATH, formData);
-  },
-
-  /** Télécharge le billet (déclenche le téléchargement navigateur). */
-  async downloadTicketToDevice() {
-    const res = await api.get(TICKET_PATH, { responseType: "blob" });
-    const blob = res.data;
-    const contentType = res.headers["content-type"] || blob.type || "application/octet-stream";
-    const disposition = res.headers["content-disposition"];
-    const parsedName = parseFilenameFromContentDisposition(disposition);
-    const ext = fileExtensionFromContentType(contentType);
-    const filename =
-      parsedName && parsedName !== "ticket"
-        ? parsedName
-        : `billet${ext || ""}`;
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.rel = "noopener";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  },
-
-  async deleteTicket() {
-    await api.delete(TICKET_PATH);
   },
 };
 

@@ -1,55 +1,44 @@
-import { useState, useEffect, useRef, useCallback, useLayoutEffect, useMemo } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Typography,
+  Grid,
   Card,
   CardContent,
   CardActionArea,
   Chip,
   CircularProgress,
   Alert,
-  IconButton,
-  Button,
+  Container,
   TextField,
   InputAdornment,
-  Tooltip,
-  Switch,
-  FormControlLabel,
-  Stack,
+  IconButton,
+  Tabs,
+  Tab,
+  Button,
 } from "@mui/material";
+import EventIcon from "@mui/icons-material/Event";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import ViewModuleIcon from "@mui/icons-material/ViewModule";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import SearchIcon from "@mui/icons-material/Search";
-import PlaceIcon from "@mui/icons-material/Place";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import PeopleIcon from "@mui/icons-material/People";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import spectatorService from "../../spectator/services/spectatorService";
 import spectatorProfileService from "../../spectator/services/spectatorProfileService";
-import competitionFollowService from "../../spectator/services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
-import CompetitionSwimImage from "../../spectator/components/CompetitionSwimImage";
-import {
-  competitionStatusColor,
-  competitionStatusLabel,
-} from "../../spectator/utils/competitionStatus";
-import { SPECTATOR_MENU_GLASS_DECOR } from "../../spectator/swimmingVisuals";
-import {
-  spectatorGlassTint,
-  textLegibleDark,
-  textLegibleMuted,
-  spectatorDarkMenuShell,
-} from "../../spectator/spectatorGlassTheme";
-import { useAuth } from "../../../common/contexts/AuthContext";
-import { getSpectatorDisplayFirstName } from "../../../common/utils/spectatorWelcomeName";
 import { stripHtmlTags } from "../../../common/utils/htmlUtils";
 
 export default function Spectator() {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const modeParam = searchParams.get("mode");
 
   const [events, setEvents] = useState([]);
   const [filteredEvents, setFilteredEvents] = useState([]);
@@ -58,57 +47,27 @@ export default function Spectator() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [favorites, setFavorites] = useState([]);
-  const [followedCompetitionIds, setFollowedCompetitionIds] = useState([]);
-  const [followListError, setFollowListError] = useState(null);
-  const [followActionLoadingId, setFollowActionLoadingId] = useState(null);
-  const [followActionError, setFollowActionError] = useState(null);
-  const [competitionsCount, setCompetitionsCount] = useState(0);
   const [competitionFavorites, setCompetitionFavorites] = useState([]);
+  const [competitionsCount, setCompetitionsCount] = useState(0);
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [competitionsByEvent, setCompetitionsByEvent] = useState({});
   const [allCompetitions, setAllCompetitions] = useState([]);
   const [viewMode, setViewMode] = useState("all"); // "all" | "favorites"
-  const [competitionSearch, setCompetitionSearch] = useState("");
 
   const eventsCarouselRef = useRef(null);
   const competitionsCarouselRef = useRef(null);
-  const competitionCarouselRowRef = useRef(null);
-
-  /** Pleine largeur + scroll si le contenu dépasse ; sinon panneau serré sur les cartes uniquement. */
-  const [competitionCarouselUseFullWidth, setCompetitionCarouselUseFullWidth] =
-    useState(true);
-
-  const loadFollowedCompetitions = useCallback(async () => {
-    setFollowListError(null);
-    try {
-      const list = await competitionFollowService.listFollowed();
-      setFollowedCompetitionIds(
-        list.map((row) => String(row.competitionId))
-      );
-    } catch (err) {
-      console.error(err);
-      setFollowListError(
-        "Impossible de charger vos abonnements compétition. Les boutons peuvent être indisponibles."
-      );
-      setFollowedCompetitionIds([]);
-    }
-  }, []);
 
   useEffect(() => {
     loadEvents();
     loadFavorites();
-    loadFollowedCompetitions();
+    loadCompetitionFavorites();
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const isFavorites = params.get("mode") === "favorites";
-    setViewMode(isFavorites ? "favorites" : "all");
+    setViewMode(modeParam === "favorites" ? "favorites" : "all");
+    // Quand on change de vue via le menu, on revient à la sélection "toutes les compétitions"
     setSelectedEventId(null);
-    if (isFavorites) {
-      loadFollowedCompetitions();
-    }
-  }, [location.search, loadFollowedCompetitions]);
+  }, [modeParam]);
 
   useEffect(() => {
     filterEvents();
@@ -117,6 +76,11 @@ export default function Spectator() {
   const loadFavorites = () => {
     const favs = spectatorProfileService.getFavorites();
     setFavorites(favs);
+  };
+
+  const loadCompetitionFavorites = () => {
+    const favs = spectatorProfileService.getCompetitionFavorites();
+    setCompetitionFavorites(favs);
   };
 
   const filterEvents = () => {
@@ -151,32 +115,14 @@ export default function Spectator() {
     loadFavorites();
   };
 
-  const toggleCompetitionFollow = async (competitionId, e) => {
+  const toggleCompetitionFavorite = (competitionId, e) => {
     e.stopPropagation();
-    const id = String(competitionId);
-    const isFollowing = followedCompetitionIds.includes(id);
-    setFollowActionError(null);
-    setFollowActionLoadingId(id);
-    try {
-      if (isFollowing) {
-        await competitionFollowService.unfollow(competitionId);
-        setFollowedCompetitionIds((prev) => prev.filter((x) => x !== id));
-      } else {
-        await competitionFollowService.follow(competitionId);
-        setFollowedCompetitionIds((prev) =>
-          prev.includes(id) ? prev : [...prev, id]
-        );
-      }
-    } catch (err) {
-      const status = err.response?.status;
-      setFollowActionError(
-        status === 404
-          ? "Cette compétition n'existe pas ou n'est plus disponible."
-          : "Impossible de mettre à jour l'abonnement. Réessayez plus tard."
-      );
-    } finally {
-      setFollowActionLoadingId(null);
+    if (spectatorProfileService.isCompetitionFavorite(competitionId)) {
+      spectatorProfileService.removeCompetitionFavorite(competitionId);
+    } else {
+      spectatorProfileService.addCompetitionFavorite(competitionId);
     }
+    loadCompetitionFavorites();
   };
 
   const loadEvents = async () => {
@@ -200,21 +146,22 @@ export default function Spectator() {
 
       const map = {};
       const aggregated = [];
+      let totalCompetitions = 0;
 
       competitionsResults.forEach(({ eventId, comps }) => {
         map[eventId] = comps;
-        const parentEventName = data.find((e) => e.id === eventId)?.name || "Événement";
+        totalCompetitions += comps?.length || 0;
         aggregated.push(
           ...(comps || []).map((c) => ({
             ...c,
             parentEventId: c.parentEventId ?? eventId,
-            parentEventName,
           }))
         );
       });
 
       setCompetitionsByEvent(map);
       setAllCompetitions(aggregated);
+      setCompetitionsCount(totalCompetitions);
     } catch (err) {
       setError("Impossible de charger les événements. Veuillez réessayer.");
       console.error(err);
@@ -223,114 +170,42 @@ export default function Spectator() {
     }
   };
 
-  const competitionFavoriteIdSet = useMemo(
-    () => new Set(competitionFavorites.map((id) => String(id))),
-    [competitionFavorites]
-  );
-
-  const competitionsToDisplay = useMemo(() => {
-    if (selectedEventId !== null) {
-      return competitionsByEvent[selectedEventId] || [];
+  const getStatusColor = (status) => {
+    switch (status?.toUpperCase()) {
+      case "UPCOMING":
+        return appTheme.colors.cyan;
+      case "ONGOING":
+        return appTheme.colors.green;
+      case "COMPLETED":
+        return appTheme.colors.violet;
+      default:
+        return appTheme.colors.textMuted;
     }
-    if (viewMode === "favorites") {
-      return allCompetitions.filter((c) =>
-        competitionFavoriteIdSet.has(String(c.id))
-      );
-    }
-    return allCompetitions;
-  }, [
-    selectedEventId,
-    viewMode,
-    allCompetitions,
-    competitionsByEvent,
-    competitionFavoriteIdSet,
-  ]);
+  };
 
-  const competitionSearchNorm = competitionSearch.trim().toLowerCase();
-  const competitionsFiltered = useMemo(() => {
-    if (!competitionSearchNorm) return competitionsToDisplay;
-    return competitionsToDisplay.filter(
-      (c) =>
-        c.name?.toLowerCase().includes(competitionSearchNorm) ||
-        c.description?.toLowerCase().includes(competitionSearchNorm) ||
-        c.parentEventName?.toLowerCase().includes(competitionSearchNorm)
-    );
-  }, [competitionsToDisplay, competitionSearchNorm]);
-
-  useLayoutEffect(() => {
-    if (competitionsFiltered.length === 0) {
-      setCompetitionCarouselUseFullWidth((prev) => (prev === false ? prev : false));
-      return;
+  const getStatusLabel = (status) => {
+    switch (status?.toUpperCase()) {
+      case "UPCOMING":
+        return "À venir";
+      case "ONGOING":
+        return "En cours";
+      case "COMPLETED":
+        return "Terminé";
+      default:
+        return status || "Non défini";
     }
+  };
 
   const favoriteEventIdSet = new Set(favorites.map((id) => String(id)));
-  const followedCompetitionIdSet = new Set(followedCompetitionIds);
+  const competitionFavoriteIdSet = new Set(competitionFavorites.map((id) => String(id)));
   const competitionsToDisplay =
     selectedEventId !== null
       ? competitionsByEvent[selectedEventId] || []
       : viewMode === "favorites"
         ? allCompetitions.filter((c) =>
-            followedCompetitionIdSet.has(String(c.id))
+            competitionFavoriteIdSet.has(String(c.id))
           )
         : allCompetitions;
-    const measure = () => {
-      const scrollEl = competitionsCarouselRef.current;
-      const rowEl = competitionCarouselRowRef.current;
-      if (!scrollEl || !rowEl) return;
-
-      const available = rowEl.parentElement?.getBoundingClientRect().width ?? 0;
-      if (available <= 0) return;
-
-      const gapStyle = getComputedStyle(scrollEl);
-      const gap =
-        parseFloat(gapStyle.columnGap || gapStyle.gap || "0") || 0;
-
-      let contentSum = 0;
-      const kids = scrollEl.children;
-      for (let i = 0; i < kids.length; i++) {
-        contentSum += kids[i].getBoundingClientRect().width;
-        if (i < kids.length - 1) contentSum += gap;
-      }
-
-      const rowStyle = getComputedStyle(rowEl);
-      const rowPad =
-        parseFloat(rowStyle.paddingLeft) + parseFloat(rowStyle.paddingRight);
-      const isSm = window.matchMedia("(min-width: 600px)").matches;
-      const arrowReserve =
-        competitionsFiltered.length <= 1 ? 0 : isSm ? 96 : 0;
-
-      const needsFullWidth =
-        contentSum + rowPad + arrowReserve + 16 > available;
-
-      setCompetitionCarouselUseFullWidth((prev) =>
-        prev === needsFullWidth ? prev : needsFullWidth
-      );
-    };
-
-    measure();
-
-    const parent = competitionCarouselRowRef.current?.parentElement;
-    const ro = new ResizeObserver(() => measure());
-    if (parent) ro.observe(parent);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [competitionsFiltered]);
-
-  const compactCompetitionCarouselPanel =
-    competitionsFiltered.length > 0 && !competitionCarouselUseFullWidth;
-  const hideCompetitionCarouselArrows =
-    competitionsFiltered.length === 1 || !competitionCarouselUseFullWidth;
-
-  const globalFilterLabel =
-    viewMode === "favorites" ? "Mes compétitions suivies" : "Toutes les compétitions";
-
-  const welcomeFirst = getSpectatorDisplayFirstName(user);
-  const spectatorWelcomeTitle = welcomeFirst
-    ? `Bienvenue, ${welcomeFirst}`
-    : "Bienvenue";
 
   const scrollCarousel = (ref, direction = "left") => {
     if (!ref?.current) return;
@@ -345,200 +220,86 @@ export default function Spectator() {
     return (
       <Box
         sx={{
-          flex: 1,
-          width: "100%",
-          minHeight: 0,
           display: "flex",
-          flexDirection: "column",
-          alignSelf: "stretch",
-          boxSizing: "border-box",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
         }}
       >
-        <Box
-          sx={{
-            flex: 1,
-            width: "100%",
-            minHeight: 0,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            position: "relative",
-            borderRadius: 0,
-            overflow: "hidden",
-            border: "none",
-            boxSizing: "border-box",
-          }}
-        >
-          <Box
-            aria-hidden
-            sx={{
-              position: "absolute",
-              inset: 0,
-              background: spectatorGlassTint,
-              backdropFilter: "blur(22px) saturate(1.15)",
-              WebkitBackdropFilter: "blur(22px) saturate(1.15)",
-            }}
-          />
-          <Box
-            aria-hidden
-            sx={{
-              position: "absolute",
-              inset: 0,
-              backgroundImage: `url(${SPECTATOR_MENU_GLASS_DECOR})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              opacity: 0.42,
-              mixBlendMode: "soft-light",
-              pointerEvents: "none",
-            }}
-          />
-          <Box
-            sx={{
-              position: "relative",
-              zIndex: 1,
-              flex: 1,
-              width: "100%",
-              minHeight: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <CircularProgress sx={{ color: appTheme.colors.cyan }} />
-          </Box>
-        </Box>
+        <CircularProgress sx={{ color: appTheme.colors.cyan }} />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ flex: 1, width: "100%", px: { xs: 2, sm: 3 }, py: 4, boxSizing: "border-box" }}>
-        <Alert severity="error" sx={{ borderRadius: 2 }}>
-          {error}
-        </Alert>
-      </Box>
+      <Container maxWidth="md" sx={{ py: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
     );
   }
 
   return (
     <Box
       sx={{
-        flex: 1,
-        width: "100%",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignSelf: "stretch",
-        boxSizing: "border-box",
+        p: { xs: 3, md: 4 },
+        background: "rgba(255, 255, 255, 0.7)",
+        backdropFilter: "blur(10px)",
+        borderRadius: 4,
+        boxShadow: "0 18px 50px rgba(0,0,0,0.08)",
       }}
     >
-      <Box
-        sx={{
-          flex: 1,
-          width: "100%",
-          minHeight: 0,
-          position: "relative",
-          borderRadius: 0,
-          overflow: "hidden",
-          border: "none",
-          boxSizing: "border-box",
-        }}
-      >
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: spectatorGlassTint,
-            backdropFilter: "blur(26px) saturate(1.12)",
-            WebkitBackdropFilter: "blur(26px) saturate(1.12)",
-          }}
-        />
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${SPECTATOR_MENU_GLASS_DECOR})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.4,
-            mixBlendMode: "soft-light",
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            height: "100%",
-            overflow: "auto",
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch",
-            p: { xs: 2, sm: 2.5, md: 3.5 },
-            boxSizing: "border-box",
-          }}
-        >
-      {/* En-tête type site */}
-      <Box
-        sx={{
-          mb: 4,
-          pb: 3,
-          borderBottom: "1px solid rgba(14, 116, 144, 0.2)",
-          px: { xs: 0, sm: 0.5 },
-        }}
-      >
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
         <Typography
           variant="h4"
-          component="h1"
           sx={{
-            fontWeight: 900,
-            mb: 0,
-            letterSpacing: "-0.02em",
-            fontSize: { xs: "1.65rem", sm: "2rem" },
-            ...textLegibleDark,
+            fontWeight: 800,
+            mb: 1,
+            background: `linear-gradient(135deg, ${appTheme.colors.dark} 0%, ${appTheme.colors.cyan} 100%)`,
+            backgroundClip: "text",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
           }}
         >
-          {spectatorWelcomeTitle}
+        Espace Spectateur
+      </Typography>
+        <Typography
+          sx={{
+            color: appTheme.colors.darkSoft,
+            fontSize: "1.1rem",
+          }}
+        >
+          Consultez les événements, compétitions et résultats en temps réel
         </Typography>
-        {followListError && (
-          <Alert severity="warning" sx={{ mt: 2 }}>
-            {followListError}
-          </Alert>
-        )}
-        {followActionError && (
-          <Alert severity="error" sx={{ mt: 2 }} onClose={() => setFollowActionError(null)}>
-            {followActionError}
-          </Alert>
-        )}
       </Box>
 
+      {/* Spectateur Nav: événements (carousel pastilles) -> compétitions (carousel) */}
       <Box sx={{ mb: 4, width: "100%", overflow: "hidden" }}>
         <Box
-          role="region"
-          aria-label="Filtrer par événement — choisir la vue globale ou un événement"
           sx={{
-            ...spectatorDarkMenuShell,
             display: "flex",
             alignItems: "center",
-            gap: 1.25,
-            px: { xs: 1.5, sm: 2 },
-            py: 1.5,
+            gap: 1,
+            px: 1.5,
+            py: 0.75,
+            borderRadius: "999px",
+            background: "rgba(255,255,255,0.9)",
+            border: "1px solid rgba(148, 163, 184, 0.35)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.05)",
             flexWrap: "nowrap",
           }}
         >
           <IconButton
             onClick={() => scrollCarousel(eventsCarouselRef, "left")}
             sx={{
-              color: "#e2e8f0",
-              bgcolor: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.22)",
+              bgcolor: "rgba(34,211,238,0.08)",
+              border: "1px solid rgba(34,211,238,0.25)",
+              "&:hover": { bgcolor: "rgba(34,211,238,0.15)" },
               flex: "0 0 auto",
               width: 40,
               height: 40,
               borderRadius: "999px",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.35)" },
             }}
           >
             <ArrowBackIosNewIcon sx={{ fontSize: 18 }} />
@@ -563,178 +324,86 @@ export default function Spectator() {
             }}
           >
             <Button
-              onClick={() => {
-                setSelectedEventId(null);
-                navigate("/spectator", { replace: true });
-              }}
+              onClick={() => setSelectedEventId(null)}
               variant="contained"
               disableElevation
               sx={{
                 borderRadius: "999px",
                 px: 2,
-                height: "auto",
+                height: 36,
                 minHeight: 36,
-                py: 0.75,
                 textTransform: "none",
-fontWeight: 800,
-  ...(selectedEventId === null && viewMode === "all"
-    ? {
-        backgroundImage: appTheme.gradients.navbar,
-        backgroundColor: "rgba(34, 211, 238, 0.35)",
-        color: "#ffffff",
-        textShadow: "0 1px 2px rgba(0,0,0,0.4)",
-        border: "1px solid rgba(255,255,255,0.35)",
-        boxShadow: "0 4px 18px rgba(34, 211, 238, 0.35)",
-      }
-    : {
-        backgroundImage: "none",
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-        color: "#f1f5f9",
-        border: "1px solid rgba(255,255,255,0.22)",
-        boxShadow: "none",
-      }),
+                fontWeight: 700,
+                bgcolor: selectedEventId === null ? appTheme.gradients.navbar : "transparent",
+                color: selectedEventId === null ? "#020617" : appTheme.colors.dark,
+                backgroundColor:
+                  selectedEventId === null ? "transparent" : "rgba(255,255,255,0.92)",
+                border:
+                  selectedEventId === null
+                    ? "1px solid rgba(34,211,238,0.55)"
+                    : "1px solid rgba(148,163,184,0.35)",
+                boxShadow: "none",
                 whiteSpace: "nowrap",
-                maxWidth: { xs: 200, sm: 300 },
                 '& .MuiButton-startIcon': { marginRight: 0 },
                 "&:hover": {
-...(selectedEventId === null && viewMode === "all"
-    ? {
-        backgroundImage: appTheme.gradients.navbar,
-        backgroundColor: "rgba(34, 211, 238, 0.45)",
-        filter: "brightness(1.03)",
-        boxShadow: "0 6px 22px rgba(34, 211, 238, 0.45)",
-      }
-    : {
-        backgroundColor: "rgba(255, 255, 255, 0.16)",
-        borderColor: "rgba(255, 255, 255, 0.32)",
-      }),
+                  bgcolor:
+                    selectedEventId === null
+                      ? appTheme.gradients.navbar
+                      : "rgba(148,163,184,0.12)",
                 },
               }}
             >
-              <ViewModuleIcon
-                sx={{
-                  mr: 1,
-                  fontSize: 18,
-                  flexShrink: 0,
-                  color: "inherit",
-                }}
-              />
-              <Box
-                component="span"
-                sx={{
-                  display: "inline-flex",
-                  flexDirection: "column",
-                  alignItems: "flex-start",
-                  textAlign: "left",
-                  overflow: "hidden",
-                }}
-              >
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    lineHeight: 1.2,
-                    color: "inherit",
-                    opacity: selectedEventId === null ? 0.95 : 0.9,
-                    letterSpacing: "0.02em",
-                  }}
-                >
-                  Vue globale
-                </Box>
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: 14,
-                    fontWeight: 900,
-                    lineHeight: 1.25,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    maxWidth: "100%",
-                    color: "inherit",
-                  }}
-                >
-                  {globalFilterLabel}
-                </Box>
-              </Box>
+              <StarBorderIcon sx={{ mr: 1, fontSize: 18 }} />
+              mes actus
             </Button>
 
-            {filteredEvents.map((event) => {
+            {events.map((event) => {
               const isSelected = selectedEventId === event.id;
               const isFav = spectatorProfileService.isFavorite(event.id);
               return (
-                <Tooltip
+                <Button
                   key={event.id}
-                  title={`Afficher uniquement les compétitions de « ${event.name} »`}
-                  arrow
+                  onClick={() => setSelectedEventId(event.id)}
+                  variant="contained"
+                  disableElevation
+                  sx={{
+                    borderRadius: "999px",
+                    px: 2,
+                    height: 36,
+                    minHeight: 36,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    bgcolor: isSelected ? appTheme.gradients.navbar : "rgba(255,255,255,0.92)",
+                    color: isSelected ? "#020617" : appTheme.colors.dark,
+                    border: isSelected
+                      ? "1px solid rgba(34,211,238,0.55)"
+                      : "1px solid rgba(148,163,184,0.35)",
+                    boxShadow: "none",
+                    fontSize: 13,
+                    whiteSpace: "nowrap",
+                    "&:hover": {
+                      bgcolor: isSelected
+                        ? appTheme.gradients.navbar
+                        : "rgba(148,163,184,0.18)",
+                    },
+                  }}
                 >
-                  <Button
-                    onClick={() => setSelectedEventId(event.id)}
-                    variant="contained"
-                    disableElevation
-                    sx={{
-                      borderRadius: "999px",
-                      px: 2,
-                      height: 36,
-                      minHeight: 36,
-                      textTransform: "none",
-                      fontWeight: 800,
-                      fontSize: 13,
-                      maxWidth: { xs: 160, sm: 220 },
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                      flexShrink: 0,
-                      ...(isSelected
-                        ? {
-                            backgroundImage: appTheme.gradients.navbar,
-                            backgroundColor: "rgba(34, 211, 238, 0.35)",
-                            color: "#ffffff",
-                            textShadow: "0 1px 2px rgba(0,0,0,0.4)",
-                            border: "1px solid rgba(255,255,255,0.35)",
-                            boxShadow: "0 4px 18px rgba(34, 211, 238, 0.35)",
-                          }
-                        : {
-                            backgroundImage: "none",
-                            backgroundColor: "rgba(255,255,255,0.1)",
-                            color: "#f1f5f9",
-                            border: "1px solid rgba(255,255,255,0.22)",
-                            boxShadow: "none",
-                          }),
-                      "&:hover": {
-                        ...(isSelected
-                          ? {
-                              backgroundImage: appTheme.gradients.navbar,
-                              backgroundColor: "rgba(34, 211, 238, 0.45)",
-                              filter: "brightness(1.03)",
-                              boxShadow: "0 6px 22px rgba(34, 211, 238, 0.45)",
-                            }
-                          : {
-                              backgroundColor: "rgba(255,255,255,0.16)",
-                              borderColor: "rgba(255,255,255,0.32)",
-                            }),
-                      },
-                    }}
-                  >
-                    {event.name}
-                    {isFav && (
-                      <Box
-                        component="span"
-                        sx={{
-                          display: "inline-block",
-                          width: 8,
-                          height: 8,
-                          ml: 1,
-                          borderRadius: "999px",
-                          background: appTheme.colors.violet,
-                          verticalAlign: "middle",
-                          flexShrink: 0,
-                        }}
-                      />
-                    )}
-                  </Button>
-                </Tooltip>
+                  {event.name}
+                  {isFav && (
+                    <Box
+                      component="span"
+                      sx={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        ml: 1,
+                        borderRadius: "999px",
+                        background: appTheme.colors.violet,
+                        verticalAlign: "middle",
+                      }}
+                    />
+                  )}
+                </Button>
               );
             })}
           </Box>
@@ -742,159 +411,29 @@ fontWeight: 800,
           <IconButton
             onClick={() => scrollCarousel(eventsCarouselRef, "right")}
             sx={{
-              color: "#e2e8f0",
-              bgcolor: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.22)",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.35)" },
+              bgcolor: "rgba(34,211,238,0.08)",
+              border: "1px solid rgba(34,211,238,0.25)",
+              "&:hover": { bgcolor: "rgba(34,211,238,0.15)" },
             }}
           >
             <ArrowForwardIosIcon sx={{ fontSize: 18 }} />
           </IconButton>
         </Box>
-      </Box>
-
-        <Stack spacing={2} sx={{ mt: 4, mb: 2 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              justifyContent: "space-between",
-              alignItems: { xs: "stretch", md: "flex-start" },
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                ...spectatorDarkMenuShell,
-                minWidth: 0,
-                maxWidth: { md: 560 },
-                py: { xs: 1.75, sm: 2 },
-                px: { xs: 2, sm: 2.5 },
-                borderRight: "3px solid rgba(148, 163, 184, 0.35)",
-              }}
-            >
-              <Typography
-                variant="h5"
-                component="h2"
-                sx={{
-                  color: "#ffffff",
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                  fontSize: { xs: "1.4rem", sm: "1.55rem" },
-                  lineHeight: 1.2,
-                  textShadow: "0 1px 3px rgba(0,0,0,0.85), 0 0 1px rgba(0,0,0,1)",
-                }}
-              >
-                {selectedEventId !== null
-                  ? `Compétitions de l'événement`
-                  : viewMode === "favorites"
-                    ? "Compétitions suivies"
-                    : "Toutes les compétitions"}
-              </Typography>
-              {selectedEventId === null && competitionsFiltered.length > 0 && (
-                <Typography
-                  sx={{
-                    mt: 1.15,
-                    lineHeight: 1.55,
-                    fontSize: { xs: "0.9375rem", sm: "1rem" },
-                    fontWeight: 400,
-                    color: "#d1d5db",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                  }}
-                >
-                  {competitionsFiltered.length} compétition
-                  {competitionsFiltered.length !== 1 ? "s" : ""} — faites défiler horizontalement pour les
-                  parcourir.
-                </Typography>
-              )}
-            </Box>
-            <TextField
-              size="medium"
-              placeholder="Rechercher une compétition, un événement…"
-              value={competitionSearch}
-              onChange={(e) => setCompetitionSearch(e.target.value)}
-              inputProps={{
-                "aria-label":
-                  "Rechercher une compétition ou un événement par nom",
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start" sx={{ mr: 0.5 }}>
-                    <SearchIcon sx={{ color: "#0f172a", fontSize: 22 }} />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: { xs: "100%", md: "auto" },
-                flex: { md: "1 1 0" },
-                minWidth: { xs: "100%", md: "min(100%, 360px)" },
-                maxWidth: { xs: "100%", md: "min(720px, 100%)" },
-                alignSelf: { md: "stretch" },
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "999px",
-                  background: "rgba(255, 255, 255, 0.97)",
-                  color: "#020617",
-                  fontWeight: 600,
-                  fontSize: "1rem",
-                  minHeight: 48,
-                  pr: 1.5,
-                  boxShadow: "0 2px 12px rgba(15,23,42,0.1)",
-                  "& fieldset": {
-                    borderColor: "rgba(15,23,42,0.2)",
-                    borderWidth: "1.5px",
-                  },
-                  "&:hover fieldset": { borderColor: "rgba(34,211,238,0.55)" },
-                  "&.Mui-focused fieldset": { borderColor: appTheme.colors.cyan, borderWidth: "2px" },
-                },
-                "& .MuiInputBase-input": {
-                  py: 1.25,
-                  px: 0.5,
-                  fontSize: "1rem",
-                  textOverflow: "clip",
-                  "&::placeholder": {
-                    color: "#334155",
-                    opacity: 1,
-                    fontWeight: 600,
-                    fontSize: "0.9375rem",
-                  },
-                },
-              }}
-            />
-          </Box>
-        </Stack>
 
         <Box
-          ref={competitionCarouselRowRef}
           sx={{
             display: "flex",
-            alignItems: "stretch",
-            gap: { xs: 0.5, sm: 1 },
-            flexDirection: { xs: "column", sm: "row" },
-            ...(competitionsFiltered.length > 0
-              ? {
-                  p: { xs: 1.5, sm: 2 },
-                  borderRadius: appTheme.radius.lg,
-                  background: "linear-gradient(145deg, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.48) 100%)",
-                  backdropFilter: "blur(16px)",
-                  WebkitBackdropFilter: "blur(16px)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  boxShadow: "0 12px 40px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
-                }
-              : {}),
-            ...(competitionsFiltered.length > 0 && compactCompetitionCarouselPanel
-              ? {
-                  alignSelf: "flex-start",
-                  width: "fit-content",
-                  maxWidth: "100%",
-                }
-              : {}),
+            justifyContent: "space-between",
+            alignItems: "center",
+            mt: 4,
+            mb: 2,
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 800, color: appTheme.colors.dark }}>
             {selectedEventId !== null
               ? `Compétitions de l'événement`
               : viewMode === "favorites"
-                ? "Abonnements (notifications)"
+                ? "Compétitions suivies"
                 : "Toutes les compétitions"}
           </Typography>
         </Box>
@@ -902,22 +441,6 @@ fontWeight: 800,
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton
             onClick={() => scrollCarousel(competitionsCarouselRef, "left")}
-            sx={{
-              color: "#e2e8f0",
-              bgcolor: "rgba(15,23,42,0.55)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-              display: {
-                xs: "none",
-                sm: hideCompetitionCarouselArrows ? "none" : "inline-flex",
-              },
-              alignSelf: "center",
-              "&:hover": {
-                bgcolor: "rgba(34,211,238,0.2)",
-                borderColor: appTheme.colors.cyan,
-                color: "#f8fafc",
-              },
-            }}
           >
             <ArrowBackIosNewIcon />
           </IconButton>
@@ -926,317 +449,295 @@ fontWeight: 800,
             ref={competitionsCarouselRef}
             sx={{
               display: "flex",
-              justifyContent: "flex-start",
-              gap: { xs: 2, sm: 3 },
+              gap: 3,
               overflowX: "auto",
               pb: 1,
-              pt: { xs: 0.5, sm: 0 },
-              flex: compactCompetitionCarouselPanel ? "0 1 auto" : 1,
-              minWidth: compactCompetitionCarouselPanel ? 0 : undefined,
-              scrollSnapType: { xs: "x mandatory", sm: "none" },
-              WebkitOverflowScrolling: "touch",
+              flex: 1,
             }}
           >
             {competitionsToDisplay.length === 0 ? (
               <Card
                 sx={{
-                  minWidth: { xs: "100%", sm: 360 },
-                  background: "rgba(255, 255, 255, 0.76)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
+                  minWidth: 360,
+                  background: appTheme.gradients.card,
                   borderRadius: appTheme.radius.lg,
-                  border: "1px solid rgba(15,23,42,0.1)",
-                  boxShadow: "0 4px 16px rgba(15,23,42,0.08)",
                   p: 3,
                 }}
               >
-<Typography sx={{ color: "#1e293b", fontWeight: 600 }}>
-  {viewMode === "favorites"
-    ? "Aucune compétition suivie pour le moment."
-    : "Aucune compétition disponible."}
-                </Typography>
-              </Card>
-            ) : competitionsFiltered.length === 0 ? (
-              <Card
-                sx={{
-                  minWidth: { xs: "100%", sm: 360 },
-                  background: "rgba(255, 255, 255, 0.76)",
-                  backdropFilter: "blur(12px)",
-                  WebkitBackdropFilter: "blur(12px)",
-                  borderRadius: appTheme.radius.lg,
-                  border: "1px solid rgba(15,23,42,0.1)",
-                  boxShadow: "0 4px 16px rgba(15,23,42,0.08)",
-                  p: 3,
-                }}
-              >
-                <Typography sx={{ color: "#1e293b", fontWeight: 600 }}>
-                  Aucun résultat pour « {competitionSearch.trim()} ». Essayez un autre mot-clé.
+                <Typography sx={{ color: appTheme.colors.textSecondary }}>
+                  Aucune compétition disponible.
                 </Typography>
               </Card>
             ) : (
-              competitionsFiltered.map((competition) => {
-                const st = competitionStatusColor(competition.status);
-                const isFollowed = competitionFavoriteIdSet.has(String(competition.id));
-                return (
-                  <Card
-                    key={competition.id}
-                    sx={{
-                      minWidth: { xs: "min(calc(100vw - 4rem), 320px)", sm: 360 },
-                      maxWidth: { sm: 400 },
-                      scrollSnapAlign: "start",
-                      display: "flex",
-                      flexDirection: "column",
-                      height: "100%",
-                      overflow: "hidden",
-                      isolation: "isolate",
-                      background: "linear-gradient(145deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.72) 100%)",
-                      backdropFilter: "blur(14px)",
-                      WebkitBackdropFilter: "blur(14px)",
-                      borderRadius: appTheme.radius.lg,
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      boxShadow: `0 12px 36px rgba(2,6,23,0.45), inset 0 0 0 1px ${st}22`,
-                      borderLeft: `6px solid ${st}`,
-                    }}
+              competitionsToDisplay.map((competition) => (
+                <Card
+                  key={competition.id}
+                  sx={{
+                    minWidth: 360,
+                    background: appTheme.gradients.card,
+                    borderRadius: appTheme.radius.lg,
+                    boxShadow: appTheme.shadows.card,
+                    height: "100%",
+                  }}
+                >
+                  <CardActionArea
+                    onClick={() =>
+                      navigate(`/spectator/competitions/${competition.id}`)
+                    }
+                    sx={{ p: 0 }}
                   >
-                    <Box sx={{ position: "relative" }}>
-                      <CardActionArea
-                        onClick={() =>
-                          navigate(`/spectator/competitions/${competition.id}`)
-                        }
-                        sx={{ p: 0, alignItems: "stretch", flexDirection: "column" }}
-                      >
-                        <CompetitionSwimImage
-                          competitionId={competition.id}
-                          height={152}
-                          sx={{
-                            borderRadius: `${appTheme.radius.lg} ${appTheme.radius.lg} 0 0`,
-                          }}
-                        />
-                        <CardContent
-                          sx={{
-                            p: 2.5,
-                            width: "100%",
-                            boxSizing: "border-box",
-                            flex: 1,
-                          }}
-                        >
-<Box sx={{ display: "flex", alignItems: "flex-start", gap: 2 }}>
-  <Box
-    sx={{
-      width: 52,
-      height: 52,
-      borderRadius: "16px",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      color: st,
-      background: `${st}22`,
-      border: `1px solid ${st}44`,
-      flexShrink: 0,
-    }}
-  >
-    <EmojiEventsIcon sx={{ fontSize: 28 }} />
-  </Box>
-  <Box sx={{ minWidth: 0, flex: 1 }}>
-    <Stack
-      direction="row"
-      spacing={0.75}
-      flexWrap="wrap"
-      alignItems="center"
-      sx={{ mb: 0.75 }}
-    >
-      <Typography
-        sx={{
-          color: "rgba(226,232,240,0.75)",
-          fontSize: "0.65rem",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-        }}
-      >
-        Natation
-      </Typography>
-      <Chip
-        label={competitionStatusLabel(
-          competition.status,
-          competition.statusLabel
-        )}
-        size="small"
-        sx={{
-          height: 22,
-          fontSize: "0.7rem",
-          background: `${st}28`,
-          color: st,
-          fontWeight: 800,
-          border: `1px solid ${st}55`,
-        }}
-      />
-    </Stack>
-    <Typography
-      sx={{
-        fontSize: "1.15rem",
-        fontWeight: 900,
-        lineHeight: 1.25,
-        mb: 1,
-        background: `linear-gradient(135deg, #f8fafc 0%, ${st} 160%)`,
-        backgroundClip: "text",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-      }}
-    >
-      {competition.name}
-    </Typography>
-    <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5, mb: 0.5 }}>
-      <PlaceIcon
-        sx={{ fontSize: 16, color: "rgba(148,163,184,0.95)", mt: 0.15, flexShrink: 0 }}
-      />
-      <Typography sx={{ color: "rgba(226,232,240,0.85)", fontSize: 12, fontWeight: 600 }}>
-        {competition.parentEventName || "—"}
-      </Typography>
-    </Box>
-    {competition.startDate && (
-      <Typography sx={{ color: "rgba(148,163,184,0.95)", fontSize: 12, fontWeight: 600 }}>
-        {format(new Date(competition.startDate), "d MMM yyyy", { locale: fr })}
-        {competition.endDate
-          ? ` → ${format(new Date(competition.endDate), "d MMM yyyy", { locale: fr })}`
-          : ""}
-      </Typography>
-    )}
-    <Typography
-      sx={{
-        mt: 1.25,
-        color: "rgba(148,163,184,0.88)",
-        fontSize: "0.7rem",
-        fontWeight: 700,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em",
-        display: "block",
-      }}
-    >
-      Ouvrir la fiche · participants & épreuves
-    </Typography>
-  </Box>
-</Box>
-</CardContent>
-</CardActionArea>
-<Box
-  onClick={(e) => e.stopPropagation()}
-  sx={{ p: 2, pt: 0, display: "flex", justifyContent: "flex-end" }}
->
-  <Button
-    size="small"
-    disabled={followActionLoadingId === String(competition.id)}
-    onClick={(e) => toggleCompetitionFollow(competition.id, e)}
-    sx={{
-      borderRadius: "999px",
-      textTransform: "none",
-      fontWeight: 800,
-      px: 2,
-      py: 0.75,
-      background: followedCompetitionIdSet.has(String(competition.id))
-        ? `${appTheme.colors.violet}20`
-        : "transparent",
-      color: followedCompetitionIdSet.has(String(competition.id))
-        ? appTheme.colors.violet
-        : appTheme.colors.textMuted,
-      border: followedCompetitionIdSet.has(String(competition.id))
-        ? `1px solid ${appTheme.colors.violet}40`
-        : "1px solid rgba(148, 163, 184, 0.25)",
-      "&:hover": {
-        background: followedCompetitionIdSet.has(String(competition.id))
-          ? `${appTheme.colors.violet}25`
-          : "rgba(34,211,238,0.08)",
-      },
-    }}
-  >
-    {followActionLoadingId === String(competition.id)
-      ? "…"
-      : followedCompetitionIdSet.has(String(competition.id))
-      ? "Abonné"
-      : "Suivre"}
-  </Button>
-</Box>
+                    <CardContent sx={{ p: 3 }}>
+                      <Box
                         sx={{
-                          position: "absolute",
-                          top: 8,
-                          right: 8,
-                          px: 1,
-                          py: 0.5,
-                          borderRadius: "999px",
-                          background: "rgba(15,23,42,0.82)",
-                          backdropFilter: "blur(8px)",
-                          border: isFollowed
-                            ? `1px solid ${appTheme.colors.violet}66`
-                            : "1px solid rgba(255,255,255,0.22)",
-                          boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 2,
                         }}
                       >
-                        <FormControlLabel
-                          control={
-                            <Switch
-                              checked={isFollowed}
-                              size="small"
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                toggleCompetitionFavorite(competition.id, e);
-                              }}
-                              sx={{
-                                mr: 0,
-                                "& .MuiSwitch-switchBase.Mui-checked": {
-                                  color: appTheme.colors.violet,
-                                },
-                                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                                  backgroundColor: `${appTheme.colors.violet}aa`,
-                                },
-                              }}
-                            />
-                          }
-                          label={
-                            <Typography
-                              sx={{
-                                fontSize: 12,
-                                fontWeight: 800,
-                                color: isFollowed ? appTheme.colors.violet : "rgba(226,232,240,0.85)",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {isFollowed ? "Suivi" : "Suivre"}
-                            </Typography>
-                          }
-                          sx={{ m: 0, alignItems: "center" }}
+                        <EmojiEventsIcon
+                          sx={{ fontSize: 28, color: appTheme.colors.violet }}
                         />
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "flex-end",
+                            gap: 1,
+                          }}
+                        >
+                          <Button
+                            size="small"
+                            onClick={(e) =>
+                              toggleCompetitionFavorite(competition.id, e)
+                            }
+                            sx={{
+                              borderRadius: "999px",
+                              textTransform: "none",
+                              fontWeight: 800,
+                              px: 2,
+                              py: 0.75,
+                              background: competitionFavoriteIdSet.has(String(competition.id))
+                                ? `${appTheme.colors.violet}20`
+                                : "transparent",
+                              color: competitionFavoriteIdSet.has(String(competition.id))
+                                ? appTheme.colors.violet
+                                : appTheme.colors.textMuted,
+                              border: competitionFavoriteIdSet.has(String(competition.id))
+                                ? `1px solid ${appTheme.colors.violet}40`
+                                : "1px solid rgba(148, 163, 184, 0.25)",
+                              "&:hover": {
+                                background: competitionFavoriteIdSet.has(String(competition.id))
+                                  ? `${appTheme.colors.violet}25`
+                                  : "rgba(34,211,238,0.08)",
+                              },
+                            }}
+                          >
+                            {competitionFavoriteIdSet.has(String(competition.id))
+                              ? "Suivi"
+                              : "Suivre"}
+                          </Button>
+                          <Chip
+                            label={getStatusLabel(competition.status)}
+                            size="small"
+                            sx={{
+                              background: `${getStatusColor(competition.status)}20`,
+                              color: getStatusColor(competition.status),
+                              fontWeight: 600,
+                              border: `1px solid ${getStatusColor(competition.status)}40`,
+                            }}
+                          />
+                        </Box>
                       </Box>
-                    </Box>
-                  </Card>
-                );
-              })
+                      <Typography
+                        sx={{
+                          fontWeight: 800,
+                          color: appTheme.colors.textPrimary,
+                          mb: 1,
+                        }}
+                      >
+                        {competition.name}
+                      </Typography>
+                      {competition.startDate && (
+                        <Typography sx={{ color: appTheme.colors.textMuted, fontSize: 13 }}>
+                          {format(new Date(competition.startDate), "d MMM yyyy", { locale: fr })}
+                        </Typography>
+                      )}
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              ))
             )}
           </Box>
 
           <IconButton
             onClick={() => scrollCarousel(competitionsCarouselRef, "right")}
-            sx={{
-              color: "#e2e8f0",
-              bgcolor: "rgba(15,23,42,0.55)",
-              border: "1px solid rgba(255,255,255,0.18)",
-              boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
-              display: {
-                xs: "none",
-                sm: hideCompetitionCarouselArrows ? "none" : "inline-flex",
-              },
-              alignSelf: "center",
-              "&:hover": {
-                bgcolor: "rgba(34,211,238,0.2)",
-                borderColor: appTheme.colors.cyan,
-                color: "#f8fafc",
-              },
-            }}
           >
             <ArrowForwardIosIcon />
           </IconButton>
         </Box>
-        </Box>
       </Box>
+
+      {/* Stats Cards */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              background: appTheme.gradients.card,
+              borderRadius: appTheme.radius.lg,
+              boxShadow: appTheme.shadows.card,
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <EventIcon sx={{ fontSize: 40, color: appTheme.colors.cyan }} />
+                <Box>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textMuted,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Événements
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textPrimary,
+                      fontSize: "2rem",
+                      fontWeight: 700,
+                      mt: 0.5,
+                    }}
+                  >
+                    {events.length}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              background: appTheme.gradients.card,
+              borderRadius: appTheme.radius.lg,
+              boxShadow: appTheme.shadows.card,
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <EmojiEventsIcon sx={{ fontSize: 40, color: appTheme.colors.violet }} />
+                <Box>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textMuted,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Compétitions
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textPrimary,
+                      fontSize: "2rem",
+                      fontWeight: 700,
+                      mt: 0.5,
+                    }}
+                  >
+                    {competitionsCount}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              background: appTheme.gradients.card,
+              borderRadius: appTheme.radius.lg,
+              boxShadow: appTheme.shadows.card,
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <CalendarTodayIcon sx={{ fontSize: 40, color: appTheme.colors.green }} />
+                <Box>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textMuted,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    En cours
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textPrimary,
+                      fontSize: "2rem",
+                      fontWeight: 700,
+                      mt: 0.5,
+                    }}
+                  >
+                    {events.filter((e) => e.status?.toUpperCase() === "ONGOING").length}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={3}>
+          <Card
+            sx={{
+              background: appTheme.gradients.card,
+              borderRadius: appTheme.radius.lg,
+              boxShadow: appTheme.shadows.card,
+            }}
+          >
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <TrendingUpIcon sx={{ fontSize: 40, color: appTheme.colors.cyan }} />
+                <Box>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textMuted,
+                      fontSize: "0.75rem",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    Résultats
+                  </Typography>
+                  <Typography
+                    sx={{
+                      color: appTheme.colors.textPrimary,
+                      fontSize: "1rem",
+                      fontWeight: 600,
+                      mt: 0.5,
+                    }}
+                  >
+                    Disponibles
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Events List supprimée : la sélection se fait via le carrousel */}
     </Box>
   );
 }

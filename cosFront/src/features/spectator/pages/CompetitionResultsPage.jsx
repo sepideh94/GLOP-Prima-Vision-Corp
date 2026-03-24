@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../../../common/contexts/AuthContext";
 import {
   Box,
   Typography,
@@ -23,10 +22,8 @@ import {
   Tabs,
   Tab,
   Stack,
-  Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
@@ -35,108 +32,11 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale/fr";
 import spectatorService from "../services/spectatorService";
-import competitionFollowService from "../services/competitionFollowService";
 import appTheme from "../../../common/theme/appTheme";
-import { getSpectatorDisplayFirstName } from "../../../common/utils/spectatorWelcomeName";
-import { SPECTATOR_MENU_GLASS_DECOR } from "../swimmingVisuals";
-import {
-  spectatorGlassTint,
-  textLegibleDark,
-  spectatorDarkMenuShell,
-} from "../spectatorGlassTheme";
 import HtmlContent from "../../../common/components/HtmlContent";
 import TrialResultsViewDialog from "../../trial/pages/TrialResultsViewDialog";
-import {
-  competitionStatusColor,
-  competitionStatusLabel,
-} from "../utils/competitionStatus";
-
-const competitionGlassCardSx = {
-  background: "linear-gradient(145deg, rgba(15,23,42,0.92) 0%, rgba(15,23,42,0.72) 100%)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-  border: "1px solid rgba(255,255,255,0.14)",
-  boxShadow: "0 12px 36px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
-};
-
-const competitionEmptyPanelSx = {
-  background: "linear-gradient(145deg, rgba(15,23,42,0.72) 0%, rgba(15,23,42,0.48) 100%)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.12)",
-  boxShadow: "0 12px 40px rgba(2,6,23,0.45), inset 0 1px 0 rgba(255,255,255,0.06)",
-};
-
-function SpectatorCompetitionGlassShell({ children, scrollContentProps = {} }) {
-  return (
-    <Box
-      sx={{
-        flex: 1,
-        width: "100%",
-        minHeight: 0,
-        display: "flex",
-        flexDirection: "column",
-        alignSelf: "stretch",
-        boxSizing: "border-box",
-      }}
-    >
-      <Box
-        sx={{
-          flex: 1,
-          width: "100%",
-          minHeight: 0,
-          position: "relative",
-          borderRadius: 0,
-          overflow: "hidden",
-          border: "none",
-          boxSizing: "border-box",
-        }}
-      >
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            background: spectatorGlassTint,
-            backdropFilter: "blur(26px) saturate(1.12)",
-            WebkitBackdropFilter: "blur(26px) saturate(1.12)",
-          }}
-        />
-        <Box
-          aria-hidden
-          sx={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage: `url(${SPECTATOR_MENU_GLASS_DECOR})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            opacity: 0.42,
-            mixBlendMode: "soft-light",
-            pointerEvents: "none",
-          }}
-        />
-        <Box
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            height: "100%",
-            overflow: "auto",
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch",
-            p: { xs: 2, sm: 2.5, md: 3.5 },
-            boxSizing: "border-box",
-            ...scrollContentProps,
-          }}
-        >
-          {children}
-        </Box>
-      </Box>
-    </Box>
-  );
-}
 
 export default function CompetitionResultsPage() {
-  const { user } = useAuth();
   const { competitionId } = useParams();
   const navigate = useNavigate();
   const [competition, setCompetition] = useState(null);
@@ -150,41 +50,9 @@ export default function CompetitionResultsPage() {
   const [resultsLoaded, setResultsLoaded] = useState(false);
   const [selectedTrial, setSelectedTrial] = useState(null);
   const [resultsDialogOpen, setResultsDialogOpen] = useState(false);
-  const [following, setFollowing] = useState(false);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [followStatusLoaded, setFollowStatusLoaded] = useState(false);
-  const [followError, setFollowError] = useState(null);
 
   useEffect(() => {
     loadCompetitionData();
-  }, [competitionId]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const id = Number(competitionId);
-    if (!Number.isFinite(id)) return;
-    setFollowStatusLoaded(false);
-    (async () => {
-      try {
-        const status = await competitionFollowService.getStatus(id);
-        if (!cancelled) {
-          setFollowing(Boolean(status?.following));
-          setFollowError(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setFollowing(false);
-          if (err.response?.status !== 403) {
-            setFollowError("Statut d'abonnement indisponible.");
-          }
-        }
-      } finally {
-        if (!cancelled) setFollowStatusLoaded(true);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, [competitionId]);
 
   useEffect(() => {
@@ -224,6 +92,32 @@ export default function CompetitionResultsPage() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status?.toUpperCase()) {
+      case "UPCOMING":
+        return appTheme.colors.cyan;
+      case "ONGOING":
+        return appTheme.colors.green;
+      case "COMPLETED":
+        return appTheme.colors.violet;
+      default:
+        return appTheme.colors.textMuted;
+    }
+  };
+
+  const getStatusLabel = (status) => {
+    switch (status?.toUpperCase()) {
+      case "UPCOMING":
+        return "À venir";
+      case "ONGOING":
+        return "En cours";
+      case "COMPLETED":
+        return "Terminé";
+      default:
+        return status || "Non défini";
+    }
+  };
+
   const getTrialStatusColor = (trial) => {
     if (trial.cancelled) return appTheme.colors.textMuted;
     if (trial.hasEnded) return appTheme.colors.violet;
@@ -245,31 +139,6 @@ export default function CompetitionResultsPage() {
   const openTrialResults = (trial) => {
     setSelectedTrial(trial);
     setResultsDialogOpen(true);
-  };
-
-  const toggleFollow = async () => {
-    const id = Number(competitionId);
-    if (!Number.isFinite(id)) return;
-    setFollowLoading(true);
-    setFollowError(null);
-    try {
-      if (following) {
-        await competitionFollowService.unfollow(id);
-        setFollowing(false);
-      } else {
-        await competitionFollowService.follow(id);
-        setFollowing(true);
-      }
-    } catch (err) {
-      const status = err.response?.status;
-      setFollowError(
-        status === 404
-          ? "Compétition introuvable."
-          : "Impossible de mettre à jour l'abonnement."
-      );
-    } finally {
-      setFollowLoading(false);
-    }
   };
 
   const prettifyEnum = (value) => {
@@ -364,17 +233,6 @@ export default function CompetitionResultsPage() {
 
     return normalized.charAt(0).toUpperCase() + normalized.slice(1);
   };
-  const withDisplayRank = (rows) =>
-    rows.map((row, index, arr) => {
-      if (index === 0) return { ...row, displayRank: 1 };
-      const prev = arr[index - 1];
-      const isSameRankAsPrev =
-        row?.rank != null && prev?.rank != null && row.rank === prev.rank;
-      return {
-        ...row,
-        displayRank: isSameRankAsPrev ? prev.displayRank : index + 1,
-      };
-    });
 
   // Grouper les épreuves par round
   const trialsByRound = trials.reduce((acc, trial) => {
@@ -425,101 +283,40 @@ export default function CompetitionResultsPage() {
     return acc;
   }, {});
 
-  const welcomeFirst = getSpectatorDisplayFirstName(user);
-  const spectatorWelcomeTitle = welcomeFirst
-    ? `Bienvenue, ${welcomeFirst}`
-    : "Bienvenue";
-
   if (loading) {
     return (
-      <SpectatorCompetitionGlassShell
-        scrollContentProps={{
+      <Box
+        sx={{
           display: "flex",
-          alignItems: "center",
           justifyContent: "center",
-          minHeight: 360,
+          alignItems: "center",
+          minHeight: "400px",
         }}
       >
         <CircularProgress sx={{ color: appTheme.colors.cyan }} />
-      </SpectatorCompetitionGlassShell>
+      </Box>
     );
   }
 
   if (error || !competition) {
     return (
-      <SpectatorCompetitionGlassShell>
-        <Alert
-          severity="error"
-          sx={{
-            mb: 2,
-            borderRadius: 2,
-            background: "rgba(254, 226, 226, 0.95)",
-            color: "#991b1b",
-            border: "1px solid rgba(248, 113, 113, 0.45)",
-          }}
-        >
-          {error || "Compétition introuvable"}
-        </Alert>
+      <Box sx={{ p: 4 }}>
+        <Alert severity="error">{error || "Compétition introuvable"}</Alert>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/spectator")}
-          variant="contained"
-          disableElevation
-          sx={{
-            mt: 1,
-            borderRadius: "999px",
-            textTransform: "none",
-            fontWeight: 800,
-            backgroundImage: "none",
-            backgroundColor: "rgba(255,255,255,0.1)",
-            color: "#f1f5f9",
-            border: "1px solid rgba(255,255,255,0.22)",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.16)",
-              borderColor: "rgba(255,255,255,0.32)",
-            },
-          }}
+          sx={{ mt: 2 }}
         >
-          Retour à l&apos;accueil spectateur
+          Retour
         </Button>
-      </SpectatorCompetitionGlassShell>
+      </Box>
     );
   }
 
   return (
-    <>
-      <SpectatorCompetitionGlassShell>
-      <Box
-        sx={{
-          mb: 4,
-          pb: 3,
-          borderBottom: "1px solid rgba(14, 116, 144, 0.2)",
-          px: { xs: 0, sm: 0.5 },
-        }}
-      >
-        <Typography
-          variant="h4"
-          component="h1"
-          sx={{
-            fontWeight: 900,
-            mb: 0,
-            letterSpacing: "-0.02em",
-            fontSize: { xs: "1.65rem", sm: "2rem" },
-            ...textLegibleDark,
-          }}
-        >
-          {spectatorWelcomeTitle}
-        </Typography>
-      </Box>
-
+    <Box sx={{ p: { xs: 3, md: 4 } }}>
       {/* Breadcrumbs */}
-      <Breadcrumbs
-        sx={{
-          mb: 3,
-          "& .MuiBreadcrumbs-separator": { color: "rgba(14, 116, 144, 0.55)" },
-        }}
-        separator="›"
-      >
+      <Breadcrumbs sx={{ mb: 3 }} separator="›">
         <Link
           component="button"
           variant="body1"
@@ -527,25 +324,36 @@ export default function CompetitionResultsPage() {
           sx={{
             color: appTheme.colors.cyan,
             textDecoration: "none",
-            fontWeight: 700,
-            textShadow: "0 1px 2px rgba(0,0,0,0.25)",
             "&:hover": { textDecoration: "underline" },
           }}
         >
           Événements
         </Link>
-        <Typography sx={{ ...textLegibleDark, fontSize: "1rem", fontWeight: 800 }}>
-          {competition.name}
-        </Typography>
+        {competition.parentEventId && (
+          <Link
+            component="button"
+            variant="body1"
+            onClick={() => navigate(`/spectator/events/${competition.parentEventId}`)}
+            sx={{
+              color: appTheme.colors.cyan,
+              textDecoration: "none",
+              "&:hover": { textDecoration: "underline" },
+            }}
+          >
+            Événement
+          </Link>
+        )}
+        <Typography color="text.primary">{competition.name}</Typography>
       </Breadcrumbs>
 
-      {/* Header fiche compétition */}
+      {/* Header */}
       <Box
         sx={{
           mb: 4,
-          p: { xs: 2.5, sm: 3, md: 4 },
+          p: 4,
+          background: appTheme.gradients.card,
           borderRadius: appTheme.radius.lg,
-          ...competitionGlassCardSx,
+          boxShadow: appTheme.shadows.card,
         }}
       >
         <Box
@@ -554,17 +362,15 @@ export default function CompetitionResultsPage() {
             justifyContent: "space-between",
             alignItems: "flex-start",
             mb: 2,
-            gap: 2,
-            flexWrap: "wrap",
           }}
         >
-          <Box sx={{ flex: "1 1 240px", minWidth: 0 }}>
+          <Box>
             <Typography
               variant="h4"
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: appTheme.colors.textPrimary,
+                color: appTheme.colors.dark,
               }}
             >
               {competition.name}
@@ -576,59 +382,20 @@ export default function CompetitionResultsPage() {
                   color: appTheme.colors.textSecondary,
                   fontSize: "1.1rem",
                   mb: 2,
-                  maxWidth: "65ch",
                 }}
               />
             )}
           </Box>
-<Stack direction="row" spacing={1} alignItems="flex-start" flexWrap="wrap">
-  <Tooltip
-    title="Recevoir les notifications d'incidents et de classements pour cette compétition (e-mail et centre de notifications)."
-    placement="bottom"
-  >
-    <span>
-      <Button
-        variant={following ? "contained" : "outlined"}
-        size="medium"
-        startIcon={<NotificationsActiveIcon />}
-        disabled={!followStatusLoaded || followLoading}
-        onClick={toggleFollow}
-        sx={{
-          textTransform: "none",
-          fontWeight: 700,
-          borderRadius: appTheme.radius.pill,
-          ...(following
-            ? {
-                background: `${appTheme.colors.violet}`,
-                color: "#fff",
-                "&:hover": { background: `${appTheme.colors.violet}dd` },
-              }
-            : {
-                borderColor: `${appTheme.colors.violet}66`,
-                color: appTheme.colors.violet,
-              }),
-        }}
-      >
-        {followLoading ? "…" : following ? "Abonné" : "Suivre les notifications"}
-      </Button>
-    </span>
-  </Tooltip>
-  <Chip
-    label={competitionStatusLabel(competition.status, competition.statusLabel)}
-    sx={{
-      background: `${competitionStatusColor(competition.status)}20`,
-      color: competitionStatusColor(competition.status),
-      fontWeight: 600,
-      border: `1px solid ${competitionStatusColor(competition.status)}40`,
-    }}
-  />
-</Stack>
+          <Chip
+            label={getStatusLabel(competition.status)}
+            sx={{
+              background: `${getStatusColor(competition.status)}20`,
+              color: getStatusColor(competition.status),
+              fontWeight: 600,
+              border: `1px solid ${getStatusColor(competition.status)}40`,
+            }}
+          />
         </Box>
-        {followError && (
-          <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setFollowError(null)}>
-            {followError}
-          </Alert>
-        )}
 
         {competition.startDate && (
           <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
@@ -656,35 +423,26 @@ export default function CompetitionResultsPage() {
         )}
       </Box>
 
-      {/* Onglets — barre type menu spectateur */}
-      <Box sx={{ ...spectatorDarkMenuShell, mb: 4, py: 0, px: 0, overflow: "hidden" }}>
+      {/* Tabs */}
+      <Box sx={{ mb: 4 }}>
         <Tabs
           value={tabValue}
           onChange={(e, newValue) => setTabValue(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
           sx={{
-            minHeight: 52,
-            px: { xs: 0.5, sm: 1 },
             "& .MuiTab-root": {
-              color: "rgba(226,232,240,0.72)",
-              fontWeight: 700,
-              textTransform: "none",
-              fontSize: "0.9375rem",
-              minHeight: 52,
+              color: appTheme.colors.textSecondary,
+              fontWeight: 600,
               "&.Mui-selected": {
-                color: "#f8fafc",
+                color: appTheme.colors.cyan,
               },
             },
             "& .MuiTabs-indicator": {
-              height: 3,
-              borderRadius: "3px 3px 0 0",
-              background: `linear-gradient(90deg, ${appTheme.colors.cyan}, ${appTheme.colors.green})`,
+              background: appTheme.colors.cyan,
             },
           }}
         >
-          <Tab icon={<SportsScoreIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Épreuves" />
-          <Tab icon={<LeaderboardIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Classements" />
+          <Tab icon={<SportsScoreIcon />} iconPosition="start" label="Épreuves" />
+          <Tab icon={<LeaderboardIcon />} iconPosition="start" label="Classements" />
         </Tabs>
       </Box>
 
@@ -693,13 +451,10 @@ export default function CompetitionResultsPage() {
         <Box>
             <Typography
               variant="h5"
-              component="h2"
               sx={{
-                fontWeight: 800,
+                fontWeight: 700,
                 mb: 3,
-                color: "#f8fafc",
-                letterSpacing: "-0.02em",
-                textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+                color: appTheme.colors.dark,
               }}
             >
               Épreuves ({trials.length})
@@ -708,13 +463,13 @@ export default function CompetitionResultsPage() {
           {trials.length === 0 ? (
             <Card
               sx={{
+                background: appTheme.gradients.card,
                 borderRadius: appTheme.radius.lg,
                 p: 4,
                 textAlign: "center",
-                ...competitionEmptyPanelSx,
               }}
             >
-              <Typography sx={{ color: "#d1d5db", fontWeight: 500, lineHeight: 1.6 }}>
+              <Typography sx={{ color: appTheme.colors.textSecondary }}>
                 Aucune épreuve disponible pour cette compétition.
               </Typography>
             </Card>
@@ -724,10 +479,9 @@ export default function CompetitionResultsPage() {
                 <Typography
                   variant="h6"
                   sx={{
-                    fontWeight: 800,
+                    fontWeight: 700,
                     mb: 2,
-                    color: "#e2e8f0",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.35)",
+                    color: appTheme.colors.dark,
                   }}
                 >
                   {roundName}
@@ -737,15 +491,11 @@ export default function CompetitionResultsPage() {
                     <Grid item xs={12} md={6} key={trial.id}>
                       <Card
                         sx={{
+                          background: appTheme.gradients.card,
                           borderRadius: appTheme.radius.lg,
+                          boxShadow: appTheme.shadows.card,
+                          border: "1px solid rgba(148, 163, 184, 0.1)",
                           height: "100%",
-                          ...competitionGlassCardSx,
-                          transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                          "&:hover": {
-                            transform: "translateY(-3px)",
-                            boxShadow:
-                              "0 16px 44px rgba(2,6,23,0.55), inset 0 1px 0 rgba(255,255,255,0.08)",
-                          },
                         }}
                       >
                         <CardContent sx={{ p: 3 }}>
@@ -888,13 +638,10 @@ export default function CompetitionResultsPage() {
         <Box>
           <Typography
             variant="h5"
-            component="h2"
             sx={{
-              fontWeight: 800,
+              fontWeight: 700,
               mb: 3,
-              color: "#f8fafc",
-              letterSpacing: "-0.02em",
-              textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+              color: appTheme.colors.dark,
             }}
           >
             Classements
@@ -905,33 +652,21 @@ export default function CompetitionResultsPage() {
               <CircularProgress sx={{ color: appTheme.colors.cyan }} />
             </Box>
           ) : resultsError ? (
-            <Alert
-              severity="error"
-              sx={{
-                mb: 2,
-                borderRadius: 2,
-                background: "rgba(254, 226, 226, 0.95)",
-                color: "#991b1b",
-                border: "1px solid rgba(248, 113, 113, 0.45)",
-              }}
-            >
-              {resultsError}
-            </Alert>
+            <Alert severity="error">{resultsError}</Alert>
           ) : competitionResults.length === 0 ? (
             <Card
               sx={{
+                background: appTheme.gradients.card,
                 borderRadius: appTheme.radius.lg,
-                ...competitionEmptyPanelSx,
+                boxShadow: appTheme.shadows.card,
               }}
             >
               <CardContent>
                 <Typography
                   sx={{
-                    color: "#d1d5db",
-                    fontWeight: 500,
+                    color: appTheme.colors.textSecondary,
                     textAlign: "center",
                     py: 3,
-                    lineHeight: 1.6,
                   }}
                 >
                   Aucun classement disponible pour cette compétition.
@@ -947,7 +682,7 @@ export default function CompetitionResultsPage() {
                     sx={{
                       fontWeight: 800,
                       mb: 1.6,
-                      color: appTheme.colors.textPrimary,
+                      color: appTheme.colors.dark,
                     }}
                   >
                     {roundName}
@@ -957,15 +692,6 @@ export default function CompetitionResultsPage() {
                 const results = Array.isArray(trialGroup.results)
                   ? trialGroup.results
                   : [];
-                const rankedRows = withDisplayRank(
-                  results.filter((r) => r?.participant?.status !== "FORFEIT")
-                );
-                const displayResults = [
-                  ...rankedRows,
-                  ...results
-                    .filter((r) => r?.participant?.status === "FORFEIT")
-                    .map((r) => ({ ...r, rank: null, tie: false, displayRank: null })),
-                ];
                 const resultsCount = results.length;
                 const performanceType = results[0]?.performanceType || null;
                 const performanceLabel =
@@ -1159,11 +885,11 @@ export default function CompetitionResultsPage() {
                               </TableRow>
                             </TableHead>
                             <TableBody>
-                              {displayResults.map((result) => (
+                              {results.map((result) => (
                                 <TableRow
                                   key={result.id}
                                   sx={
-                                    result.tie && result?.participant?.status !== "FORFEIT"
+                                    result.tie
                                       ? {
                                           background: "rgba(250, 204, 21, 0.14)",
                                           "&:hover": {
@@ -1179,34 +905,19 @@ export default function CompetitionResultsPage() {
                                 >
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Typography sx={{ fontWeight: 700 }}>
-                                      {result.displayRank == null
-                                        ? "—"
-                                        : result.displayRank === 1
+                                      {result.rank === 1
                                         ? "🥇"
-                                        : result.displayRank === 2
+                                        : result.rank === 2
                                         ? "🥈"
-                                        : result.displayRank === 3
+                                        : result.rank === 3
                                         ? "🥉"
-                                        : result.displayRank}
+                                        : result.rank}
                                     </Typography>
                                   </TableCell>
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Typography sx={{ fontWeight: 600 }}>
                                       {result.participant?.displayName || "Participant inconnu"}
                                     </Typography>
-                                    {result.participant?.status === "FORFEIT" && (
-                                      <Chip
-                                        size="small"
-                                        label="Forfait"
-                                        sx={{
-                                          mt: 0.6,
-                                          fontWeight: 700,
-                                          color: "#fecaca",
-                                          background: "rgba(239, 68, 68, 0.20)",
-                                          border: "1px solid rgba(239, 68, 68, 0.45)",
-                                        }}
-                                      />
-                                    )}
                                     {result.participant?.competitorType === "TEAM" &&
                                       Array.isArray(result.participant?.members) &&
                                       result.participant.members.length > 0 && (
@@ -1227,21 +938,10 @@ export default function CompetitionResultsPage() {
                                   </TableCell>
                                   <TableCell sx={{ color: "#E2E8F0" }}>
                                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                      <Typography
-                                        sx={{
-                                          fontWeight: 800,
-                                          color:
-                                            result.participant?.status === "FORFEIT"
-                                              ? "#fecaca"
-                                              : "#E2E8F0",
-                                        }}
-                                      >
-                                        {result.participant?.status === "FORFEIT"
-                                          ? "Forfait"
-                                          : result.performance}
+                                      <Typography sx={{ fontWeight: 800 }}>
+                                        {result.performance}
                                       </Typography>
-                                      {result.tie &&
-                                        result.participant?.status !== "FORFEIT" && (
+                                      {result.tie && (
                                         <Chip
                                           size="small"
                                           label="Ex æquo"
@@ -1273,20 +973,21 @@ export default function CompetitionResultsPage() {
         </Box>
       )}
 
-      {/* Retour */}
+      {/* Back Button */}
       <Box sx={{ mt: 4 }}>
         <Button
           startIcon={<ArrowBackIcon />}
-          onClick={() => navigate("/spectator")}
+          onClick={() => {
+            if (competition.parentEventId) {
+              navigate(`/spectator/events/${competition.parentEventId}`);
+            } else {
+              navigate("/spectator");
+            }
+          }}
           sx={{
             color: appTheme.colors.cyan,
-            fontWeight: 800,
-            textTransform: "none",
-            letterSpacing: "0.04em",
-            fontSize: "0.875rem",
-            textShadow: "0 1px 2px rgba(0,0,0,0.35)",
             "&:hover": {
-              background: `${appTheme.colors.cyan}18`,
+              background: `${appTheme.colors.cyan}20`,
             },
           }}
         >
@@ -1302,7 +1003,6 @@ export default function CompetitionResultsPage() {
         }}
         trial={selectedTrial}
       />
-      </SpectatorCompetitionGlassShell>
-    </>
+    </Box>
   );
 }
