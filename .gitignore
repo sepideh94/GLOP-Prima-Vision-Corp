@@ -11,5 +11,8 @@ node_modules/
 *.log
 logs/
 
+# Playwright (artefacts à la racine du dépôt)
+test-results/
+
 hs_err_pid*
 replay_pid*
