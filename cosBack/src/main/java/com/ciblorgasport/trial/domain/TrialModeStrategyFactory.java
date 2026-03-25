@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+
 /**
  * Factory du Strategy Pattern pour les modes d'épreuve.
  * <p>
