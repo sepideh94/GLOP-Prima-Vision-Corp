@@ -21,7 +21,6 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import VisibilityIcon from "@mui/icons-material/Visibility";
 import appTheme from "../../../common/theme/appTheme";
 import trialService from "../services/trialService";
 
@@ -181,10 +180,10 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
             <EmojiEventsIcon sx={{ color: appTheme.colors.green }} />
           </Box>
           <Box>
-            <Typography sx={{ fontWeight: 900, lineHeight: 1.1 }}>
+            <Typography sx={{ fontWeight: 900, lineHeight: 1.1, color: "#0f172a" }}>
               Classement
             </Typography>
-            <Typography sx={{ fontSize: 13, color: "text.secondary" }}>
+            <Typography sx={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>
               {trial?.name || "Épreuve"}
             </Typography>
           </Box>
@@ -209,7 +208,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
                 fontWeight: 700,
                 borderRadius: appTheme.radius.pill,
                 background: "rgba(167, 139, 250, 0.17)",
-                color: "#DDD6FE",
+                color: "#6d28d9",
                 border: "1px solid rgba(167, 139, 250, 0.42)",
               }}
             />
@@ -224,7 +223,7 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
               fontWeight: 700,
               borderRadius: appTheme.radius.pill,
               background: "rgba(167, 139, 250, 0.17)",
-              color: "#DDD6FE",
+              color: "#6d28d9",
               border: "1px solid rgba(167, 139, 250, 0.42)",
             }}
           />
@@ -388,7 +387,6 @@ export default function TrialResultsViewDialog({ open, onClose, trial }) {
       <DialogActions sx={{ p: 2 }}>
         <Button
           onClick={onClose}
-          startIcon={<VisibilityIcon sx={{ fontSize: 18 }} />}
           sx={{
             textTransform: "none",
             fontWeight: 700,
