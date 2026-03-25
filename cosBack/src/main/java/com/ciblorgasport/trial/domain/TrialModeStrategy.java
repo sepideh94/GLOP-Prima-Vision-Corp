@@ -16,6 +16,12 @@ import com.ciblorgasport.competition.domain.CompetitorType;
 public interface TrialModeStrategy {
 
     /**
+     * Le mode porté par cette stratégie (INDIVIDUAL, TEAM...).
+     * Sert à indexer automatiquement les stratégies dans la factory.
+     */
+    TrialMode getMode();
+
+    /**
      * Type de compétiteur attendu pour ce mode (ATHLETE, TEAM...).
      */
     CompetitorType getExpectedCompetitorType();

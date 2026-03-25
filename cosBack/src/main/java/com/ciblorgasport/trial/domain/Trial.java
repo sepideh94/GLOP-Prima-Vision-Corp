@@ -175,19 +175,8 @@ public class Trial implements StatusChecker {
      * @throws IllegalStateException if the trial is already cancelled or completed
      */
     /**
-     * Retourne la stratégie métier associée au mode de cette épreuve.
-     * <p>
-     * Point d'entrée unique pour accéder aux règles spécifiques au mode
-     * (type de participant attendu, maximum par série, validation...).
-     * L'enum {@link TrialMode} reste l'unique source de vérité persistée ;
-     * la stratégie est résolue à la demande sans modifier le schéma JPA.
-     *
-     * @return la {@link TrialModeStrategy} correspondant au mode de l'épreuve
+     * Marks this trial as cancelled by the specified user.
      */
-    public TrialModeStrategy getModeStrategy() {
-        return TrialModeStrategyFactory.getStrategy(this.mode);
-    }
-
     public void cancel(UserAccount cancelledBy) {
         Status currentStatus = getStatus();
 
