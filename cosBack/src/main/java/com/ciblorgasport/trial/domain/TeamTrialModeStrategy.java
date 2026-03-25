@@ -19,6 +19,11 @@ public class TeamTrialModeStrategy implements TrialModeStrategy {
     private static final int MAX_PER_HEAT = 8;
 
     @Override
+    public TrialMode getMode() {
+        return TrialMode.TEAM;
+    }
+
+    @Override
     public CompetitorType getExpectedCompetitorType() {
         return CompetitorType.TEAM;
     }

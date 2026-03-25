@@ -23,7 +23,9 @@ import com.ciblorgasport.team.dto.TeamResponse;
 import com.ciblorgasport.team.infrastructure.TeamRepository;
 import com.ciblorgasport.trial.domain.Participant;
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialMode;
 import com.ciblorgasport.trial.domain.TrialModeStrategy;
+import com.ciblorgasport.trial.domain.TrialModeStrategyFactory;
 import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.dto.AthleteSummary;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
@@ -46,6 +48,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     private final CommissionerRepository commissionerRepository;
     private final EmailService emailService;
     private final NotificationService notificationService;
+    private final TrialModeStrategyFactory trialModeStrategyFactory;
 
     private boolean isAthleteEligible(Athlete athlete) {
         return athlete != null && athlete.isActive() && athlete.isProfileComplete();
@@ -66,20 +69,11 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         validateTrialStateForAssignment(trial);
 
-        TrialModeStrategy strategy = trial.getModeStrategy();
+        TrialModeStrategy strategy = trialModeStrategyFactory.getStrategy(trial.getMode());
         List<Long> uniqueAthleteIds = athleteIds.stream().distinct().toList();
 
         long currentCount = trialParticipantRepository.countByTrialId(trialId);
-        int maxPerHeat = strategy.getMaxParticipantsPerHeat();
-
-        if (currentCount + uniqueAthleteIds.size() > maxPerHeat) {
-            throw new IllegalArgumentException(
-                    "Le nombre maximum de " + strategy.getParticipantTypeLabel()
-                            + "s par série est de " + maxPerHeat
-                            + ". Actuellement " + currentCount
-                            + " " + strategy.getParticipantTypeLabel() + "(s) assigné(s), impossible d'en ajouter "
-                            + uniqueAthleteIds.size() + ".");
-        }
+        enforceMaxPerHeat(strategy, currentCount, uniqueAthleteIds.size());
 
         RoundName currentRound = trial.getRound().getName();
         List<Long> qualifiedCompetitorIds = null;
@@ -220,6 +214,10 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         Trial trial = trialRepository.findById(trialId)
                 .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
 
+        List<Long> teamMemberAthleteIds = trial.getMode() == TrialMode.INDIVIDUAL
+                ? teamRepository.findAllMemberAthleteIds()
+                : List.of();
+
         RoundName currentRound = trial.getRound().getName();
 
         if (currentRound == RoundName.DEMI_FINALE || currentRound == RoundName.FINALE) {
@@ -235,6 +233,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                     .collect(Collectors.toList());
 
             qualifiedIds.removeAll(alreadyAssignedIds);
+            qualifiedIds.removeAll(teamMemberAthleteIds);
 
             if (qualifiedIds.isEmpty()) {
                 return new ArrayList<>();
@@ -257,6 +256,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
                 .map(p -> p.getCompetitorId())
                 .filter(id -> !alreadyAssignedIds.contains(id))
+                .filter(id -> !teamMemberAthleteIds.contains(id))
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -350,15 +350,11 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         validateTrialStateForAssignment(trial);
 
-        TrialModeStrategy strategy = trial.getModeStrategy();
+        TrialModeStrategy strategy = trialModeStrategyFactory.getStrategy(trial.getMode());
         List<Long> uniqueTeamIds = teamIds.stream().distinct().toList();
 
         long currentCount = trialParticipantRepository.countByTrialId(trialId);
-        int maxPerHeat = strategy.getMaxParticipantsPerHeat();
-
-        if (currentCount + uniqueTeamIds.size() > maxPerHeat) {
-            throw new IllegalArgumentException("Nombre maximum d'équipes par série dépassé.");
-        }
+        enforceMaxPerHeat(strategy, currentCount, uniqueTeamIds.size());
 
         RoundName currentRound = trial.getRound().getName();
         List<Long> qualifiedCompetitorIds = null;
@@ -512,6 +508,17 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                 return CompetitorType.TEAM;
             }
         };
+    }
+
+    private void enforceMaxPerHeat(TrialModeStrategy strategy, long currentCount, int toAddCount) {
+        int maxPerHeat = strategy.getMaxParticipantsPerHeat();
+        if (currentCount + toAddCount > maxPerHeat) {
+            String label = strategy.getParticipantTypeLabel();
+            throw new IllegalArgumentException(
+                    "Le nombre maximum de " + label + "s par série est de " + maxPerHeat
+                            + ". Actuellement " + currentCount + " " + label + "(s) assigné(s), impossible d'en ajouter "
+                            + toAddCount + ".");
+        }
     }
 
     @Override
