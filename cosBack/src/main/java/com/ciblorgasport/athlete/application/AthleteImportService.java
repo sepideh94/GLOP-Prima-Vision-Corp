@@ -119,8 +119,10 @@ public class AthleteImportService {
 
     /**
      * Invite un athlète à une compétition s'il n'est pas déjà invité.
-     * Si l'athlète a déjà un profil complet, la participation est créée directement
-     * en CONFIRMED. Sinon elle reste en INVITED.
+     * Règle métier : une participation n'est jamais CONFIRMED automatiquement.
+     * La confirmation est réservée à la validation explicite par le commissaire.
+     * Si le profil est complet + charte acceptée, la participation démarre en
+     * PENDING_VALIDATION, sinon elle reste en INVITED.
      *
      * @return true si une nouvelle invitation a été créée, false si déjà invité
      */
@@ -137,7 +139,7 @@ public class AthleteImportService {
         }
 
         ParticipationStatus initialStatus = athlete.isProfileComplete()
-                ? ParticipationStatus.CONFIRMED
+                ? ParticipationStatus.PENDING_VALIDATION
                 : ParticipationStatus.INVITED;
 
         Participation participation = Participation.builder()

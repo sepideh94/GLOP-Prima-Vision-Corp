@@ -81,6 +81,12 @@ const ResetPasswordPage = () => {
 
   return (
     <div style={styles.page}>
+      <style>{`
+        .password-field::-ms-reveal,
+        .password-field::-ms-clear {
+          display: none;
+        }
+      `}</style>
       <div style={styles.shell}>
         <div style={styles.leftPanel}>
           <div style={styles.leftPanelOverlay}></div>
@@ -132,6 +138,7 @@ const ResetPasswordPage = () => {
                 <input
                   id="reset-new-password"
                   type={showNewPassword ? "text" : "password"}
+                  className="password-field"
                   name="newPassword"
                   value={formData.newPassword}
                   onChange={handleChange}
@@ -167,6 +174,7 @@ const ResetPasswordPage = () => {
                 <input
                   id="reset-confirm-password"
                   type={showConfirmPassword ? "text" : "password"}
+                  className="password-field"
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}

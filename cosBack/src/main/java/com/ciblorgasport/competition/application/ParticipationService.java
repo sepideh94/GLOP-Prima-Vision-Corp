@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
 import com.ciblorgasport.competition.domain.ParticipationStatus;
@@ -133,18 +134,18 @@ public class ParticipationService {
                 .orElseThrow(() -> new EntityNotFoundException("Participation non trouvée"));
 
         if (participation.getCompetitorType() != CompetitorType.ATHLETE) {
-            throw new IllegalStateException("Seul un athlète peut confirmer sa participation.");
+            throw new BusinessValidationException("Seul un athlète peut confirmer sa participation.");
         }
 
         if (!participation.getCompetitorId().equals(athleteId)) {
-            throw new IllegalStateException("Accès non autorisé à cette participation.");
+            throw new BusinessValidationException("Accès non autorisé à cette participation.");
         }
 
         Athlete athlete = athleteRepository.findById(participation.getCompetitorId())
                 .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé"));
 
         if (!athlete.isProfileComplete()) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "Impossible de confirmer la participation : votre profil est incomplet (documents manquants)."
             );
         }
@@ -171,7 +172,7 @@ public class ParticipationService {
                     .orElseThrow(() -> new EntityNotFoundException("Athlète non trouvé"));
 
             if (!athlete.isProfileComplete()) {
-                throw new IllegalStateException(
+                throw new BusinessValidationException(
                         "Impossible d'accepter la charte : votre profil est incomplet (documents manquants)."
                 );
             }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +17,7 @@ import {
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import GroupAddIcon from "@mui/icons-material/GroupAdd";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import UnfoldMoreIcon from "@mui/icons-material/UnfoldMore";
 
 import commissionerImportService from "../services/commissionerImportService";
 import teamService from "../services/teamService";
@@ -31,6 +32,52 @@ export default function ImportParticipantsDialog({ open, onClose, competitionId,
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+
+  const handleSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedPreview = useMemo(() => {
+    if (!sortConfig.key) return preview;
+
+    const getName = (p) => `${p.firstName || ""} ${p.lastName || ""}`.trim();
+
+    const sorted = [...preview].sort((a, b) => {
+      let aValue;
+      let bValue;
+
+      if (sortConfig.key === "teamName") {
+        aValue = a.teamName || "";
+        bValue = b.teamName || "";
+      } else if (sortConfig.key === "fullName") {
+        aValue = getName(a);
+        bValue = getName(b);
+      } else if (sortConfig.key === "email") {
+        aValue = a.email || "";
+        bValue = b.email || "";
+      } else if (sortConfig.key === "status") {
+        aValue = a.status || "";
+        bValue = b.status || "";
+      } else {
+        aValue = a[sortConfig.key];
+        bValue = b[sortConfig.key];
+      }
+
+      if (typeof aValue === "string") aValue = aValue.toLowerCase();
+      if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [preview, sortConfig]);
 
   const parseCsv = (selectedFile) => {
 
@@ -245,7 +292,7 @@ export default function ImportParticipantsDialog({ open, onClose, competitionId,
 
         <Tabs
           value={tab}
-          onChange={(e,v)=>{setTab(v); setFile(null); setPreview([]); setError(""); setSuccess("");}}
+          onChange={(e,v)=>{setTab(v); setFile(null); setPreview([]); setError(""); setSuccess(""); setSortConfig({ key: null, direction: "asc" });}}
           sx={{ mb:3 }}
         >
           <Tab label="Individuel" />
@@ -304,16 +351,26 @@ export default function ImportParticipantsDialog({ open, onClose, competitionId,
               <table className="table table-sm table-hover">
                 <thead>
                   <tr>
-                    {tab===1 && <th>Équipe</th>}
-                    <th>Nom</th>
-                    <th>Email</th>
-                    <th>Statut</th>
+                    {tab===1 && (
+                      <th style={{ cursor: "pointer" }} onClick={() => handleSort("teamName")}>
+                        Équipe <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                      </th>
+                    )}
+                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("fullName")}>
+                      Nom <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                    </th>
+                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("email")}>
+                      Email <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                    </th>
+                    <th style={{ cursor: "pointer" }} onClick={() => handleSort("status")}>
+                      Statut <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                    </th>
                   </tr>
                 </thead>
 
                 <tbody>
 
-                  {preview.map((p,i)=>(
+                  {sortedPreview.map((p,i)=>(
                     <tr key={i}>
 
                       {tab===1 && <td>{p.teamName}</td>}

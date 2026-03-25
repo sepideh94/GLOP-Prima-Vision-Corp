@@ -3,6 +3,7 @@ package com.ciblorgasport.common.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
@@ -46,7 +47,7 @@ class CsvImportServiceTest {
         MockMultipartFile file = new MockMultipartFile("file", "big.csv", "text/csv", content);
 
         assertThatThrownBy(() -> service.parseCsv(file))
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(BusinessValidationException.class)
                 .hasMessageContaining("5 Mo");
     }
 }

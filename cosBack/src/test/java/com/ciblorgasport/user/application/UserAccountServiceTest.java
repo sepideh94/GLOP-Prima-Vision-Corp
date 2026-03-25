@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.dto.UserResponse;
@@ -81,7 +82,7 @@ class UserAccountServiceTest {
         };
         newUser.setEmail("test@email.com");
 
-        assertThrows(IllegalArgumentException.class, () -> userAccountService.save(newUser));
+        assertThrows(BusinessValidationException.class, () -> userAccountService.save(newUser));
         verify(userRepo, never()).save(any());
     }
 
@@ -119,7 +120,7 @@ class UserAccountServiceTest {
         when(userRepo.findByEmail("test@email.com")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("wrongPass", "encodedPassword")).thenReturn(false);
 
-        assertThrows(IllegalArgumentException.class, () -> 
+        assertThrows(BusinessValidationException.class, () ->
             userAccountService.changePassword("test@email.com", "wrongPass", "newPass")
         );
 

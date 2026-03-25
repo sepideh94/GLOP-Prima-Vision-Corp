@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.competition.application.exceptions.CompetitionDateIntegrityException;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.dto.CompetitionCreateRequest;
@@ -60,7 +61,7 @@ public class CompetitionServiceImpl implements CompetitionService{
     public CompetitionResponse createCompetition(CompetitionCreateRequest request) {
 
         Event parentEvent = eventRepository.findById(request.getParentEventId())
-                .orElseThrow(() -> new IllegalArgumentException("Événement parent introuvable avec l'ID: " + request.getParentEventId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Événement parent introuvable avec l'ID: " + request.getParentEventId()));
 
         validateDatesOrder(request.getStartDate(), request.getEndDate());
         validateCompetitionDate(request.getStartDate(), request.getEndDate(), parentEvent);
@@ -80,7 +81,7 @@ public class CompetitionServiceImpl implements CompetitionService{
     
     private Competition getCompetitionByIdOrThrow(Long id) {
         return competitionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Compétition introuvable avec l'ID: " + id));
     }
 
     @Transactional

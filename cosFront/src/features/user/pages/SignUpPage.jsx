@@ -81,6 +81,12 @@ const SignUpPage = () => {
 
   return (
     <div style={styles.page}>
+      <style>{`
+        .password-field::-ms-reveal,
+        .password-field::-ms-clear {
+          display: none;
+        }
+      `}</style>
       <div style={styles.shell}>
         <div style={styles.leftPanel}>
           <div style={styles.leftPanelOverlay}></div>
@@ -168,6 +174,7 @@ const SignUpPage = () => {
               <input
                 id="signup-password"
                 type={showPassword ? "text" : "password"}
+                className="password-field"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -202,6 +209,7 @@ const SignUpPage = () => {
               <input
                 id="signup-confirm-password"
                 type={showConfirmPassword ? "text" : "password"}
+                className="password-field"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}

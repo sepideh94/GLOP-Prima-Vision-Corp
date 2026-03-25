@@ -1,5 +1,7 @@
 package com.ciblorgasport.geolocation.application.usecase;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.geolocation.application.port.GeoLocationService;
 import com.ciblorgasport.geolocation.application.port.RouteInfo;
 import com.ciblorgasport.geolocation.application.port.TravelMode;
@@ -46,16 +48,16 @@ public class GetDirectionsUseCase {
         if (request.getSiteId() != null) {
             return siteRepository.findById(request.getSiteId())
                     .map(s -> new double[]{s.getLatitude(), s.getLongitude()})
-                    .orElseThrow(() -> new IllegalArgumentException("Site introuvable: " + request.getSiteId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Site introuvable: " + request.getSiteId()));
         }
         if (request.getFanZoneId() != null) {
             return fanZoneRepository.findById(request.getFanZoneId())
                     .map(fz -> new double[]{fz.getLatitude(), fz.getLongitude()})
-                    .orElseThrow(() -> new IllegalArgumentException("Fan zone introuvable: " + request.getFanZoneId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Fan zone introuvable: " + request.getFanZoneId()));
         }
         if (request.getToLatitude() != null && request.getToLongitude() != null) {
             return new double[]{request.getToLatitude(), request.getToLongitude()};
         }
-        throw new IllegalArgumentException("Destination non spécifiée. Fournir siteId, fanZoneId ou coordonnées GPS.");
+        throw new BusinessValidationException("Destination non spécifiée. Fournir siteId, fanZoneId ou coordonnées GPS.");
     }
 }

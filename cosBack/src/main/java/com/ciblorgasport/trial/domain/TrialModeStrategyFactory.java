@@ -46,7 +46,7 @@ public final class TrialModeStrategyFactory {
     public TrialModeStrategy getStrategy(TrialMode mode) {
         TrialModeStrategy strategy = strategies.get(mode);
         if (strategy == null) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "Aucune stratégie définie pour le mode d'épreuve : " + mode
                 + ". Vérifiez que ce mode est enregistré dans TrialModeStrategyFactory.");
         }

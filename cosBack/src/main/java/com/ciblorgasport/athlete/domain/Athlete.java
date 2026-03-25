@@ -74,11 +74,15 @@ public class Athlete extends UserAccount implements Competitor {
 	    return isActive();
 	}
 	
+	private boolean hasText(String value) {
+	    return value != null && !value.trim().isEmpty();
+	}
+
 	public boolean isProfileComplete() {
-	    return nationality != null && 
+	    return hasText(nationality) && 
 	           birthDate != null && 
-	           sexe != null && 
-	           passportNumber != null && 
+	           hasText(sexe) && 
+	           hasText(passportNumber) && 
 	           passportDocument != null && 
 	           medicalCertificate != null && 
 	           hasAcceptedCharte;

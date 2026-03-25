@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.common.utils.StatusChecker;
 import com.ciblorgasport.competition.domain.Competition;
@@ -180,11 +181,11 @@ public class Trial implements StatusChecker {
         Status currentStatus = getStatus();
 
         if (currentStatus == Status.CANCELED) {
-            throw new IllegalStateException("Ce trial est déjà annulé.");
+            throw new BusinessValidationException("Ce trial est déjà annulé.");
         }
 
         if (currentStatus == Status.COMPLETED) {
-            throw new IllegalStateException("Impossible d'annuler un trial terminé.");
+            throw new BusinessValidationException("Impossible d'annuler un trial terminé.");
         }
 
         // Only UPCOMING and IN_PROGRESS can be cancelled

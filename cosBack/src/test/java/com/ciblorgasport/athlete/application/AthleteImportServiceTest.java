@@ -29,6 +29,7 @@ import com.ciblorgasport.common.service.CsvImportService;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
+import com.ciblorgasport.competition.domain.ParticipationStatus;
 import com.ciblorgasport.competition.infrastructure.CompetitionRepository;
 import com.ciblorgasport.competition.infrastructure.ParticipationRepository;
 import com.ciblorgasport.user.dto.CreateUserRequest;
@@ -140,5 +141,35 @@ class AthleteImportServiceTest {
         // Skipped includes both parsing errors or already invited
         assertThat(result.processed()).isEqualTo(0);
         assertThat(result.skipped()).isEqualTo(1);
+    }
+
+    @Test
+    void importAthletesForCompetition_ProfileComplete_ShouldCreatePendingValidationNotConfirmed() throws Exception {
+        MultipartFile file = new MockMultipartFile("file", "dummy".getBytes());
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+
+        CSVRecord existingRecord = mock(CSVRecord.class);
+        when(existingRecord.get("email")).thenReturn("athlete@test.com");
+        when(csvService.parseCsv(file)).thenReturn(List.of(existingRecord));
+
+        athlete.setActive(true);
+        athlete.setNationality("FR");
+        athlete.setSexe("M");
+        athlete.setBirthDate(java.time.LocalDate.of(2000, 1, 1));
+        athlete.setPassportNumber("AA123456");
+        athlete.setPassportDocument(new com.ciblorgasport.storage.domain.Document());
+        athlete.setMedicalCertificate(new com.ciblorgasport.storage.domain.Document());
+        athlete.setHasAcceptedCharte(true);
+
+        when(athleteRepository.findByEmail("athlete@test.com")).thenReturn(Optional.of(athlete));
+        when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorType(
+                eq(1L), eq(10L), eq(CompetitorType.ATHLETE))).thenReturn(false);
+
+        athleteImportService.importAthletesForCompetition(file, 1L);
+
+        org.mockito.ArgumentCaptor<Participation> captor =
+                org.mockito.ArgumentCaptor.forClass(Participation.class);
+        verify(participationRepository).save(captor.capture());
+        assertThat(captor.getValue().getStatus()).isEqualTo(ParticipationStatus.PENDING_VALIDATION);
     }
 }

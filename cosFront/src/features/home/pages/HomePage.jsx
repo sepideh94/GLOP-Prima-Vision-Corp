@@ -113,6 +113,21 @@ const parseDateSafe = (value) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
+/** Événement à afficher dans l’agenda : à venir, ou en cours (fin ≥ aujourd’hui). */
+function isEventInAgenda(e, startOfToday) {
+  const start = e?.startDate != null ? parseDateSafe(e.startDate) : null;
+  const end = e?.endDate != null ? parseDateSafe(e.endDate) : null;
+  const startValid = start && !Number.isNaN(start.getTime());
+  const endValid = end && !Number.isNaN(end.getTime());
+  if (!startValid && !endValid) return false;
+  if (startValid && start >= startOfToday) return true;
+  if (endValid && end >= startOfToday) {
+    if (!startValid) return true;
+    return start < startOfToday;
+  }
+  return false;
+}
+
 const extractCompetitionDatesMap = (events) => {
   const map = new Map();
   if (!Array.isArray(events)) return map;
@@ -185,7 +200,10 @@ export default function HomePage() {
         setResultsError(null);
         const [competitions, events] = await Promise.all([
           publicResultsService.getCompetitionsWithResults(),
-          eventService.getAllEvents().catch(() => []),
+          eventService.getAllEvents().catch((err) => {
+            console.warn("[HomePage] getAllEvents a échoué", err);
+            return [];
+          }),
         ]);
         if (cancelled) return;
 
@@ -276,15 +294,12 @@ export default function HomePage() {
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const ev = [...(Array.isArray(events) ? events : [])]
-          .filter((e) => {
-            if (!e?.startDate) return false;
-            const start = parseDateSafe(e.startDate);
-            if (Number.isNaN(start.getTime())) return false;
-            // Agenda: uniquement les événements à venir (pas ceux déjà en cours).
-            // On compare au début de journée pour éviter les décalages de fuseau.
-            return start >= startOfToday;
+          .filter((e) => isEventInAgenda(e, startOfToday))
+          .sort((a, b) => {
+            const da = parseDateSafe(a.startDate) ?? parseDateSafe(a.endDate) ?? new Date(0);
+            const db = parseDateSafe(b.startDate) ?? parseDateSafe(b.endDate) ?? new Date(0);
+            return da - db;
           })
-          .sort((a, b) => parseDateSafe(a.startDate) - parseDateSafe(b.startDate))
           .slice(0, 3);
         setRecentEvents(ev);
       } catch (e) {
@@ -787,8 +802,8 @@ export default function HomePage() {
                 {
                   label: "Agendas et événements",
                   sectionId: "section-agendas",
-                  bg: "linear-gradient(92deg, #eab308 0%, #facc15 50%, #fde047 100%)",
-                  color: "#0f172a",
+                  bg: "linear-gradient(92deg, #ca8a04 0%, #eab308 45%, #facc15 100%)",
+                  color: "#fff",
                   shadow: "0 6px 20px rgba(234, 179, 8, 0.35)",
                 },
                 {
@@ -1458,7 +1473,7 @@ export default function HomePage() {
               Agenda des événements
             </Typography>
             <Typography sx={{ color: INK_MUTED, mt: 1.25, maxWidth: 640, lineHeight: 1.65, fontSize: 15 }}>
-              Les prochains événements à venir, présentés en format agenda avec les informations utiles.
+              Les prochains événements à venir.
             </Typography>
           </Box>
           {recentEvents.length > 0 ? (

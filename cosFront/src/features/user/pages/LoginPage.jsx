@@ -97,6 +97,12 @@ const LoginPage = () => {
 
 return (
     <div style={styles.page}>
+      <style>{`
+        .password-field::-ms-reveal,
+        .password-field::-ms-clear {
+          display: none;
+        }
+      `}</style>
       <div style={styles.shell}>
         <div style={styles.leftPanel}>
           <div style={styles.leftPanelOverlay}></div>
@@ -176,6 +182,7 @@ return (
            <input
              id="login-password"
              type={showPassword ? "text" : "password"}
+             className="password-field"
              name="password"
              style={styles.passwordInput}
              onChange={handleChange}

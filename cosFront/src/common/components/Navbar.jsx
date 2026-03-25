@@ -1,15 +1,26 @@
-import { AppBar, Toolbar, Typography, Box, Button, IconButton, Menu, MenuItem, Badge } from "@mui/material";
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Box,
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Badge,
+  Divider,
+} from "@mui/material";
 import SportsScoreIcon from "@mui/icons-material/SportsScore";
 import MenuIcon from "@mui/icons-material/Menu";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import PersonIcon from "@mui/icons-material/Person";
 import PeopleIcon from "@mui/icons-material/People";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import appTheme from "../theme/appTheme";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import notificationService from "../../features/notification/services/notificationService";
 
 export default function Navbar() {
@@ -42,8 +53,12 @@ export default function Navbar() {
 
   const goFriends = () => {
     handleCloseMenu();
-    // UI placeholder (pas encore d'endpoint / page dédiée)
-    window.alert("Retrouver des amis : fonctionnalité à venir.");
+    navigate("/spectator/map");
+  };
+
+  const handleLogoutFromMenu = () => {
+    handleCloseMenu();
+    logout();
   };
 
   useEffect(() => {
@@ -107,6 +122,16 @@ export default function Navbar() {
                   onClose={handleCloseMenu}
                   PaperProps={{ sx: { minWidth: 240 } }}
                 >
+                  <MenuItem onClick={goNotifications}>
+                    <NotificationsIcon
+                      fontSize="small"
+                      sx={{ mr: 1, color: appTheme.colors.violet }}
+                    />
+                    Notifications
+                    {unreadCount > 0
+                      ? ` (${unreadCount > 99 ? "99+" : unreadCount})`
+                      : ""}
+                  </MenuItem>
                   <MenuItem
                     component={RouterLink}
                     to="/spectator?mode=favorites"
@@ -115,36 +140,20 @@ export default function Navbar() {
                     <FavoriteIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.violet }} />
                     Compétitions suivies
                   </MenuItem>
-                  <MenuItem onClick={goProfile}>
-                    <PersonIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.cyan }} />
-                    Mon profil
-                  </MenuItem>
-                <MenuItem onClick={goNotifications}>
-                  <NotificationsIcon
-                    fontSize="small"
-                    sx={{ mr: 1, color: appTheme.colors.violet }}
-                  />
-                  Mes notifications {unreadCount > 0 ? `(${unreadCount > 99 ? "99+" : unreadCount})` : ""}
-                </MenuItem>
                   <MenuItem onClick={goFriends}>
                     <PeopleIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.green }} />
                     Retrouver des amis
                   </MenuItem>
+                  <MenuItem onClick={goProfile}>
+                    <PersonIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.cyan }} />
+                    Mon profil
+                  </MenuItem>
+                  <Divider sx={{ my: 0.5 }} />
+                  <MenuItem onClick={handleLogoutFromMenu}>
+                    <LogoutIcon fontSize="small" sx={{ mr: 1, color: appTheme.colors.dark }} />
+                    Déconnexion
+                  </MenuItem>
                 </Menu>
-
-                <Button
-                  onClick={logout}
-                  sx={{
-                    px: 3,
-                    borderRadius: "999px",
-                    fontWeight: 700,
-                    textTransform: "none",
-                    background: appTheme.colors.dark,
-                    color: appTheme.colors.textPrimary,
-                  }}
-                >
-                  Déconnexion
-                </Button>
               </>
             ) : (
               <>

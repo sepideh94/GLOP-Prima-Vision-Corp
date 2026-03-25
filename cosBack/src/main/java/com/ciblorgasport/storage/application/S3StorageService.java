@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ciblorgasport.common.exception.ExternalServiceException;
 import com.ciblorgasport.storage.domain.Document;
 import com.ciblorgasport.storage.infrastructure.DocumentRepository;
 
@@ -58,7 +59,7 @@ public class S3StorageService implements StorageService {
 
 			return documentRepository.save(document);
 		} catch (IOException e) {
-			throw new RuntimeException("Erreur lors de l'upload du fichier", e);
+			throw new ExternalServiceException("Erreur lors de l'upload du fichier", e);
 		}
 	}
 
@@ -72,7 +73,7 @@ public class S3StorageService implements StorageService {
 		try {
 			return s3Client.getObject(getRequest).readAllBytes();
 		} catch (IOException e) {
-			throw new RuntimeException("Erreur lors du téléchargement du fichier", e);
+			throw new ExternalServiceException("Erreur lors du téléchargement du fichier", e);
 		}
 	}
 
