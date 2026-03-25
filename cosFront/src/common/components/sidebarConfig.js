@@ -41,7 +41,7 @@ const sidebarConfig = {
       path: "/admin/users",
     },
     {
-      label: "Planning",
+      label: "Planning des volontaires",
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
     },
