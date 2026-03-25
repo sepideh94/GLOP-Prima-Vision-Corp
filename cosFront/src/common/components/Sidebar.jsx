@@ -13,41 +13,16 @@ import {
 import PersonIcon from "@mui/icons-material/Person";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotificationUnread } from "../contexts/NotificationUnreadContext";
 import sidebarConfig from "./sidebarConfig";
 import appTheme from "../theme/appTheme";
-import { useEffect, useMemo, useState } from "react";
-import notificationService from "../../features/notification/services/notificationService";
-
 const drawerWidth = 240;
 
 export default function Sidebar() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const role = user?.role || "GUEST";
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  const canHaveNotifications = useMemo(() => role !== "GUEST", [role]);
-
-  useEffect(() => {
-    if (!canHaveNotifications) return undefined;
-
-    let mounted = true;
-    const loadUnread = async () => {
-      try {
-        const count = await notificationService.getUnreadCount();
-        if (mounted) setUnreadCount(count);
-      } catch {
-        if (mounted) setUnreadCount(0);
-      }
-    };
-
-    loadUnread();
-    const timer = setInterval(loadUnread, 30000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, [canHaveNotifications]);
+  const { unreadCount } = useNotificationUnread();
 
   // Générer les initiales du nom
   const getInitials = () => {

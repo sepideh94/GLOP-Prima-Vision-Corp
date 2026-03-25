@@ -28,9 +28,9 @@ import StopIcon from "@mui/icons-material/Stop";
 import SensorsIcon from "@mui/icons-material/Sensors";
 
 import { useAuth } from "../../../common/contexts/AuthContext";
+import { useNotificationUnread } from "../../../common/contexts/NotificationUnreadContext";
 import appTheme from "../../../common/theme/appTheme";
 import athleteProfileService from "../../athlete/services/athleteProfileService";
-import notificationService from "../../notification/services/notificationService";
 import useAthleteTracking from "../../map/hooks/useAthleteTracking";
 
 const HERO_IMAGE =
@@ -108,16 +108,6 @@ export default function Athlete() {
     };
 
     load();
-
-    const loadUnread = async () => {
-      try {
-        const n = await notificationService.getUnreadCount();
-        if (!cancelled && typeof n === "number") setUnreadNotifications(n);
-      } catch {
-        /* ignore */
-      }
-    };
-    loadUnread();
 
     return () => {
       cancelled = true;

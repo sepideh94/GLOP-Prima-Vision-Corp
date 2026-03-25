@@ -413,10 +413,14 @@ export default function AthleteSchedulePage() {
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              sm: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(3, minmax(0, 1fr))",
+            },
             gap: 3,
-            justifyContent: "flex-start",
+            alignItems: "stretch",
           }}
         >
           {schedule.map((trial, index) => {
@@ -431,9 +435,9 @@ export default function AthleteSchedulePage() {
               <Card
                 key={trial.trialParticipantId || trial.trialId || index}
                 sx={{
-                  width: 400,
-                  maxWidth: "100%",
-                  minWidth: { xs: "100%", sm: 360 },
+                  width: "100%",
+                  minWidth: 0,
+                  height: "100%",
                   display: "flex",
                   flexDirection: "column",
                   borderRadius: appTheme.radius.lg,

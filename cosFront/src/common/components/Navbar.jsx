@@ -19,17 +19,17 @@ import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
 import { useLocation, useNavigate, Link as RouterLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { useNotificationUnread } from "../contexts/NotificationUnreadContext";
 import appTheme from "../theme/appTheme";
-import { useState, useEffect } from "react";
-import notificationService from "../../features/notification/services/notificationService";
+import { useState } from "react";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotificationUnread();
   const location = useLocation();
   const navigate = useNavigate();
   const isSpectatorArea = location.pathname.startsWith("/spectator");
   const [anchorEl, setAnchorEl] = useState(null);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   const open = Boolean(anchorEl);
 
@@ -60,25 +60,6 @@ export default function Navbar() {
     handleCloseMenu();
     logout();
   };
-
-  useEffect(() => {
-    if (!user) return undefined;
-    let mounted = true;
-    const loadUnread = async () => {
-      try {
-        const count = await notificationService.getUnreadCount();
-        if (mounted) setUnreadCount(count);
-      } catch {
-        if (mounted) setUnreadCount(0);
-      }
-    };
-    loadUnread();
-    const timer = setInterval(loadUnread, 30000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, [user]);
 
   return (
     <AppBar

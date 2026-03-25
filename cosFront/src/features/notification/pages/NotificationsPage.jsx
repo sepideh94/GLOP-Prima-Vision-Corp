@@ -5,17 +5,24 @@ import {
   Chip,
   CircularProgress,
   Typography,
-  Divider,
   Snackbar,
   Alert as MuiAlert,
   Paper,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import MarkEmailReadOutlinedIcon from "@mui/icons-material/MarkEmailReadOutlined";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import NotificationsActiveOutlinedIcon from "@mui/icons-material/NotificationsActiveOutlined";
 import GroupsIcon from "@mui/icons-material/Groups";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import GppBadOutlinedIcon from "@mui/icons-material/GppBadOutlined";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 
+import appTheme from "../../../common/theme/appTheme";
+import { useNotificationUnread } from "../../../common/contexts/NotificationUnreadContext";
 import notificationService from "../services/notificationService";
 
 function formatDateTime(sentAt) {
@@ -54,33 +61,44 @@ const NOTIFICATION_TYPE_LABELS = {
 
 const TYPE_STYLE = {
   TEAM_PARTICIPATION_VALIDATED: {
-    bg: "linear-gradient(135deg, #bfdbfe, #93c5fd)",
+    accent: "#2563eb",
+    bg: "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
     fg: "#1e3a8a",
-    icon: <GroupsIcon sx={{ fontSize: 20 }} />,
+    icon: <GroupsIcon sx={{ fontSize: 22 }} />,
   },
   PARTICIPATION_VALIDATED: {
-    bg: "linear-gradient(135deg, #86efac, #4ade80)",
+    accent: "#15803d",
+    bg: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
     fg: "#14532d",
-    icon: null,
+    icon: <CheckCircleOutlineIcon sx={{ fontSize: 22 }} />,
   },
   PARTICIPATION_REFUSED: {
-    bg: "linear-gradient(135deg, #fdba74, #fb923c)",
-    fg: "#7c2d12",
-    icon: null,
+    accent: "#be123c",
+    bg: "linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%)",
+    fg: "#881337",
+    icon: <GppBadOutlinedIcon sx={{ fontSize: 22 }} />,
   },
   default: {
-    bg: "linear-gradient(135deg, #fde047, #facc15)",
-    fg: "#713f12",
-    icon: null,
+    accent: "#0891b2",
+    bg: "linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%)",
+    fg: "#0e7490",
+    icon: <MarkEmailReadOutlinedIcon sx={{ fontSize: 22 }} />,
   },
 };
 
+const ink = "#0c1a2e";
+const inkHeading = "#0f2744";
+const muted = "#475569";
+const borderSubtle = "rgba(15, 39, 68, 0.08)";
+
 export default function NotificationsPage() {
+  const { syncUnreadCount, decrementUnreadCount } = useNotificationUnread();
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [markingId, setMarkingId] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: "" });
+  const [listFilter, setListFilter] = useState("all");
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
@@ -92,6 +110,13 @@ export default function NotificationsPage() {
     });
   }, [notifications]);
 
+  const displayedNotifications = useMemo(() => {
+    if (listFilter === "unread") {
+      return sortedNotifications.filter((n) => !n.isRead);
+    }
+    return sortedNotifications;
+  }, [sortedNotifications, listFilter]);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -100,11 +125,14 @@ export default function NotificationsPage() {
         notificationService.getUnreadCount(),
       ]);
       setNotifications(Array.isArray(items) ? items : []);
-      setUnreadCount(typeof count === "number" ? count : 0);
+      const nextUnread = typeof count === "number" ? count : 0;
+      setUnreadCount(nextUnread);
+      syncUnreadCount(nextUnread);
     } catch (e) {
       console.error("Erreur chargement notifications", e);
       setNotifications([]);
       setUnreadCount(0);
+      syncUnreadCount(0);
     } finally {
       setLoading(false);
     }
@@ -127,6 +155,7 @@ export default function NotificationsPage() {
         prev.map((n) => (Number(n.id) === id ? { ...n, isRead: true } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      decrementUnreadCount(1);
     } catch (e) {
       console.error(e);
       setSnackbar({
@@ -143,13 +172,17 @@ export default function NotificationsPage() {
 
   const readCount = Math.max(0, notifications.length - unreadCount);
 
+  const handleFilterChange = (_e, value) => {
+    if (value !== null) setListFilter(value);
+  };
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         position: "relative",
-        background:
-          "linear-gradient(160deg, #fffbeb 0%, #ecfdf5 32%, #e0f2fe 65%, #ffedd5 100%)",
+        fontFamily: appTheme.typography.fontFamily,
+        background: "linear-gradient(180deg, #fffefb 0%, #E8F3FC 38%, #F0F7FF 100%)",
         mx: { xs: -3, sm: -4, md: -6 },
         mt: { xs: -2, sm: -3 },
         px: { xs: 2, sm: 3, md: 4 },
@@ -159,24 +192,24 @@ export default function NotificationsPage() {
         "&::before": {
           content: '""',
           position: "absolute",
-          right: { md: "-8%" },
-          top: "8%",
-          width: { xs: 180, md: 320 },
-          height: { xs: 180, md: 320 },
+          right: { md: "-6%" },
+          top: "5%",
+          width: { xs: 200, md: 340 },
+          height: { xs: 200, md: 340 },
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(250,204,21,0.35) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(34,211,238,0.14) 0%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
         },
         "&::after": {
           content: '""',
           position: "absolute",
-          left: { md: "-5%" },
-          bottom: "12%",
-          width: { xs: 200, md: 280 },
-          height: { xs: 200, md: 280 },
+          left: { md: "-4%" },
+          bottom: "10%",
+          width: { xs: 220, md: 300 },
+          height: { xs: 220, md: 300 },
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(14,165,233,0.22) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(163,230,53,0.12) 0%, transparent 70%)",
           pointerEvents: "none",
           zIndex: 0,
         },
@@ -187,345 +220,437 @@ export default function NotificationsPage() {
           position: "relative",
           zIndex: 1,
           width: "100%",
-          maxWidth: "100%",
+          maxWidth: 1120,
+          mx: "auto",
           display: "grid",
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", md: "minmax(0, 1.55fr) minmax(0, 1fr)" },
-          gap: { xs: 3, md: 3.5 },
-          alignItems: "stretch",
+          gridTemplateColumns: { xs: "minmax(0,1fr)", lg: "minmax(0,1fr) minmax(260px, 300px)" },
+          gap: { xs: 2.5, md: 3 },
+          alignItems: "start",
         }}
       >
-        <Box sx={{ minWidth: 0, width: "100%", order: { xs: 2, md: 1 } }}>
-      <Box
-        sx={{
-          width: "100%",
-          borderRadius: 3,
-          overflow: "hidden",
-          border: "2px solid rgba(234, 88, 12, 0.35)",
-          boxShadow: "0 20px 50px rgba(234, 88, 12, 0.12), 0 8px 30px rgba(14, 165, 233, 0.1)",
-          background: "rgba(255,255,255,0.96)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        <Box
+        {/* Hero — pleine largeur */}
+        <Paper
+          elevation={0}
           sx={{
-            px: 3,
-            py: 2.75,
-            background:
-              "linear-gradient(110deg, #fbbf24 0%, #22c55e 38%, #0ea5e9 72%, #fb923c 100%)",
-            borderBottom: "3px solid rgba(15, 23, 42, 0.08)",
+            gridColumn: { xs: "1", lg: "1 / -1" },
+            borderRadius: 3,
+            overflow: "hidden",
+            border: `1px solid ${borderSubtle}`,
+            boxShadow: "0 8px 32px rgba(15, 39, 68, 0.08)",
+            bgcolor: "#fff",
           }}
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 0.75 }}>
-            <Box
-              sx={{
-                width: 48,
-                height: 48,
-                borderRadius: 2,
-                bgcolor: "rgba(255,255,255,0.95)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
-              }}
-            >
-              <NotificationsActiveOutlinedIcon sx={{ color: "#0369a1", fontSize: 30 }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{
-                  fontWeight: 900,
-                  fontSize: { xs: 22, sm: 26 },
-                  color: "#0f172a",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 1.2,
-                  textShadow: "0 1px 0 rgba(255,255,255,0.5)",
-                }}
-              >
-                Centre de notifications
-              </Typography>
-              <Typography
-                sx={{
-                  color: "#1e293b",
-                  fontSize: 15,
-                  fontWeight: 700,
-                  mt: 0.25,
-                }}
-              >
-                {unreadCount > 0
-                  ? `${unreadCount} message${unreadCount > 1 ? "s" : ""} non lu${unreadCount > 1 ? "s" : ""} — restez informé(e) !`
-                  : "Tout est à jour — aucun message en attente."}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <CircularProgress sx={{ color: "#0284c7" }} />
-          </Box>
-        ) : sortedNotifications.length === 0 ? (
-          <Box sx={{ px: 3, py: 6, textAlign: "center" }}>
-            <Typography sx={{ color: "#64748b", fontWeight: 600 }}>
-              Aucune notification pour le moment.
-            </Typography>
-          </Box>
-        ) : (
-          <Box component="ul" sx={{ listStyle: "none", m: 0, p: 0 }}>
-            {sortedNotifications.map((n, idx) => {
-              const isRead = Boolean(n.isRead);
-              const rel = formatRelative(n.sentAt);
-              const style = TYPE_STYLE[n.type] || TYPE_STYLE.default;
-              let showOpen = false;
-              if (n?.link && origin) {
-                try {
-                  showOpen = new URL(n.link).origin !== origin;
-                } catch {
-                  showOpen = false;
-                }
-              }
-
-              return (
-                <Box key={n.id} component="li">
-                  {idx > 0 ? <Divider sx={{ borderColor: "rgba(148,163,184,0.25)" }} /> : null}
-                  <Box
+          <Box
+            sx={{
+              px: { xs: 2.5, sm: 3.5 },
+              py: { xs: 2.5, sm: 3 },
+              background: `linear-gradient(105deg, rgba(255,255,255,0.98) 0%, rgba(224,242,254,0.5) 45%, rgba(236,253,245,0.4) 100%)`,
+              borderBottom: `1px solid ${borderSubtle}`,
+            }}
+          >
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }} justifyContent="space-between">
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2.5,
+                    background: appTheme.gradients.navbar,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    boxShadow: "0 6px 18px rgba(34, 211, 238, 0.25)",
+                  }}
+                >
+                  <NotificationsActiveOutlinedIcon sx={{ color: appTheme.colors.dark, fontSize: 28 }} />
+                </Box>
+                <Box>
+                  <Typography
+                    component="h1"
                     sx={{
-                      display: "flex",
-                      gap: 2,
-                      px: 3,
-                      py: 2.25,
-                      alignItems: "flex-start",
-                      background: isRead
-                        ? "transparent"
-                        : "linear-gradient(90deg, rgba(254, 243, 199, 0.55) 0%, rgba(255,255,255,0.4) 55%)",
-                      borderLeft: isRead ? "4px solid transparent" : "4px solid #f59e0b",
-                      transition: "background 0.2s ease",
+                      fontWeight: 900,
+                      fontSize: { xs: "1.45rem", sm: "1.75rem" },
+                      color: inkHeading,
+                      letterSpacing: "-0.03em",
+                      lineHeight: 1.2,
                     }}
                   >
-                    <Box
+                    Notifications
+                  </Typography>
+                  <Typography sx={{ color: muted, fontSize: 14, fontWeight: 600, mt: 0.35 }}>
+                    Messages du commissaire et de l&apos;organisation
+                  </Typography>
+                </Box>
+              </Stack>
+              <Chip
+                icon={<InboxOutlinedIcon sx={{ fontSize: 18 }} />}
+                label={
+                  unreadCount > 0
+                    ? `${unreadCount} non lue${unreadCount > 1 ? "s" : ""}`
+                    : "À jour"
+                }
+                sx={{
+                  fontWeight: 800,
+                  alignSelf: { xs: "flex-start", sm: "center" },
+                  bgcolor: unreadCount > 0 ? "rgba(8, 145, 178, 0.12)" : "rgba(22, 163, 74, 0.12)",
+                  color: unreadCount > 0 ? "#0e7490" : "#15803d",
+                  border: `1px solid ${unreadCount > 0 ? "rgba(8, 145, 178, 0.25)" : "rgba(22, 163, 74, 0.25)"}`,
+                }}
+              />
+            </Stack>
+          </Box>
+        </Paper>
+
+        {/* Colonne principale : liste */}
+        <Box sx={{ minWidth: 0, gridColumn: "1" }}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: `1px solid ${borderSubtle}`,
+              bgcolor: "rgba(255,255,255,0.96)",
+              boxShadow: "0 4px 24px rgba(15, 39, 68, 0.06)",
+              overflow: "hidden",
+            }}
+          >
+            <Box
+              sx={{
+                px: { xs: 2, sm: 2.5 },
+                py: 2,
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                alignItems: { sm: "center" },
+                justifyContent: "space-between",
+                gap: 2,
+                borderBottom: `1px solid ${borderSubtle}`,
+                bgcolor: "rgba(248, 250, 252, 0.8)",
+              }}
+            >
+              <Typography sx={{ fontWeight: 800, fontSize: 14, color: inkHeading }}>
+                Fil des messages
+              </Typography>
+              <ToggleButtonGroup
+                exclusive
+                value={listFilter}
+                onChange={handleFilterChange}
+                size="small"
+                sx={{
+                  "& .MuiToggleButton-root": {
+                    textTransform: "none",
+                    fontWeight: 700,
+                    px: 2,
+                    borderColor: borderSubtle,
+                    color: muted,
+                    "&.Mui-selected": {
+                      bgcolor: "rgba(34, 211, 238, 0.14)",
+                      color: "#0e7490",
+                      borderColor: "rgba(8, 145, 178, 0.35)",
+                      "&:hover": { bgcolor: "rgba(34, 211, 238, 0.2)" },
+                    },
+                  },
+                }}
+              >
+                <ToggleButton value="all">Toutes</ToggleButton>
+                <ToggleButton value="unread">Non lues</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
+
+            {loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}>
+                <CircularProgress sx={{ color: "#0891b2" }} />
+              </Box>
+            ) : displayedNotifications.length === 0 ? (
+              <Box sx={{ px: 3, py: 8, textAlign: "center" }}>
+                <NotificationsNoneOutlinedIcon sx={{ fontSize: 56, color: "rgba(8, 145, 178, 0.35)", mb: 2 }} />
+                <Typography sx={{ fontWeight: 800, fontSize: 18, color: inkHeading, mb: 1 }}>
+                  {listFilter === "unread" && sortedNotifications.length > 0
+                    ? "Aucun message non lu"
+                    : "Aucune notification"}
+                </Typography>
+                <Typography sx={{ color: muted, fontWeight: 500, maxWidth: 360, mx: "auto", lineHeight: 1.6 }}>
+                  {listFilter === "unread" && sortedNotifications.length > 0
+                    ? "Tous vos messages ont été lus. Revenez plus tard ou consultez l’onglet « Toutes »."
+                    : "Les alertes de validation et les messages importants apparaîtront ici."}
+                </Typography>
+              </Box>
+            ) : (
+              <Stack spacing={0} sx={{ p: { xs: 1.5, sm: 2 } }}>
+                {displayedNotifications.map((n) => {
+                  const isRead = Boolean(n.isRead);
+                  const rel = formatRelative(n.sentAt);
+                  const style = TYPE_STYLE[n.type] || TYPE_STYLE.default;
+                  let showOpen = false;
+                  if (n?.link && origin) {
+                    try {
+                      showOpen = new URL(n.link).origin !== origin;
+                    } catch {
+                      showOpen = false;
+                    }
+                  }
+
+                  return (
+                    <Paper
+                      key={n.id}
+                      elevation={0}
                       sx={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: 2,
-                        flexShrink: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        background: style.bg,
-                        color: style.fg,
-                        boxShadow: "0 4px 12px rgba(15,23,42,0.12)",
-                        border: "2px solid rgba(255,255,255,0.6)",
+                        p: { xs: 2, sm: 2.25 },
+                        borderRadius: 2.5,
+                        border: `1px solid ${borderSubtle}`,
+                        borderLeft: `4px solid ${style.accent}`,
+                        bgcolor: isRead ? "#fff" : "rgba(224, 242, 254, 0.35)",
+                        boxShadow: isRead ? "none" : "0 4px 16px rgba(8, 145, 178, 0.08)",
+                        transition: "box-shadow 0.2s ease, background-color 0.2s ease",
+                        "&:hover": {
+                          boxShadow: "0 8px 24px rgba(15, 39, 68, 0.08)",
+                        },
                       }}
                     >
-                      {style.icon || (
-                        <MarkEmailReadOutlinedIcon sx={{ fontSize: 22, opacity: isRead ? 0.5 : 1 }} />
-                      )}
-                    </Box>
-
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          justifyContent: "space-between",
-                          gap: 1,
-                          flexWrap: "wrap",
-                        }}
-                      >
-                        <Typography
+                      <Stack direction="row" spacing={2} alignItems="flex-start">
+                        <Box
                           sx={{
-                            fontWeight: 900,
-                            fontSize: 17,
-                            color: "#0f172a",
-                            lineHeight: 1.35,
-                            letterSpacing: "-0.02em",
+                            width: 48,
+                            height: 48,
+                            borderRadius: 2,
+                            flexShrink: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: style.bg,
+                            color: style.fg,
+                            border: "1px solid rgba(255,255,255,0.8)",
+                            boxShadow: "0 2px 10px rgba(15,23,42,0.06)",
                           }}
                         >
-                          {n.title || "Notification"}
-                          {!isRead ? (
-                            <Box
-                              component="span"
-                              sx={{
-                                display: "inline-block",
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                bgcolor: "#0ea5e9",
-                                ml: 1,
-                                verticalAlign: "middle",
-                              }}
-                            />
-                          ) : null}
-                        </Typography>
-                        <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
-                          <Typography sx={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>
-                            {formatDateTime(n.sentAt)}
-                          </Typography>
-                          {rel ? (
-                            <Typography sx={{ color: "#94a3b8", fontSize: 11 }}>{rel}</Typography>
-                          ) : null}
+                          {style.icon}
                         </Box>
-                      </Box>
 
-                      <Typography
-                        sx={{
-                          color: "#334155",
-                          fontSize: 15,
-                          fontWeight: 500,
-                          lineHeight: 1.6,
-                          mt: 0.75,
-                          whiteSpace: "pre-wrap",
-                        }}
-                      >
-                        {n.message || ""}
-                      </Typography>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Stack
+                            direction={{ xs: "column", sm: "row" }}
+                            spacing={0.5}
+                            alignItems={{ sm: "flex-start" }}
+                            justifyContent="space-between"
+                            sx={{ gap: { sm: 2 } }}
+                          >
+                            <Stack direction="row" alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
+                              <Typography
+                                component="h2"
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: { xs: 16, sm: 17 },
+                                  color: ink,
+                                  lineHeight: 1.35,
+                                  letterSpacing: "-0.02em",
+                                }}
+                              >
+                                {n.title || "Notification"}
+                              </Typography>
+                              {!isRead ? (
+                                <Chip
+                                  label="Nouveau"
+                                  size="small"
+                                  sx={{
+                                    height: 22,
+                                    fontWeight: 800,
+                                    fontSize: 11,
+                                    bgcolor: "rgba(8, 145, 178, 0.15)",
+                                    color: "#0e7490",
+                                  }}
+                                />
+                              ) : null}
+                            </Stack>
+                            <Box sx={{ textAlign: { xs: "left", sm: "right" }, flexShrink: 0 }}>
+                              <Typography sx={{ color: muted, fontSize: 12, fontWeight: 700 }}>
+                                {formatDateTime(n.sentAt)}
+                              </Typography>
+                              {rel ? (
+                                <Typography sx={{ color: "#94a3b8", fontSize: 11, fontWeight: 600 }}>{rel}</Typography>
+                              ) : null}
+                            </Box>
+                          </Stack>
 
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1.25, alignItems: "center" }}>
-                        {n.type ? (
-                          <Chip
-                            size="small"
-                            label={NOTIFICATION_TYPE_LABELS[n.type] || String(n.type)}
+                          <Typography
                             sx={{
-                              fontWeight: 900,
-                              fontSize: 12,
-                              background: style.bg,
-                              color: style.fg,
-                              border: "1px solid rgba(255,255,255,0.5)",
-                            }}
-                          />
-                        ) : null}
-                        {n.incidentStatus ? (
-                          <Chip
-                            size="small"
-                            label={`Incident : ${n.incidentStatus}`}
-                            sx={{
-                              fontWeight: 700,
-                              fontSize: 11,
-                              backgroundColor: "#ede9fe",
-                              color: "#5b21b6",
-                            }}
-                          />
-                        ) : null}
-
-                        <Box sx={{ flex: 1 }} />
-
-                        {!isRead ? (
-                          <Button
-                            size="small"
-                            variant="contained"
-                            disabled={markingId === Number(n.id)}
-                            onClick={() => handleMarkAsRead(n.id)}
-                            sx={{
-                              textTransform: "none",
-                              fontWeight: 800,
-                              borderRadius: 999,
-                              background: "linear-gradient(135deg, #22c55e, #0ea5e9)",
-                              boxShadow: "0 4px 14px rgba(14, 165, 233, 0.35)",
-                              "&:hover": {
-                                background: "linear-gradient(135deg, #16a34a, #0284c7)",
-                              },
+                              color: "#334155",
+                              fontSize: 14,
+                              fontWeight: 500,
+                              lineHeight: 1.65,
+                              mt: 1,
+                              whiteSpace: "pre-wrap",
                             }}
                           >
-                            {markingId === Number(n.id) ? "…" : "Marquer comme lu"}
-                          </Button>
-                        ) : null}
+                            {n.message || ""}
+                          </Typography>
 
-                        {showOpen && n.link ? (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            endIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
-                            onClick={() => window.open(n.link, "_blank", "noopener,noreferrer")}
-                            sx={{
-                              textTransform: "none",
-                              fontWeight: 800,
-                              borderRadius: 999,
-                              borderColor: "rgba(234, 88, 12, 0.5)",
-                              color: "#c2410c",
-                            }}
+                          <Stack
+                            direction="row"
+                            flexWrap="wrap"
+                            sx={{ mt: 1.75, alignItems: "center", gap: 1 }}
                           >
-                            Ouvrir
-                          </Button>
-                        ) : null}
-                      </Box>
-                    </Box>
-                  </Box>
-                </Box>
-              );
-            })}
-          </Box>
-        )}
-      </Box>
-        </Box>
+                            {n.type ? (
+                              <Chip
+                                size="small"
+                                label={NOTIFICATION_TYPE_LABELS[n.type] || String(n.type)}
+                                sx={{
+                                  fontWeight: 800,
+                                  fontSize: 11,
+                                  background: style.bg,
+                                  color: style.fg,
+                                  border: "1px solid rgba(15,23,42,0.06)",
+                                }}
+                              />
+                            ) : null}
+                            {n.incidentStatus ? (
+                              <Chip
+                                size="small"
+                                label={`Incident : ${n.incidentStatus}`}
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: 11,
+                                  backgroundColor: "rgba(167, 139, 250, 0.15)",
+                                  color: "#5b21b6",
+                                }}
+                              />
+                            ) : null}
 
-        <Box sx={{ minWidth: 0, width: "100%", order: { xs: 1, md: 2 } }}>
-          <Stack spacing={2.5} sx={{ width: "100%", height: "100%" }}>
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.5,
-                borderRadius: 3,
-                border: "1px solid rgba(15, 39, 68, 0.08)",
-                background: "linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(254,243,199,0.55) 100%)",
-                borderTop: "4px solid #f59e0b",
-                boxShadow: "0 12px 32px rgba(245, 158, 11, 0.15)",
-              }}
-            >
-              <Typography sx={{ fontSize: 12, fontWeight: 800, color: "#92400e", letterSpacing: "0.08em", mb: 1 }}>
-                RÉSUMÉ
-              </Typography>
-              <Typography sx={{ fontWeight: 900, fontSize: 42, color: "#0f2744", lineHeight: 1 }}>
-                {unreadCount}
-              </Typography>
-              <Typography sx={{ color: "#64748b", fontSize: 14, fontWeight: 600, mb: 2 }}>
-                non lue{unreadCount > 1 ? "s" : ""}
-              </Typography>
-              <Divider sx={{ my: 1.5, borderColor: "rgba(148,163,184,0.35)" }} />
-              <Typography sx={{ fontSize: 13, color: "#475569" }}>
-                <strong>{readCount}</strong> déjà lue{readCount > 1 ? "s" : ""} sur{" "}
-                <strong>{notifications.length}</strong> au total
-              </Typography>
-            </Paper>
+                            <Box sx={{ flex: 1, minWidth: 8 }} />
 
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.25,
-                borderRadius: 3,
-                border: "1px solid rgba(15, 39, 68, 0.08)",
-                background: "linear-gradient(135deg, #fff 0%, #ffedd5 100%)",
-                borderLeft: "5px solid #22c55e",
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, color: "#0f2744", mb: 1.5, fontSize: 15 }}>
-                À savoir
-              </Typography>
-              <Stack spacing={1.25} sx={{ fontSize: 13, color: "#475569", lineHeight: 1.5 }}>
-                <Typography>• Les messages du commissaire apparaissent ici en priorité.</Typography>
-                <Typography>• Marquez comme lu pour suivre ce qu&apos;il reste à traiter.</Typography>
-                <Typography>• Les liens externes s&apos;ouvrent dans un nouvel onglet.</Typography>
+                            {showOpen && n.link ? (
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                endIcon={<OpenInNewIcon sx={{ fontSize: 16 }} />}
+                                onClick={() => window.open(n.link, "_blank", "noopener,noreferrer")}
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 700,
+                                  borderRadius: 2,
+                                  borderColor: "rgba(8, 145, 178, 0.45)",
+                                  color: "#0e7490",
+                                  "&:hover": {
+                                    borderColor: "#0891b2",
+                                    bgcolor: "rgba(8, 145, 178, 0.06)",
+                                  },
+                                }}
+                              >
+                                Ouvrir le lien
+                              </Button>
+                            ) : null}
+
+                            {!isRead ? (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={markingId === Number(n.id)}
+                                onClick={() => handleMarkAsRead(n.id)}
+                                startIcon={<MarkEmailReadOutlinedIcon sx={{ fontSize: 18 }} />}
+                                sx={{
+                                  textTransform: "none",
+                                  fontWeight: 700,
+                                  borderRadius: 2,
+                                  background: appTheme.gradients.navbar,
+                                  color: appTheme.colors.dark,
+                                  boxShadow: "0 4px 14px rgba(34, 211, 238, 0.25)",
+                                  "&:hover": {
+                                    filter: "brightness(0.97)",
+                                    boxShadow: "0 6px 18px rgba(15, 39, 68, 0.1)",
+                                  },
+                                }}
+                              >
+                                {markingId === Number(n.id) ? "…" : "Marquer comme lu"}
+                              </Button>
+                            ) : null}
+                          </Stack>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  );
+                })}
               </Stack>
-            </Paper>
-
-            <Paper
-              elevation={0}
-              sx={{
-                p: 2.25,
-                borderRadius: 3,
-                border: "1px solid rgba(15, 39, 68, 0.08)",
-                background: "linear-gradient(135deg, rgba(254,249,195,0.5), rgba(255,255,255,0.95))",
-                borderLeft: "5px solid #0ea5e9",
-              }}
-            >
-              <Typography sx={{ fontWeight: 800, color: "#0f2744", mb: 1, fontSize: 15 }}>
-                Astuce
-              </Typography>
-              <Typography sx={{ fontSize: 13, color: "#475569", lineHeight: 1.55 }}>
-                Pensez à consulter cette page après chaque envoi de documents : la validation ou un refus
-                y est notifié rapidement.
-              </Typography>
-            </Paper>
-          </Stack>
+            )}
+          </Paper>
         </Box>
+
+        {/* Colonne latérale : stats + aide */}
+        <Stack spacing={2.25} sx={{ width: "100%", minWidth: 0 }}>
+          <Paper
+            elevation={0}
+            sx={{
+              borderRadius: 3,
+              border: `1px solid ${borderSubtle}`,
+              background: "linear-gradient(165deg, #ffffff 0%, rgba(224,242,254,0.5) 100%)",
+              boxShadow: "0 4px 20px rgba(15, 39, 68, 0.06)",
+              overflow: "hidden",
+            }}
+          >
+            <Box sx={{ height: 4, background: appTheme.gradients.navbar }} />
+            <Box sx={{ p: 2.5 }}>
+              <Typography
+                sx={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: "#0e7490",
+                  letterSpacing: "0.1em",
+                  mb: 1.5,
+                }}
+              >
+                SYNTHÈSE
+              </Typography>
+              <Stack direction="row" spacing={2} alignItems="baseline">
+                <Typography sx={{ fontWeight: 900, fontSize: 40, color: inkHeading, lineHeight: 1 }}>
+                  {unreadCount}
+                </Typography>
+                <Typography sx={{ color: muted, fontSize: 13, fontWeight: 600 }}>
+                  non lue{unreadCount > 1 ? "s" : ""}
+                </Typography>
+              </Stack>
+              <Typography sx={{ fontSize: 13, color: muted, mt: 1.5, lineHeight: 1.5 }}>
+                <strong style={{ color: inkHeading }}>{readCount}</strong> lue{readCount > 1 ? "s" : ""} sur{" "}
+                <strong style={{ color: inkHeading }}>{notifications.length}</strong>
+              </Typography>
+            </Box>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              border: `1px solid ${borderSubtle}`,
+              bgcolor: "#fff",
+              borderLeft: "4px solid #22c55e",
+              boxShadow: "0 4px 20px rgba(15, 39, 68, 0.05)",
+            }}
+          >
+            <Typography sx={{ fontWeight: 800, color: inkHeading, mb: 1.5, fontSize: 15 }}>
+              Bonnes pratiques
+            </Typography>
+            <Stack spacing={1.25} sx={{ fontSize: 13, color: muted, lineHeight: 1.55 }}>
+              <Typography>• Les retours du commissaire s’affichent ici en priorité.</Typography>
+              <Typography>• Marquez comme lu pour distinguer ce qui reste à traiter.</Typography>
+              <Typography>• Les liens externes s’ouvrent dans un nouvel onglet sécurisé.</Typography>
+            </Stack>
+          </Paper>
+
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              borderRadius: 3,
+              border: `1px solid ${borderSubtle}`,
+              background: "linear-gradient(135deg, rgba(236,253,245,0.6) 0%, #fff 100%)",
+              borderLeft: "4px solid #0891b2",
+            }}
+          >
+            <Typography sx={{ fontWeight: 800, color: inkHeading, mb: 1, fontSize: 15 }}>
+              Après un envoi de documents
+            </Typography>
+            <Typography sx={{ fontSize: 13, color: muted, lineHeight: 1.55 }}>
+              Revenez sur cette page : validation ou refus y est indiqué rapidement, sans avoir à rafraîchir
+              constamment votre profil.
+            </Typography>
+          </Paper>
+        </Stack>
       </Box>
 
       <Snackbar
