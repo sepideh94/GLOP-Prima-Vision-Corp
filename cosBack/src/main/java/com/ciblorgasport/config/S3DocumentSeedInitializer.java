@@ -23,8 +23,8 @@ import software.amazon.awssdk.services.s3.model.S3Exception;
 @Component
 @Order(2)
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "storage.s3.endpoint")
-public class LocalMinioSeedInitializer implements ApplicationRunner {
+@ConditionalOnProperty(name = "app.seed.documents.enabled", havingValue = "true")
+public class S3DocumentSeedInitializer implements ApplicationRunner {
 
     private final S3Client s3Client;
 
@@ -36,9 +36,9 @@ public class LocalMinioSeedInitializer implements ApplicationRunner {
         try {
             ensureBucketExists();
             uploadSeedDocumentsIfMissing();
-            log.info("Seed MinIO exécuté avec succès.");
+            log.info("Seed S3 documents exécuté avec succès.");
         } catch (Exception e) {
-            log.error("Erreur pendant le seed MinIO", e);
+            log.error("Erreur pendant le seed S3 documents", e);
         }
     }
 
@@ -51,7 +51,7 @@ public class LocalMinioSeedInitializer implements ApplicationRunner {
                 s3Client.createBucket(b -> b.bucket(bucketName));
                 log.info("Bucket créé : {}", bucketName);
             } catch (Exception ex) {
-                log.info("Bucket probablement déjà créé : {}", bucketName);
+                log.info("Bucket probablement déjà créé ou non créable automatiquement : {}", bucketName);
             }
         }
     }
