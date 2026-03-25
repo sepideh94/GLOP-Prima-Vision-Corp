@@ -38,6 +38,12 @@ class SecurityAccessIntegrationTest {
     }
 
     @Test
+    void protectedRoute_Admin_WithoutAuthentication_ShouldBeRejected() throws Exception {
+        mockMvc.perform(get("/api/admin/dashboard"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     @WithMockUser(roles = "ADMIN")
     @org.springframework.test.annotation.DirtiesContext 
     void testCreateSuccess() throws Exception {
