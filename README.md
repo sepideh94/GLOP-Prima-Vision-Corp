@@ -2,42 +2,28 @@
 
 ## Table des matières
 
-- [Périmètre du MVP](#périmètre-du-mvp)
 - [Architecture](#architecture)
 - [Technologies utilisées](#technologies-utilisées)
-- [Fonctionnalités](#fonctionnalités)
+- [Fonctionnalités implémentées](#fonctionnalités-implémentées)
 - [Installation et lancement](#installation-et-lancement)
 - [Configuration](#configuration)
 - [Liens des e-mails (activation, invitations)](#liens-des-e-mails-activation-invitations)
 - [Identifiants de connexion](#identifiants-de-connexion)
 - [Tests](#tests)
-- [Structure du projet](#structure-du-projet)
 - [Déploiement](#déploiement)
-
-## Périmètre du MVP
-
-Le MVP (Minimum Viable Product) comprend les fonctionnalités suivantes :
-
-### Gestion des événements
-- Création, consultation, modification d'événements
-
-### Gestion des compétitions
-- Création et modification de compétitions liées à un événement
-- Consultation des compétitions par événement
-
-### Gestion des épreuves (Trials)
-- Création, consultation et modification d'épreuves
-- Annulation d'une épreuve
-- Filtrage des épreuves par compétition
 
 ## Architecture
 
-L'application suit une architecture en couches :
+L’application repose sur une **architecture monolithique** côté serveur : un **seul déployable** Spring Boot regroupe toute l’API REST, la logique métier et l’accès aux données. Le code est structuré en **modules logiques** (packages par domaine : événements, compétitions, sécurité, etc.) au sein de ce même projet, sans découpe en microservices indépendants. Le **frontend** est une application **SPA** (React) distincte, qui communique avec le backend uniquement via HTTP.
 
-- **Backend** : API REST Spring Boot (Java 21)
-- **Frontend** : Application React avec Material-UI
+En résumé :
+
+- **Backend** : API REST Spring Boot (Java 21), application monolithique modulaire
+- **Frontend** : application React avec Material-UI
 - **Base de données** : PostgreSQL
 - **Déploiement** : Docker Compose, AWS EC2
+
+Le frontend appelle le backend via HTTP (JSON), avec authentification JWT. La liste des préfixes d’URL réels est donnée par les `@RequestMapping` des contrôleurs sous `cosBack/src/main/java/com/ciblorgasport/`.
 
 ## Technologies utilisées
 
@@ -56,24 +42,59 @@ L'application suit une architecture en couches :
 - **React Router 7.9.4**
 - **Axios**
 - **Vite**
+- **Playwright** (`@playwright/test`) — tests end-to-end
 
 ### Infrastructure
 - **Docker & Docker Compose**
 - **Nginx** (pour le frontend)
 - **PgAdmin** (interface de gestion PostgreSQL)
 
-## Fonctionnalités
+## Fonctionnalités implémentées
 
-#### Admin
-- Gestion complète des compétitions
-- Consultation et modification des événements
-- Consultation des compétitions par événement
+Notre application **CiblOrgaSport (Prima Vision)** est une plateforme web pour organiser et suivre des compétitions de natation (événements, compétitions, épreuves, acteurs et public). Voici ce qu’elle propose aujourd’hui, par grand domaine.
 
-### Endpoints API disponibles
+### Authentification et comptes
+- Inscription publique (profil **Spectateur** par défaut), connexion, activation de compte et e-mails (liens générés côté serveur).
+- Réinitialisation de mot de passe (flux « mot de passe oublié »).
+- Sessions sécurisées avec **JWT** et rôles (Admin, Commissaire, Athlète, Volontaire, Spectateur).
+
+### Administrateur
+- Gestion des **événements**, **compétitions**, **épreuves** (trials), **sites** et **rounds**.
+- Création de **commissaires**, gestion des **utilisateurs**, import et gestion des **volontaires** par compétition.
+- **Plannings** (création côté admin, affectation des tâches volontaires), **tableau de bord** et statistiques.
+- **Carte** : visualisation admin, **fan-zones**, géolocalisation des athlètes côté exploitation.
+- Suivi des **incidents** signalés sur la compétition.
+
+### Commissaire
+- Pilotage des compétitions et épreuves dont il a la charge : inscriptions athlètes, équipes, imports, validation ou refus de participations.
+- Dépôt et suivi de **l’agrément** (accreditation) côté commissaire ; traitement côté admin.
+
+### Athlète
+- Consultation des **compétitions** auxquelles il participe, **profil**, **planning** par compétition.
+- Actions sur les épreuves (ex. forfait) et consultation des **résultats** qui le concernent.
+
+### Volontaire
+- Accès à son **planning** de bénévolat sur les compétitions.
+
+### Spectateur
+- Découverte des **événements** et **compétitions**, **résultats** détaillés, **profil** et **notifications**.
+- **Carte** (parcours, fan-zones, contexte compétition) pour le public connecté.
+- Possibilité de **suivre** des compétitions (favoris / suivi).
+
+### Public (sans compte obligatoire)
+- Consultation de **résultats** et de **compétitions** exposés en lecture publique selon la configuration de l’API.
+
+### Technique côté interface
+- Application **React** responsive avec **Material UI**, navigation par rôle, éditeurs de texte riches où nécessaire (contenus, descriptions).
+
+### Endpoints API disponibles (aperçu)
 
 #### Authentification (`/api/auth`)
 - `POST /api/auth/signup` - Inscription (crée un compte Spectateur)
 - `POST /api/auth/signin` - Connexion
+- `GET /api/auth/activate` - Activation de compte (lien e-mail)
+- `POST /api/auth/forgot-password` - Demande de réinitialisation
+- `POST /api/auth/forgot-password/complete` - Finalisation après réception du lien
 
 #### Événements (`/api/events`)
 - `GET /api/events` - Liste de tous les événements (public)
@@ -107,6 +128,10 @@ L'application suit une architecture en couches :
 - `GET /api/rounds/{id}` - Détails d'un round
 - `POST /api/rounds` - Créer un round (authentifié)
 - `DELETE /api/rounds/{id}` - Supprimer un round (authentifié)
+
+#### Autres familles d’API (non exhaustif)
+
+D’autres modules exposent notamment : `/api/admin` (statistiques, volontaires, utilisateurs, plannings, cartes, fan-zones, etc.), `/api/commissioner` (fonctions côté commissaire), `/api/athlete/*`, `/api/spectator/*`, `/api/spectateur/competitions`, `/api/public`, `/api/notifications`, `/api/incidents`, `/api/schedule`, `/api/user`, `/api/countries`, etc. Voir les contrôleurs dans `cosBack` pour la liste complète et les rôles requis.
 
 ## Installation et lancement
 
@@ -191,7 +216,7 @@ npm run build
 
 Un compte administrateur est automatiquement créé lors du premier lancement de l'application :
 
-- **Email** : `admin@cos.com`
+- **Email** : `admincos@yopmail.com`
 - **Mot de passe** : `Admin@123`
 
 ### Création de nouveaux comptes
@@ -205,8 +230,8 @@ Un compte administrateur est automatiquement créé lors du premier lancement de
 - Utilisez l'endpoint `/api/admin/create-commissaire` pour créer des commissaires
 
 #### Création par un Commissaire
-- Un commissaire peut créer des athlètes via `/api/commissaire/create-athlete`
-- Un commissaire peut créer des volontaires via `/api/commissaire/create-volonteer`
+- Un commissaire peut créer des athlètes via `POST /api/commissioner/create-athlete`
+- La création / invitation de volontaires pour une compétition côté administration se fait via `POST /api/admin/competitions/{competitionId}/create-volonteer` (compte Admin)
 
 ### Identifiants PgAdmin
 
@@ -243,6 +268,25 @@ mvn test jacoco:report
 mvn test -Dtest=NomDeLaClasseDeTest
 ```
 
+### Tests Frontend (e2e)
+
+Les scénarios end-to-end sont dans `cosFront/tests/e2e/` et s’exécutent avec **Playwright**.
+
+```bash
+cd cosFront
+npm install
+npx playwright install    # une fois : navigateurs pour Playwright
+npm run test:e2e
+```
+
+Variantes utiles :
+
+- `npm run test:e2e:ui` — interface Playwright
+- `npm run test:e2e:headed` — navigateur visible
+- `npm run test:e2e:debug` — mode debug
+
+Les dossiers **`test-results/`** et **`playwright-report/`** sont générés à l’exécution ; ils sont ignorés par Git (voir `cosFront/.gitignore`). À la racine du dépôt, **`test-results/`** est également ignoré s’il est produit depuis un autre répertoire de travail.
+
 ### Tests disponibles
 
 - **Tests unitaires** :
@@ -261,48 +305,6 @@ mvn test -Dtest=NomDeLaClasseDeTest
 ### Configuration des tests
 
 Les tests utilisent une base de données H2 en mémoire (configuration dans `application-test.properties`), ce qui permet de les exécuter sans dépendance externe.
-
-## Structure du projet
-
-```
-GLOP-Prima-Vision-Corp/
-├── cosBack/                    # Backend Spring Boot
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/com/ciblorgasport/
-│   │   │   │   ├── admin/          # Module Admin
-│   │   │   │   ├── athlete/         # Module Athlète
-│   │   │   │   ├── commissionner/   # Module Commissaire
-│   │   │   │   ├── competition/     # Module Compétition
-│   │   │   │   ├── event/           # Module Événement
-│   │   │   │   ├── round/           # Module Round
-│   │   │   │   ├── security/        # Authentification JWT
-│   │   │   │   ├── site/            # Module Site
-│   │   │   │   ├── trial/           # Module Épreuve
-│   │   │   │   ├── user/            # Module Utilisateur
-│   │   │   │   └── config/          # Configuration
-│   │   │   └── resources/
-│   │   │       └── application.properties
-│   │   └── test/                    # Tests
-│   └── pom.xml
-│
-├── cosFront/                   # Frontend React
-│   ├── src/
-│   │   ├── app/                # Routes principales
-│   │   ├── common/             # Composants et utilitaires communs
-│   │   │   ├── api/            # Services API
-│   │   │   ├── components/     # Composants réutilisables
-│   │   │   └── contexts/       # Contextes React (Auth)
-│   │   └── features/           # Fonctionnalités par domaine
-│   │       ├── competition/
-│   │       ├── events/
-│   │       ├── trial/
-│   │       └── user/
-│   └── package.json
-│
-├── docker-compose.yml          # Configuration Docker Compose
-└── README.md                   # Ce fichier
-```
 
 ## Configuration
 
