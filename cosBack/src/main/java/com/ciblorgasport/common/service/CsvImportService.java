@@ -6,6 +6,8 @@ import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
@@ -25,7 +27,7 @@ public class CsvImportService {
     public List<CSVRecord> parseCsv(MultipartFile file) throws Exception {
         
         if (file.getSize() > MAX_FILE_SIZE_BYTES) {
-            throw new IllegalArgumentException("Le fichier est trop volumineux. La taille maximale autorisée est de 5 Mo.");
+            throw new BusinessValidationException("Le fichier est trop volumineux. La taille maximale autorisée est de 5 Mo.");
         }
 
         String contentType = file.getContentType();

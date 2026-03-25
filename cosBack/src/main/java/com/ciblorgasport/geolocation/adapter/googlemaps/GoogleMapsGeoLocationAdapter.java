@@ -1,5 +1,7 @@
 package com.ciblorgasport.geolocation.adapter.googlemaps;
 
+import com.ciblorgasport.common.exception.ExternalServiceException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.geolocation.adapter.googlemaps.dto.GooglePlaceResult;
 import com.ciblorgasport.geolocation.application.port.*;
 import com.ciblorgasport.geolocation.domain.FanZoneType;
@@ -64,11 +66,11 @@ public class GoogleMapsGeoLocationAdapter implements GeoLocationService {
 
         try {
             Map<?, ?> response = restTemplate.getForObject(url, Map.class);
-            if (response == null) throw new RuntimeException("Réponse vide de l'API Geocoding");
+            if (response == null) throw new ExternalServiceException("Réponse vide de l'API Geocoding");
 
             List<?> results = (List<?>) response.get("results");
             if (results == null || results.isEmpty())
-                throw new RuntimeException("Adresse introuvable: " + address);
+                throw new ResourceNotFoundException("Adresse introuvable: " + address);
 
             Map<?, ?> first = (Map<?, ?>) results.get(0);
             Map<?, ?> geometry = (Map<?, ?>) first.get("geometry");
@@ -80,7 +82,7 @@ public class GoogleMapsGeoLocationAdapter implements GeoLocationService {
             );
         } catch (Exception e) {
             log.error("Erreur geocoding: {}", e.getMessage());
-            throw new RuntimeException("Impossible de géocoder l'adresse: " + address, e);
+            throw new ExternalServiceException("Impossible de géocoder l'adresse: " + address, e);
         }
     }
 
@@ -202,15 +204,15 @@ public class GoogleMapsGeoLocationAdapter implements GeoLocationService {
 
         try {
             Map<?, ?> response = restTemplate.getForObject(url, Map.class);
-            if (response == null) throw new RuntimeException("Réponse vide");
+            if (response == null) throw new ExternalServiceException("Réponse vide");
 
             Map<?, ?> result = (Map<?, ?>) response.get("result");
-            if (result == null) throw new RuntimeException("Lieu introuvable: " + placeId);
+            if (result == null) throw new ResourceNotFoundException("Lieu introuvable: " + placeId);
 
             return parseNearbyPlace(result);
         } catch (Exception e) {
             log.error("Erreur récupération détails lieu: {}", e.getMessage());
-            throw new RuntimeException("Impossible de récupérer les détails du lieu: " + placeId, e);
+            throw new ExternalServiceException("Impossible de récupérer les détails du lieu: " + placeId, e);
         }
     }
 

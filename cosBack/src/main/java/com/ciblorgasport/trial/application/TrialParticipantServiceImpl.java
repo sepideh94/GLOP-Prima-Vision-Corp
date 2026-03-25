@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.dto.AthleteResponse;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.commissionner.CommissionerRepository;
 import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.CompetitorType;
@@ -62,7 +64,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TrialParticipantResponse> assignAthletes(Long trialId, List<Long> athleteIds) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable avec l'ID: " + trialId));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable avec l'ID: " + trialId));
 
         validateTrialStateForAssignment(trial);
 
@@ -73,7 +75,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         int maxPerHeat = strategy.getMaxParticipantsPerHeat();
 
         if (currentCount + uniqueAthleteIds.size() > maxPerHeat) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                     "Le nombre maximum de " + strategy.getParticipantTypeLabel()
                             + "s par série est de " + maxPerHeat
                             + ". Actuellement " + currentCount
@@ -95,10 +97,10 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         for (Long athleteId : uniqueAthleteIds) {
             Athlete athlete = athleteRepository.findById(athleteId)
-                    .orElseThrow(() -> new RuntimeException("Athlète introuvable: " + athleteId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Athlète introuvable: " + athleteId));
 
             if (!isAthleteEligible(athlete)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'athlète " + athlete.getDisplayName()
                                 + " n'est pas éligible : compte non activé, profil incomplet ou charte non acceptée.");
             }
@@ -113,19 +115,19 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                             ParticipationStatus.CONFIRMED);
 
             if (!hasConfirmedParticipation) {
-                throw new IllegalStateException(
+                throw new BusinessValidationException(
                         "L'athlète " + athlete.getDisplayName()
                                 + " n'a pas de participation CONFIRMED à la compétition.");
             }
 
             if (qualifiedCompetitorIds != null && !qualifiedCompetitorIds.contains(athleteId)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'athlète " + athlete.getDisplayName() + " n'est pas qualifié pour cette phase.");
             }
 
             if (trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     trialId, athleteId, CompetitorType.ATHLETE)) {
-                throw new IllegalStateException(
+                throw new BusinessValidationException(
                         "L'athlète " + athlete.getDisplayName()
                                 + " est déjà assigné à cette épreuve.");
             }
@@ -147,7 +149,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TrialParticipantResponse> getByTrialId(Long trialId) {
         if (!trialRepository.existsById(trialId)) {
-            throw new RuntimeException("Épreuve introuvable avec l'ID: " + trialId);
+            throw new ResourceNotFoundException("Épreuve introuvable avec l'ID: " + trialId);
         }
 
         return trialParticipantRepository.findByTrialId(trialId).stream()
@@ -167,16 +169,16 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public void removeAthlete(Long trialId, Long athleteId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable"));
 
         if (trial.hasStarted()) {
-            throw new IllegalStateException("Série déjà commencée.");
+            throw new BusinessValidationException("Série déjà commencée.");
         }
 
         TrialParticipant tp = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(p -> p.getCompetitorId().equals(athleteId) && p.getCompetitorType() == CompetitorType.ATHLETE)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Participant non trouvé."));
+                .orElseThrow(() -> new ResourceNotFoundException("Participant non trouvé."));
 
         trialParticipantRepository.delete(tp);
     }
@@ -218,7 +220,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<AthleteResponse> getEligibleAthletes(Long trialId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable"));
 
         RoundName currentRound = trial.getRound().getName();
 
@@ -297,28 +299,28 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
     private void validateTrialStateForAssignment(Trial trial) {
         if (trial.hasStarted()) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "Impossible d'assigner des participants à une série déjà commencée.");
         }
 
         if (trial.isCancelled()) {
-            throw new IllegalStateException("État de l'épreuve invalide pour l'assignation.");
+            throw new BusinessValidationException("État de l'épreuve invalide pour l'assignation.");
         }
 
         RoundName roundName = trial.getRound().getName();
 
         if (roundName == RoundName.DEMI_FINALE) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "Les participants seront automatiquement déterminés après les résultats des qualifications.");
         }
 
         if (roundName == RoundName.FINALE) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "Les participants seront automatiquement déterminés après les résultats des demi-finales.");
         }
 
         if (roundName != RoundName.QUALIFICATION_HEAT) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "L'assignation manuelle de participants n'est autorisée que pour les séries de qualification.");
         }
     }
@@ -346,7 +348,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TrialParticipantResponse> assignTeams(Long trialId, List<Long> teamIds) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable"));
 
         validateTrialStateForAssignment(trial);
 
@@ -357,7 +359,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
         int maxPerHeat = strategy.getMaxParticipantsPerHeat();
 
         if (currentCount + uniqueTeamIds.size() > maxPerHeat) {
-            throw new IllegalArgumentException("Nombre maximum d'équipes par série dépassé.");
+            throw new BusinessValidationException("Nombre maximum d'équipes par série dépassé.");
         }
 
         RoundName currentRound = trial.getRound().getName();
@@ -374,10 +376,10 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
 
         for (Long teamId : uniqueTeamIds) {
             Team team = teamRepository.findById(teamId)
-                    .orElseThrow(() -> new RuntimeException("Équipe introuvable avec l'ID: " + teamId));
+                    .orElseThrow(() -> new ResourceNotFoundException("Équipe introuvable avec l'ID: " + teamId));
 
             if (!isTeamEligible(team)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'équipe " + team.getName()
                                 + " n'est pas éligible : tous les membres doivent avoir un compte activé, un profil complété et la charte acceptée.");
             }
@@ -392,18 +394,18 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
                             ParticipationStatus.CONFIRMED);
 
             if (!hasConfirmedParticipation) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'équipe " + team.getName() + " n'est pas confirmée pour cette compétition.");
             }
 
             if (qualifiedCompetitorIds != null && !qualifiedCompetitorIds.contains(teamId)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'équipe " + team.getName() + " n'est pas qualifiée pour cette phase.");
             }
 
             if (trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     trialId, teamId, CompetitorType.TEAM)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                         "L'équipe " + team.getName() + " est déjà assignée à cette série.");
             }
 
@@ -424,16 +426,16 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public void removeTeam(Long trialId, Long teamId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable"));
 
         if (trial.hasStarted()) {
-            throw new IllegalStateException("Série déjà commencée.");
+            throw new BusinessValidationException("Série déjà commencée.");
         }
 
         TrialParticipant tp = trialParticipantRepository.findByTrialId(trialId).stream()
                 .filter(p -> p.getCompetitorId().equals(teamId) && p.getCompetitorType() == CompetitorType.TEAM)
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Équipe non trouvée dans cette épreuve."));
+                .orElseThrow(() -> new ResourceNotFoundException("Équipe non trouvée dans cette épreuve."));
 
         trialParticipantRepository.delete(tp);
     }
@@ -442,7 +444,7 @@ public class TrialParticipantServiceImpl implements TrialParticipantService {
     @Override
     public List<TeamResponse> getEligibleTeams(Long trialId) {
         Trial trial = trialRepository.findById(trialId)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable"));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable"));
 
         RoundName currentRound = trial.getRound().getName();
 

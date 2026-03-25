@@ -10,6 +10,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.competition.domain.Competition;
 import com.ciblorgasport.competition.domain.CompetitorType;
 import com.ciblorgasport.competition.domain.Participation;
@@ -53,7 +55,7 @@ public class TrialServiceImpl implements TrialService {
         LocalDateTime competitionEnd = competition.getEndDate();
 
         if (trialStartDate.isBefore(competitionStart)) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "La date de début de l'épreuve (" + trialStartDate.format(DATETIME_FORMATTER) +
                 ") ne peut pas être antérieure à la date de début de la compétition parent (" +
                 competitionStart.format(DATETIME_FORMATTER) + ")."
@@ -61,7 +63,7 @@ public class TrialServiceImpl implements TrialService {
         }
 
         if (trialEndDate.isAfter(competitionEnd)) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "La date de fin de l'épreuve (" + trialEndDate.format(DATETIME_FORMATTER) +
                 ") ne peut pas être postérieure à la date de fin de la compétition parent (" +
                 competitionEnd.format(DATETIME_FORMATTER) + ")."
@@ -69,7 +71,7 @@ public class TrialServiceImpl implements TrialService {
         }
 
         if (trialEndDate.isBefore(trialStartDate) || trialEndDate.isEqual(trialStartDate)) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "La date et heure de fin de l'épreuve (" + trialEndDate.format(DATETIME_FORMATTER) +
                 ") doit être postérieure à la date et heure de début (" +
                 trialStartDate.format(DATETIME_FORMATTER) + ")."
@@ -94,7 +96,7 @@ public class TrialServiceImpl implements TrialService {
                 competition, trialName, categoryGender, previousRoundName);
 
         if (previousRoundTrials.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "Aucune " + previousRoundLabel
                 + " n'existe pour cette épreuve. "
                 + "Veuillez d'abord créer les "
@@ -103,7 +105,7 @@ public class TrialServiceImpl implements TrialService {
 
         for (Trial prevTrial : previousRoundTrials) {
             if (prevTrial.getEndDate() == null || prevTrial.getEndHour() == null) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                     "La série \"" + prevTrial.getName()
                     + "\" n'a pas de date de fin définie.");
             }
@@ -112,7 +114,7 @@ public class TrialServiceImpl implements TrialService {
                 prevTrial.getEndDate(), prevTrial.getEndHour());
 
             if (newTrialStart.isBefore(prevEnd) || newTrialStart.isEqual(prevEnd)) {
-                throw new IllegalArgumentException(
+                throw new BusinessValidationException(
                     "La date de début de l'épreuve doit être postérieure "
                     + "à la fin de toutes les " + previousRoundLabel
                     + ". La série \"" + prevTrial.getName()
@@ -126,28 +128,28 @@ public class TrialServiceImpl implements TrialService {
     @Override
     public TrialResponse create(TrialCreateRequest request) {
         Site site = siteRepository.findById(request.getSiteId())
-                .orElseThrow(() -> new RuntimeException("Site introuvable avec l'ID: " + request.getSiteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Site introuvable avec l'ID: " + request.getSiteId()));
 
         Competition competition = competitionRepository.findById(request.getCompetitionId())
-                .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
 
         // Résoudre le round : roundId > roundName > défaut QUALIFICATION_HEAT
         Round round;
         if (request.getRoundId() != null) {
             round = roundRepository.findById(request.getRoundId())
-                    .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Round introuvable avec l'ID: " + request.getRoundId()));
         } else if (request.getRoundName() != null && !request.getRoundName().isBlank()) {
             RoundName requestedRound;
             try {
                 requestedRound = RoundName.valueOf(request.getRoundName());
             } catch (IllegalArgumentException e) {
-                throw new IllegalArgumentException("Phase invalide : " + request.getRoundName());
+                throw new BusinessValidationException("Phase invalide : " + request.getRoundName());
             }
             round = roundRepository.findByName(requestedRound)
-                    .orElseThrow(() -> new RuntimeException("Round introuvable : " + request.getRoundName()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Round introuvable : " + request.getRoundName()));
         } else {
             round = roundRepository.findByName(RoundName.QUALIFICATION_HEAT)
-                    .orElseThrow(() -> new RuntimeException("Round QUALIFICATION_HEAT introuvable en base de données."));
+                    .orElseThrow(() -> new ResourceNotFoundException("Round QUALIFICATION_HEAT introuvable en base de données."));
         }
 
         LocalDateTime trialStart = LocalDateTime.of(request.getStartDate(), request.getStartHour());
@@ -207,16 +209,16 @@ public class TrialServiceImpl implements TrialService {
         Trial existingTrial = getTrialByIdOrThrow(id);
 
         Site site = siteRepository.findById(request.getSiteId())
-                .orElseThrow(() -> new RuntimeException("Site introuvable avec l'ID: " + request.getSiteId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Site introuvable avec l'ID: " + request.getSiteId()));
 
         Competition competition = competitionRepository.findById(request.getCompetitionId())
-                .orElseThrow(() -> new RuntimeException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Compétition introuvable avec l'ID: " + request.getCompetitionId()));
 
         // Si roundId fourni, l'utiliser ; sinon, conserver le round existant
         Round round;
         if (request.getRoundId() != null) {
             round = roundRepository.findById(request.getRoundId())
-                    .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + request.getRoundId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Round introuvable avec l'ID: " + request.getRoundId()));
         } else {
             round = existingTrial.getRound();
         }
@@ -298,14 +300,14 @@ public class TrialServiceImpl implements TrialService {
     @Override
     public void delete(Long id) {
         if (!trialRepository.existsById(id)) {
-            throw new RuntimeException("Épreuve introuvable avec l'ID: " + id);
+            throw new ResourceNotFoundException("Épreuve introuvable avec l'ID: " + id);
         }
         trialRepository.deleteById(id);
     }
 
     private Trial getTrialByIdOrThrow(Long id) {
         return trialRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Épreuve introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Épreuve introuvable avec l'ID: " + id));
     }
 
     @Transactional
@@ -314,11 +316,11 @@ public class TrialServiceImpl implements TrialService {
         Trial trial = getTrialByIdOrThrow(id);
 
         if (trial.isCancelled()) {
-            throw new IllegalStateException("L'épreuve est déjà annulée.");
+            throw new BusinessValidationException("L'épreuve est déjà annulée.");
         }
 
         UserAccount user = userAccountRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable: " + userEmail));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable: " + userEmail));
 
         trial.cancel(user);
 

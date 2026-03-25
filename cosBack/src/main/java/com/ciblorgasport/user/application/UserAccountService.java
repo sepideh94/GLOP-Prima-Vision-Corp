@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.user.dto.CreateUserRequest;
 import com.ciblorgasport.user.dto.UserResponse;
@@ -36,7 +38,7 @@ public class UserAccountService implements UserDetailsService {
         newUser.setEmail(normalizedEmail);
 
         this.userRepo.findByEmail(normalizedEmail).ifPresent(u -> {
-            throw new IllegalArgumentException("Un utilisateur existe déjà avec cet email.");
+            throw new BusinessValidationException("Un utilisateur existe déjà avec cet email.");
         });
 
         return this.userRepo.save(newUser);
@@ -57,10 +59,10 @@ public class UserAccountService implements UserDetailsService {
         String normalized = normalizeEmail(email);
 
         UserAccount user = userRepo.findByEmail(normalized)
-                .orElseThrow(() -> new RuntimeException("Utilisateur introuvable."));
+                .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
 
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Ancien mot de passe incorrect.");
+            throw new BusinessValidationException("Ancien mot de passe incorrect.");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -82,7 +84,7 @@ public class UserAccountService implements UserDetailsService {
 
 	public UserResponse getUserByIdForAdmin(Long id) {
 	    UserAccount user = userRepo.findById(id)
-	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
 	    return UserResponse.builder()
 	            .id(user.getId())
 	            .firstName(user.getFirstName())
@@ -96,7 +98,7 @@ public class UserAccountService implements UserDetailsService {
 	@Transactional
 	public void setUserActive(Long id, boolean active) {
 	    UserAccount user = userRepo.findById(id)
-	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
 	    user.setActive(active);
 	    userRepo.save(user);
 	}
@@ -104,7 +106,7 @@ public class UserAccountService implements UserDetailsService {
 	@Transactional
 	public String resetUserPasswordByAdmin(Long id) {
 	    UserAccount user = userRepo.findById(id)
-	            .orElseThrow(() -> new IllegalArgumentException("Utilisateur introuvable."));
+	            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
 	    String tempPassword = UUID.randomUUID().toString().substring(0, 8);
 	    user.setPassword(passwordEncoder.encode(tempPassword));
 	    userRepo.save(user);

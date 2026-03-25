@@ -5,6 +5,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.trial.round.domain.Round;
 import com.ciblorgasport.trial.round.dto.RoundCreateRequest;
 import com.ciblorgasport.trial.round.dto.RoundResponse;
@@ -27,7 +29,7 @@ public class RoundServiceImpl implements RoundService {
                 .anyMatch(r -> r.getName() == request.getName());
 
         if (exists) {
-            throw new RuntimeException(
+            throw new BusinessValidationException(
                 "Un round de type " + request.getName().getDisplayName() + " existe déjà.");
         }
 
@@ -55,13 +57,13 @@ public class RoundServiceImpl implements RoundService {
     @Override
     public void delete(Long id) {
         if (!roundRepository.existsById(id)) {
-            throw new RuntimeException("Round introuvable avec l'ID: " + id);
+            throw new ResourceNotFoundException("Round introuvable avec l'ID: " + id);
         }
         roundRepository.deleteById(id);
     }
 
     private Round getRoundByIdOrThrow(Long id) {
         return roundRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Round introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Round introuvable avec l'ID: " + id));
     }
 }

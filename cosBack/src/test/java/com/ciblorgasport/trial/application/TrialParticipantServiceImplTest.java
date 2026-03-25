@@ -24,6 +24,7 @@ import org.mockito.quality.Strictness;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.commissionner.CommissionerRepository;
 import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.CompetitorType;
@@ -200,8 +201,8 @@ class TrialParticipantServiceImplTest {
             when(trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     1L, 13L, CompetitorType.ATHLETE)).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignAthletes(1L, List.of(13L))
             );
 
@@ -220,8 +221,8 @@ class TrialParticipantServiceImplTest {
             when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                     100L, 13L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED)).thenReturn(false);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignAthletes(1L, List.of(13L))
             );
 
@@ -289,8 +290,8 @@ class TrialParticipantServiceImplTest {
             when(trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     1L, 21L, CompetitorType.TEAM)).thenReturn(true);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignTeams(1L, List.of(21L))
             );
 
@@ -311,8 +312,8 @@ class TrialParticipantServiceImplTest {
             when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                     100L, 21L, CompetitorType.TEAM, ParticipationStatus.CONFIRMED)).thenReturn(false);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignTeams(1L, List.of(21L))
             );
 
@@ -374,8 +375,8 @@ class TrialParticipantServiceImplTest {
             Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
             when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.declareForfeit(4L, 13L)
             );
 
@@ -398,8 +399,8 @@ class TrialParticipantServiceImplTest {
             Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
             when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.declareForfeit(4L, 13L)
             );
 
@@ -440,8 +441,8 @@ class TrialParticipantServiceImplTest {
 
             when(trial.hasStarted()).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     participant::declareForfeit
             );
 
@@ -460,8 +461,8 @@ class TrialParticipantServiceImplTest {
 
             when(trial.hasStarted()).thenReturn(false);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     participant::declareForfeit
             );
 
@@ -538,7 +539,7 @@ class TrialParticipantServiceImplTest {
             when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
             when(trial.hasStarted()).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> trialParticipantService.removeAthlete(1L, 13L));
+            BusinessValidationException exception = assertThrows(BusinessValidationException.class, () -> trialParticipantService.removeAthlete(1L, 13L));
             assertEquals("Série déjà commencée.", exception.getMessage());
         }
 

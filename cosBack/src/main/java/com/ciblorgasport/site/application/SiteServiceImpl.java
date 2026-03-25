@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.dto.SiteCreateRequest;
 import com.ciblorgasport.site.dto.SiteResponse;
@@ -28,12 +30,12 @@ public class SiteServiceImpl implements SiteService {
     public SiteResponse resolveOrCreate(SiteCreateRequest request) {
         String addr = request.getAdress() == null ? "" : request.getAdress().trim();
         if (addr.isEmpty()) {
-            throw new IllegalArgumentException("L'adresse du lieu est obligatoire.");
+            throw new BusinessValidationException("L'adresse du lieu est obligatoire.");
         }
         double lat = request.getLatitude();
         double lng = request.getLongitude();
         if (!Double.isFinite(lat) || !Double.isFinite(lng)) {
-            throw new IllegalArgumentException("Coordonnées GPS invalides.");
+            throw new BusinessValidationException("Coordonnées GPS invalides.");
         }
 
         double latMin = lat - COORD_TOLERANCE;
@@ -102,13 +104,13 @@ public class SiteServiceImpl implements SiteService {
     @Override
     public void delete(Long id) {
         if (!siteRepository.existsById(id)) {
-            throw new RuntimeException("Site introuvable avec l'ID: " + id);
+            throw new ResourceNotFoundException("Site introuvable avec l'ID: " + id);
         }
         siteRepository.deleteById(id);
     }
 
     private Site getSiteByIdOrThrow(Long id) {
         return siteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Site introuvable avec l'ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Site introuvable avec l'ID: " + id));
     }
 }

@@ -5,6 +5,8 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +50,7 @@ public final class TrialModeStrategyFactory {
     public static TrialModeStrategy getStrategy(TrialMode mode) {
         TrialModeStrategy strategy = STRATEGIES.get(mode);
         if (strategy == null) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "Aucune stratégie définie pour le mode d'épreuve : " + mode
                 + ". Vérifiez que ce mode est enregistré dans TrialModeStrategyFactory.");
         }

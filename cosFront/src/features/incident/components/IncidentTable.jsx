@@ -91,11 +91,26 @@ export default function IncidentTable({
                 Titre <UnfoldMoreIcon sx={{ fontSize: 16 }} />
               </th>
 
-              <th>Impact</th>
+              <th
+                onClick={() => onSort("impactLevels")}
+                style={{ cursor: "pointer" }}
+              >
+                Impact <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
 
-              <th>Site concerné</th>
+              <th
+                onClick={() => onSort("siteId")}
+                style={{ cursor: "pointer" }}
+              >
+                Site concerné <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
 
-              <th>Événement concerné</th>
+              <th
+                onClick={() => onSort("eventId")}
+                style={{ cursor: "pointer" }}
+              >
+                Événement concerné <UnfoldMoreIcon sx={{ fontSize: 16 }} />
+              </th>
 
               <th onClick={() => onSort("status")} style={{ cursor: "pointer" }}>
                 Statut <UnfoldMoreIcon sx={{ fontSize: 16 }} />

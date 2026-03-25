@@ -191,8 +191,22 @@ export default function IncidentsPage() {
 
     sortedIncidents = [...filteredIncidents].sort((a, b) => {
 
-      let aValue = a[sortConfig.key];
-      let bValue = b[sortConfig.key];
+      let aValue;
+      let bValue;
+
+      if (sortConfig.key === "impactLevels") {
+        aValue = (a.impactLevels || []).join(" ").toLowerCase();
+        bValue = (b.impactLevels || []).join(" ").toLowerCase();
+      } else if (sortConfig.key === "eventId") {
+        aValue = (getEventName(a.eventId) || "").toLowerCase();
+        bValue = (getEventName(b.eventId) || "").toLowerCase();
+      } else if (sortConfig.key === "siteId") {
+        aValue = a.siteId ?? -1;
+        bValue = b.siteId ?? -1;
+      } else {
+        aValue = a[sortConfig.key];
+        bValue = b[sortConfig.key];
+      }
 
       if (typeof aValue === "string") aValue = aValue.toLowerCase();
       if (typeof bValue === "string") bValue = bValue.toLowerCase();

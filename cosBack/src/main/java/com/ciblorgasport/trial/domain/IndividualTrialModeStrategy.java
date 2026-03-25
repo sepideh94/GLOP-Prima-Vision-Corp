@@ -2,6 +2,7 @@ package com.ciblorgasport.trial.domain;
 
 import org.springframework.stereotype.Component;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.competition.domain.CompetitorType;
 
 /**
@@ -28,7 +29,7 @@ public class IndividualTrialModeStrategy implements TrialModeStrategy {
     @Override
     public void validateParticipant(Participant participant) {
         if (participant.getCompetitorType() != CompetitorType.ATHLETE) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "En mode individuel, seuls les athlètes peuvent participer. "
                 + "Type reçu : " + participant.getCompetitorType()
                 + " (participant : \"" + participant.getDisplayName() + "\").");

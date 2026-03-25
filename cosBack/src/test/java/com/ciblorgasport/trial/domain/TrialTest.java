@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.site.domain.Site;
 
@@ -319,8 +320,8 @@ class TrialTest {
                 .password("password")
                 .build();
 
-        // Should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        // Should throw BusinessValidationException
+        BusinessValidationException exception = assertThrows(BusinessValidationException.class, () -> {
             trial.cancel(admin);
         });
 
@@ -349,8 +350,8 @@ class TrialTest {
         trial.cancel(admin);
         assertTrue(trial.isCancelled());
 
-        // Try to cancel again - should throw IllegalStateException
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+        // Try to cancel again - should throw BusinessValidationException
+        BusinessValidationException exception = assertThrows(BusinessValidationException.class, () -> {
             trial.cancel(admin);
         });
 

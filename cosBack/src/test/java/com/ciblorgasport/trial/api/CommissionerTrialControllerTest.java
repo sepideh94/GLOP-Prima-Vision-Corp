@@ -185,7 +185,7 @@ class CommissionerTrialControllerTest {
         @DisplayName("409 — épreuve non terminée (TrialNotCompletedException)")
         void shouldReturn409WhenTrialNotCompleted() throws Exception {
             given(recordTrialResultsUseCase.recordManual(eq(5L), anyList(), any()))
-                    .willThrow(new com.ciblorgasport.common.exception.TrialNotCompletedException(
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.TrialNotCompletedException(
                             5L, com.ciblorgasport.common.model.Status.UPCOMING));
 
             String body = """
@@ -210,7 +210,7 @@ class CommissionerTrialControllerTest {
         @DisplayName("404 — épreuve introuvable (TrialNotFoundException)")
         void shouldReturn404WhenTrialNotFound() throws Exception {
             given(recordTrialResultsUseCase.recordManual(eq(99L), anyList(), any()))
-                    .willThrow(new com.ciblorgasport.common.exception.TrialNotFoundException(99L));
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.TrialNotFoundException(99L));
 
             String body = """
                     {
@@ -375,7 +375,7 @@ class CommissionerTrialControllerTest {
         void shouldReturn409WhenTrialNotCompleted() throws Exception {
             given(trialParticipantRepository.findByTrialId(5L)).willReturn(List.of());
             given(recordTrialResultsUseCase.execute(eq(5L), any()))
-                    .willThrow(new com.ciblorgasport.common.exception.TrialNotCompletedException(
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.TrialNotCompletedException(
                             5L, com.ciblorgasport.common.model.Status.UPCOMING));
 
             mockMvc.perform(post("/api/commissioner/trials/{id}/simulate-results", 5L))
@@ -445,7 +445,7 @@ class CommissionerTrialControllerTest {
         @DisplayName("404 — épreuve introuvable (TrialNotFoundException)")
         void shouldReturn404WhenTrialNotFound() throws Exception {
             given(recordTrialResultsUseCase.updateManual(eq(99L), anyList(), any(), anyString()))
-                    .willThrow(new com.ciblorgasport.common.exception.TrialNotFoundException(99L));
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.TrialNotFoundException(99L));
 
             mockMvc.perform(put("/api/commissioner/trials/{id}/results", 99L)
                             .with(authentication(mockPrincipal()))
@@ -461,7 +461,7 @@ class CommissionerTrialControllerTest {
         @DisplayName("409 — épreuve non terminée (TrialNotCompletedException)")
         void shouldReturn409WhenTrialNotCompleted() throws Exception {
             given(recordTrialResultsUseCase.updateManual(eq(5L), anyList(), any(), anyString()))
-                    .willThrow(new com.ciblorgasport.common.exception.TrialNotCompletedException(
+                    .willThrow(new com.ciblorgasport.trial.domain.exception.TrialNotCompletedException(
                             5L, com.ciblorgasport.common.model.Status.UPCOMING));
 
             mockMvc.perform(put("/api/commissioner/trials/{id}/results", 5L)

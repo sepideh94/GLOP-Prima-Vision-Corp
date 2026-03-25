@@ -89,11 +89,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            TrialNotFoundException.class,
             com.ciblorgasport.trial.domain.exception.TrialNotFoundException.class
     })
     public ResponseEntity<ApiError> handleTrialNotFoundException(
-            RuntimeException ex,
+            Exception ex,
             HttpServletRequest request
     ) {
         ApiError error = ApiError.builder()
@@ -108,11 +107,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            TrialNotCompletedException.class,
             com.ciblorgasport.trial.domain.exception.TrialNotCompletedException.class
     })
     public ResponseEntity<ApiError> handleTrialNotCompletedException(
-            RuntimeException ex,
+            Exception ex,
             HttpServletRequest request
     ) {
         ApiError error = ApiError.builder()
@@ -231,6 +229,70 @@ public class GlobalExceptionHandler {
                 .build();
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(BusinessValidationException.class)
+    public ResponseEntity<ApiError> handleBusinessValidationException(
+            BusinessValidationException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_REQUEST.value())
+                .error("Requête invalide")
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiError> handleResourceNotFoundException(
+            ResourceNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(ExternalServiceException.class)
+    public ResponseEntity<ApiError> handleExternalServiceException(
+            ExternalServiceException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.BAD_GATEWAY.value())
+                .error(HttpStatus.BAD_GATEWAY.getReasonPhrase())
+                .message(ex.getMessage())
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(error);
+    }
+
+    @ExceptionHandler(TechnicalException.class)
+    public ResponseEntity<ApiError> handleTechnicalException(
+            TechnicalException ex,
+            HttpServletRequest request
+    ) {
+        ApiError error = ApiError.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                .error(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase())
+                .message("Une erreur interne est survenue.")
+                .path(request.getRequestURI())
+                .build();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
     @ExceptionHandler(IllegalStateException.class)

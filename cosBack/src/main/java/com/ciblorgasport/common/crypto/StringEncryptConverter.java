@@ -11,6 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.ciblorgasport.common.exception.TechnicalException;
+
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -48,7 +50,7 @@ public class StringEncryptConverter implements AttributeConverter<String, String
 
 			return Base64.getEncoder().encodeToString(combined);
 		} catch (GeneralSecurityException e) {
-			throw new RuntimeException("Erreur lors du chiffrement", e);
+			throw new TechnicalException("Erreur lors du chiffrement", e);
 		}
 	}
 
@@ -75,7 +77,7 @@ public class StringEncryptConverter implements AttributeConverter<String, String
 			byte[] decrypted = cipher.doFinal(encrypted);
 			return new String(decrypted, StandardCharsets.UTF_8);
 		} catch (GeneralSecurityException e) {
-			throw new RuntimeException("Erreur lors du déchiffrement", e);
+			throw new TechnicalException("Erreur lors du déchiffrement", e);
 		}
 	}
 
