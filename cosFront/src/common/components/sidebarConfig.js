@@ -10,6 +10,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import StadiumIcon from "@mui/icons-material/Stadium";
 import MapIcon from "@mui/icons-material/Map";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 
 const sidebarConfig = {
   ADMIN: [
@@ -107,6 +108,11 @@ const sidebarConfig = {
 
   SPECTATOR: [
     { label: "Accueil", icon: HomeIcon, path: "/spectator" },
+    {
+      label: "Résultats des suivis",
+      icon: LeaderboardIcon,
+      path: "/spectator/followed-results",
+    },
     {
       label: "Mon profil",
       icon: PeopleIcon,

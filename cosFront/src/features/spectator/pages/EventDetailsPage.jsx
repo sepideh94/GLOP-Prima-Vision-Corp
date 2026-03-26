@@ -29,10 +29,17 @@ import {
   eventStatusChipProps,
 } from "../utils/competitionStatus";
 import HtmlContent from "../../../common/components/HtmlContent";
+import { useNotificationUnread } from "../../../common/contexts/NotificationUnreadContext";
+import SpectatorSocialShell from "../components/SpectatorSocialShell";
+
+const pageInk = "#0f2744";
+const pageMuted = "#475569";
+const pageBorder = "rgba(15, 39, 68, 0.1)";
 
 export default function EventDetailsPage() {
   const { eventId } = useParams();
   const navigate = useNavigate();
+  const { unreadCount } = useNotificationUnread();
   const [event, setEvent] = useState(null);
   const [competitions, setCompetitions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -146,71 +153,78 @@ export default function EventDetailsPage() {
   }
 
   return (
-    <Box
-      sx={{
-        flex: 1,
-        width: "100%",
-        maxWidth: "100%",
-        minHeight: "100%",
-        display: "flex",
-        flexDirection: "column",
-        px: { xs: 1.5, sm: 2, md: 3 },
-        py: { xs: 2, sm: 2.5, md: 3 },
-        boxSizing: "border-box",
+    <SpectatorSocialShell
+      activeKey="home"
+      unreadCount={unreadCount}
+      leftTitle="Espace fan"
+      hideRight
+      onNavigate={(key) => {
+        if (key === "home") navigate("/spectator");
+        if (key === "followed") navigate("/spectator?view=followed");
+        if (key === "followed_results") navigate("/spectator?view=followed_results");
+        if (key === "map") navigate("/spectator/map");
+        if (key === "notifications") navigate("/spectator/notifications");
+        if (key === "profile") navigate("/spectator/profile");
+        if (key === "tickets") navigate("/spectator/tickets");
       }}
-    >
-    <Box
-      sx={{
-        flex: 1,
-        width: "100%",
-        p: { xs: 2, sm: 2.5, md: 4 },
-        background: "rgba(15, 23, 42, 0.42)",
-        backdropFilter: "blur(18px)",
-        WebkitBackdropFilter: "blur(18px)",
-        borderRadius: { xs: 2, md: 3 },
-        boxShadow: "0 8px 32px rgba(2, 6, 23, 0.35)",
-        border: "1px solid rgba(255, 255, 255, 0.14)",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* Breadcrumbs */}
-      <Breadcrumbs sx={{ mb: 3, "& .MuiTypography-root": { color: "rgba(226,232,240,0.92)" } }} separator="›">
+      center={
+        <Box
+          sx={{
+            flex: 1,
+            width: "100%",
+            maxWidth: 1180,
+            mx: "auto",
+            minHeight: "100%",
+            display: "flex",
+            flexDirection: "column",
+            px: { xs: 0, sm: 0, md: 0 },
+            py: 0,
+            boxSizing: "border-box",
+            fontFamily: appTheme.typography.fontFamily,
+          }}
+        >
+      <Breadcrumbs
+        sx={{ mb: 2.5, "& .MuiTypography-root": { color: pageMuted, fontWeight: 600 } }}
+        separator="›"
+      >
         <Link
           component="button"
           variant="body1"
           onClick={() => navigate("/spectator")}
           sx={{
-            color: appTheme.colors.cyan,
+            color: "#0e7490",
+            fontWeight: 700,
             textDecoration: "none",
             "&:hover": { textDecoration: "underline" },
           }}
         >
-          Événements
+          Accueil fan
         </Link>
-        <Typography sx={{ color: "rgba(248,250,252,0.95)" }}>{event.name}</Typography>
+        <Typography sx={{ color: pageInk, fontWeight: 800 }}>{event.name}</Typography>
       </Breadcrumbs>
 
-      {/* Header */}
       <Box
         sx={{
-          mb: 4,
-          p: 4,
-          background: "rgba(15, 23, 42, 0.5)",
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          borderRadius: appTheme.radius.lg,
-          border: "1px solid rgba(255,255,255,0.12)",
-          boxShadow: "0 16px 40px rgba(2,6,23,0.35)",
+          mb: 3,
+          p: { xs: 2.5, sm: 3.5 },
+          borderRadius: 3,
+          border: `1px solid ${pageBorder}`,
+          background:
+            "linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(224,242,254,0.45) 55%, rgba(236,253,245,0.3) 100%)",
+          boxShadow: "0 8px 32px rgba(15, 39, 68, 0.07)",
         }}
       >
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2 }}>
-          <Box>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 2, gap: 2 }}>
+          <Box sx={{ minWidth: 0 }}>
             <Typography
               variant="h4"
+              component="h1"
               sx={{
-                fontWeight: 800,
+                fontWeight: 900,
                 mb: 1,
-                color: "#f8fafc",
+                color: pageInk,
+                letterSpacing: "-0.02em",
+                fontSize: { xs: "1.5rem", sm: "2rem" },
               }}
             >
               {event.name}
@@ -219,9 +233,11 @@ export default function EventDetailsPage() {
               <HtmlContent
                 html={event.description}
                 sx={{
-                  color: "rgba(226, 232, 240, 0.88)",
-                  fontSize: "1.1rem",
-                  mb: 2,
+                  color: pageMuted,
+                  fontSize: { xs: "0.95rem", sm: "1.05rem" },
+                  mb: 0,
+                  fontWeight: 500,
+                  lineHeight: 1.6,
                 }}
               />
             )}
@@ -229,28 +245,33 @@ export default function EventDetailsPage() {
           <Chip
             label={eventChip.label}
             sx={{
-              background: `${eventChip.color}24`,
+              flexShrink: 0,
+              background: `${eventChip.color}20`,
               color: eventChip.color,
-              fontWeight: 600,
-              border: `1px solid ${eventChip.color}55`,
+              fontWeight: 800,
+              border: `1px solid ${eventChip.color}44`,
             }}
           />
         </Box>
 
         {event.startDate && (
-          <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mt: 2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <CalendarTodayIcon sx={{ color: appTheme.colors.cyan }} />
-              <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
-                <strong>Début:</strong>{" "}
+              <CalendarTodayIcon sx={{ color: "#0891b2" }} />
+              <Typography sx={{ color: pageMuted, fontWeight: 600 }}>
+                <Box component="span" sx={{ color: pageInk }}>
+                  Début :
+                </Box>{" "}
                 {format(new Date(event.startDate), "d MMMM yyyy", { locale: fr })}
               </Typography>
             </Box>
             {event.endDate && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CalendarTodayIcon sx={{ color: appTheme.colors.violet }} />
-                <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
-                  <strong>Fin:</strong>{" "}
+                <Typography sx={{ color: pageMuted, fontWeight: 600 }}>
+                  <Box component="span" sx={{ color: pageInk }}>
+                    Fin :
+                  </Box>{" "}
                   {format(new Date(event.endDate), "d MMMM yyyy", { locale: fr })}
                 </Typography>
               </Box>
@@ -259,51 +280,56 @@ export default function EventDetailsPage() {
         )}
       </Box>
 
-      {/* Competitions */}
       <Box>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 700,
-                mb: 3,
-                color: "#f8fafc",
-                textShadow: "0 1px 12px rgba(2,6,23,0.35)",
-              }}
-            >
-              Compétitions ({competitions.length})
-            </Typography>
+        <Typography
+          variant="h5"
+          component="h2"
+          sx={{
+            fontWeight: 900,
+            mb: 2,
+            color: pageInk,
+            fontSize: { xs: "1.2rem", sm: "1.35rem" },
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Compétitions ({competitions.length})
+        </Typography>
 
         {competitions.length === 0 ? (
           <Card
+            elevation={0}
             sx={{
-              background: "rgba(15, 23, 42, 0.5)",
-              backdropFilter: "blur(12px)",
-              WebkitBackdropFilter: "blur(12px)",
-              borderRadius: appTheme.radius.lg,
-              border: "1px solid rgba(255,255,255,0.12)",
+              borderRadius: 3,
+              border: `1px solid ${pageBorder}`,
+              bgcolor: "rgba(255,255,255,0.96)",
               p: 4,
               textAlign: "center",
+              boxShadow: "0 4px 20px rgba(15, 39, 68, 0.05)",
             }}
           >
-            <Typography sx={{ color: "rgba(226,232,240,0.88)" }}>
+            <Typography sx={{ color: pageMuted, fontWeight: 600 }}>
               Aucune compétition disponible pour cet événement.
             </Typography>
           </Card>
         ) : (
           <Grid container spacing={3}>
-            {competitions.map((competition) => (
+            {competitions.map((competition) => {
+              const st = competitionStatusColor(competition.status);
+              return (
               <Grid item xs={12} md={6} key={competition.id}>
                 <Card
+                  elevation={0}
                   sx={{
-                    background: appTheme.gradients.card,
+                    background: "#fff",
                     borderRadius: appTheme.radius.lg,
-                    boxShadow: appTheme.shadows.card,
-                    border: "1px solid rgba(148, 163, 184, 0.1)",
-                    transition: "all 0.3s ease",
+                    border: `1px solid ${pageBorder}`,
+                    boxShadow: "0 10px 28px rgba(15, 39, 68, 0.08)",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
                     overflow: "hidden",
+                    borderLeft: `6px solid ${st}`,
                     "&:hover": {
-                      transform: "translateY(-4px)",
-                      boxShadow: `0 20px 40px rgba(0,0,0,0.4), 0 0 0 2px ${appTheme.colors.violet}40`,
+                      transform: "translateY(-3px)",
+                      boxShadow: `0 16px 36px rgba(15, 39, 68, 0.12), 0 0 0 1px ${st}33`,
                     },
                     height: "100%",
                   }}
@@ -353,7 +379,7 @@ export default function EventDetailsPage() {
                               px: 1,
                               color: followedCompetitionIds.includes(String(competition.id))
                                 ? appTheme.colors.violet
-                                : appTheme.colors.textMuted,
+                                : pageMuted,
                             }}
                           >
                             {followActionId === String(competition.id)
@@ -369,10 +395,10 @@ export default function EventDetailsPage() {
                             )}
                             size="small"
                             sx={{
-                              background: `${competitionStatusColor(competition.status)}20`,
-                              color: competitionStatusColor(competition.status),
-                              fontWeight: 600,
-                              border: `1px solid ${competitionStatusColor(competition.status)}40`,
+                              background: `${st}18`,
+                              color: st,
+                              fontWeight: 700,
+                              border: `1px solid ${st}44`,
                             }}
                           />
                         </Box>
@@ -381,9 +407,9 @@ export default function EventDetailsPage() {
                       <Typography
                         variant="h6"
                         sx={{
-                          fontWeight: 700,
+                          fontWeight: 800,
                           mb: 1,
-                          color: appTheme.colors.textPrimary,
+                          color: pageInk,
                         }}
                       >
                         {competition.name}
@@ -393,7 +419,7 @@ export default function EventDetailsPage() {
                         <HtmlContent
                           html={competition.description}
                           sx={{
-                            color: appTheme.colors.textSecondary,
+                            color: pageMuted,
                             fontSize: "0.875rem",
                             mb: 2,
                             display: "-webkit-box",
@@ -412,16 +438,15 @@ export default function EventDetailsPage() {
                             gap: 1,
                             mt: 2,
                             pt: 2,
-                            borderTop: "1px solid rgba(148, 163, 184, 0.1)",
+                            borderTop: `1px solid ${pageBorder}`,
                           }}
                         >
-                          <CalendarTodayIcon
-                            sx={{ fontSize: 16, color: appTheme.colors.textMuted }}
-                          />
+                          <CalendarTodayIcon sx={{ fontSize: 16, color: pageMuted }} />
                           <Typography
                             sx={{
-                              color: appTheme.colors.textMuted,
+                              color: pageMuted,
                               fontSize: "0.8125rem",
+                              fontWeight: 600,
                             }}
                           >
                             {format(new Date(competition.startDate), "d MMM yyyy", {
@@ -430,31 +455,44 @@ export default function EventDetailsPage() {
                           </Typography>
                         </Box>
                       )}
+                      <Typography
+                        sx={{
+                          mt: 1.5,
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: "#0e7490",
+                          letterSpacing: "0.06em",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Résultats, épreuves & classement →
+                      </Typography>
                     </CardContent>
                   </CardActionArea>
                 </Card>
               </Grid>
-            ))}
+              );
+            })}
           </Grid>
         )}
       </Box>
 
-      {/* Back Button */}
-      <Box sx={{ mt: 4 }}>
+      <Box sx={{ mt: 3 }}>
         <Button
           startIcon={<ArrowBackIcon />}
           onClick={() => navigate("/spectator")}
           sx={{
-            color: appTheme.colors.cyan,
-            "&:hover": {
-              background: `${appTheme.colors.cyan}20`,
-            },
+            textTransform: "none",
+            fontWeight: 700,
+            color: "#0e7490",
+            "&:hover": { bgcolor: "rgba(8,145,178,0.08)" },
           }}
         >
-          Retour à la liste des événements
+          Retour à l’accueil fan
         </Button>
       </Box>
-    </Box>
-    </Box>
+        </Box>
+      }
+    />
   );
 }

@@ -87,7 +87,7 @@ export default function Layout() {
                 flexDirection: "column",
                 minWidth: 0,
                 minHeight: 0,
-                px: isSpectatorArea ? 3 : 6,
+                px: isSpectatorArea ? { xs: 1, sm: 1.5, md: 2 } : 6,
                 py: isSpectatorArea ? 0 : 5,
                 ...(isSpectatorArea && { background: "transparent" }),
               }}
