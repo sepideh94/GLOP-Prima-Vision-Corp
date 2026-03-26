@@ -350,7 +350,7 @@ export default function IncidentsPage() {
 
           const payload = {
             title: form.title.trim(),
-            description: form.instructions?.trim() || null,
+            description: form.description?.trim() || null,
             impactLevels: form.impactLevels,
             eventId: Number(form.eventId),
             competitionId: form.competitionId ? Number(form.competitionId) : null,

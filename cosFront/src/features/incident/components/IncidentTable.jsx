@@ -21,11 +21,6 @@ const statusLabels = {
   RESOLU: "Résolu",
 };
 
-const siteLabels = {
-  1: "Piscine principale",
-  2: "Piscine secondaire",
-};
-
 const getStatusColor = (status) => {
   switch (status) {
     case "EN_COURS":
@@ -99,13 +94,6 @@ export default function IncidentTable({
               </th>
 
               <th
-                onClick={() => onSort("siteId")}
-                style={{ cursor: "pointer" }}
-              >
-                Site concerné <UnfoldMoreIcon sx={{ fontSize: 16 }} />
-              </th>
-
-              <th
                 onClick={() => onSort("eventId")}
                 style={{ cursor: "pointer" }}
               >
@@ -125,7 +113,7 @@ export default function IncidentTable({
 
             {incidents.length === 0 && (
               <tr>
-                <td colSpan={6} style={{ textAlign: "center", padding: 20 }}>
+                <td colSpan={5} style={{ textAlign: "center", padding: 20 }}>
                   Aucun incident trouvé
                 </td>
               </tr>
@@ -139,10 +127,6 @@ export default function IncidentTable({
 
                 <td>
                   {getImpactLabel(i.impactLevels)}
-                </td>
-
-                <td>
-                  {i.siteId ? siteLabels[i.siteId] || i.siteId : "-"}
                 </td>
 
                 <td>
