@@ -14,7 +14,6 @@ import {
   Stack,
   Paper,
   Divider,
-  Badge,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -26,9 +25,6 @@ import {
 } from "@mui/material";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import SearchIcon from "@mui/icons-material/Search";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
-import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import LiveTvOutlinedIcon from "@mui/icons-material/LiveTvOutlined";
 import LeaderboardOutlinedIcon from "@mui/icons-material/LeaderboardOutlined";
 import NotificationsActiveOutlinedIcon from "@mui/icons-material/NotificationsActiveOutlined";
@@ -922,90 +918,6 @@ export default function Spectator() {
         <Paper
           elevation={0}
           sx={{
-            p: 1.5,
-            mb: 3,
-            borderRadius: 3,
-            border: `1px solid ${pageBorder}`,
-            bgcolor: "rgba(255,255,255,0.94)",
-            boxShadow: "0 4px 20px rgba(15, 39, 68, 0.05)",
-          }}
-        >
-        <Stack direction="row" flexWrap="wrap" sx={{ gap: 1.25 }}>
-          <Button
-            variant="outlined"
-            startIcon={<PersonOutlineIcon />}
-            onClick={() => navigate("/spectator/profile")}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2,
-              borderColor: "rgba(8,145,178,0.38)",
-              color: "#0e7490",
-              "&:hover": { borderColor: "#0891b2", bgcolor: "rgba(8,145,178,0.07)" },
-            }}
-          >
-            Mon profil
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<LeaderboardOutlinedIcon />}
-            onClick={() => navigate("/spectator/followed-results")}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2,
-              borderColor: "rgba(8,145,178,0.42)",
-              color: "#0f766e",
-              "&:hover": { borderColor: "#0d9488", bgcolor: "rgba(13,148,136,0.08)" },
-            }}
-          >
-            Résultats des suivis
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<MapOutlinedIcon />}
-            onClick={() => navigate("/spectator/map")}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2,
-              borderColor: "rgba(22,163,74,0.35)",
-              color: "#15803d",
-              "&:hover": { borderColor: "#16a34a", bgcolor: "rgba(22,163,74,0.08)" },
-            }}
-          >
-            Carte & lieux
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={
-              <Badge
-                badgeContent={unreadCount > 99 ? "99+" : unreadCount}
-                color="error"
-                invisible={unreadCount === 0}
-                sx={{ "& .MuiBadge-badge": { fontWeight: 800 } }}
-              >
-                <NotificationsOutlinedIcon />
-              </Badge>
-            }
-            onClick={() => navigate("/spectator/notifications")}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2,
-              borderColor: "rgba(37,99,235,0.35)",
-              color: "#1d4ed8",
-              "&:hover": { borderColor: "#2563eb", bgcolor: "rgba(37,99,235,0.06)" },
-            }}
-          >
-            Notifications
-          </Button>
-        </Stack>
-        </Paper>
-
-        <Paper
-          elevation={0}
-          sx={{
             p: { xs: 2, sm: 2.25 },
             mb: 2.5,
             borderRadius: 3,
@@ -1062,7 +974,24 @@ export default function Spectator() {
           </Stack>
         </Paper>
 
-        <Typography sx={{ fontWeight: 800, fontSize: 13, color: "#0e7490", letterSpacing: "0.06em", mb: 1 }}>
+        <Typography
+          sx={{
+            fontWeight: 800,
+            fontSize: 13,
+            color: "#0e7490",
+            letterSpacing: "0.06em",
+            mb: 1,
+            display: "inline-flex",
+            alignItems: "center",
+            px: 1.25,
+            py: 0.6,
+            borderRadius: 2,
+            bgcolor: "rgba(255,255,255,0.86)",
+            backdropFilter: "blur(2px)",
+            border: "1px solid rgba(8,145,178,0.2)",
+            boxShadow: "0 2px 10px rgba(15, 39, 68, 0.08)",
+          }}
+        >
           <LiveTvOutlinedIcon sx={{ fontSize: 17, mr: 0.8, verticalAlign: "text-bottom" }} />
           CHOISIR UN ÉVÉNEMENT
         </Typography>
@@ -1230,7 +1159,7 @@ export default function Spectator() {
                       textTransform: "none",
                       fontWeight: 800,
                       fontSize: 13,
-                      maxWidth: { xs: 160, sm: 220 },
+                      maxWidth: { xs: 240, sm: 340, md: 420 },
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -1320,6 +1249,12 @@ export default function Spectator() {
                   letterSpacing: "-0.02em",
                   fontSize: { xs: "1.35rem", sm: "1.5rem" },
                   lineHeight: 1.25,
+                  display: "inline-block",
+                  px: 1.1,
+                  py: 0.4,
+                  borderRadius: 1.5,
+                  bgcolor: "rgba(255,255,255,0.86)",
+                  boxShadow: "0 2px 10px rgba(15,39,68,0.08)",
                 }}
               >
                 {selectedEventId !== null
@@ -1329,7 +1264,20 @@ export default function Spectator() {
                     : "À l’affiche"}
               </Typography>
               {selectedEventId === null && competitionsFiltered.length > 0 && (
-                <Typography sx={{ mt: 1, lineHeight: 1.55, fontSize: 15, fontWeight: 600, color: pageMuted }}>
+                <Typography
+                  sx={{
+                    mt: 1,
+                    lineHeight: 1.55,
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: pageMuted,
+                    display: "inline-block",
+                    px: 1,
+                    py: 0.25,
+                    borderRadius: 1.5,
+                    bgcolor: "rgba(255,255,255,0.82)",
+                  }}
+                >
                   {competitionsFiltered.length} compétition
                   {competitionsFiltered.length !== 1 ? "s" : ""} disponibles.
                 </Typography>
