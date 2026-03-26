@@ -1,4 +1,4 @@
-package com.ciblorgasport.admin;
+package com.ciblorgasport.admin.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

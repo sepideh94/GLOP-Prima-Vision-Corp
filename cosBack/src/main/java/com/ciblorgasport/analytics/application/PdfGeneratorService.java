@@ -1,6 +1,6 @@
 package com.ciblorgasport.analytics.application;
 
-import com.ciblorgasport.admin.AdminStatsResponse;
+import com.ciblorgasport.admin.dto.AdminStatsResponse;
 import com.lowagie.text.Document;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;

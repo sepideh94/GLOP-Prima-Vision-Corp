@@ -15,7 +15,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.event.domain.Event;
 import com.ciblorgasport.event.infrastructure.EventRepository;
 import com.ciblorgasport.spectator.domain.Spectator;

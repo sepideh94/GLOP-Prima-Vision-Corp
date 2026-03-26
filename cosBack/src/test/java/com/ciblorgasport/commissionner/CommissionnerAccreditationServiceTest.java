@@ -24,7 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.notification.domain.NotificationType;
