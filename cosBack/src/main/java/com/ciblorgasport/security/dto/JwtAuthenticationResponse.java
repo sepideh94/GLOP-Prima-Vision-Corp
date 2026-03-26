@@ -13,4 +13,8 @@ public class JwtAuthenticationResponse {
   String token;
   String role;
   Long userId;
+  /** Prénom du compte (affichage accueil, etc.) */
+  String firstName;
+  /** Nom du compte */
+  String lastName;
 }

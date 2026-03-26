@@ -92,7 +92,7 @@ const SignUpPage = () => {
           <div style={styles.leftPanelOverlay}></div>
           <div style={styles.leftAccentBar}></div>
 
-          <div>
+          <div style={styles.leftContent}>
             <div style={styles.badge}>CiblOrgaSport</div>
 
             <h1 style={styles.title}>
@@ -112,7 +112,7 @@ const SignUpPage = () => {
             </div>
           </div>
 
-          <p style={styles.footerText}>
+          <p style={{ ...styles.footerText, ...styles.leftContent }}>
             Inscription gratuite • Accès immédiat • Données sécurisées
           </p>
         </div>
@@ -281,10 +281,10 @@ const styles = {
     maxWidth: "1100px",
     borderRadius: "24px",
     overflow: "hidden",
-    boxShadow: "0 28px 80px rgba(2,6,23,0.45)",
-    border: "1px solid rgba(15,23,42,0.08)",
-    background: "rgba(2,6,23,0.45)",
-    backdropFilter: "blur(8px)",
+    boxShadow: "0 10px 36px rgba(15,23,42,0.14)",
+    border: "1px solid rgba(148,163,184,0.22)",
+    background: "rgba(255,255,255,0.06)",
+    backdropFilter: "blur(10px)",
   },
 
   leftPanel: {
@@ -294,15 +294,20 @@ const styles = {
     flexDirection: "column",
     justifyContent: "space-between",
     position: "relative",
-    background: "linear-gradient(145deg, rgba(2,6,23,0.65) 0%, rgba(15,23,42,0.55) 100%)",
+    background:
+      "linear-gradient(152deg, #1e3a5f 0%, #1e293b 42%, #172554 100%)",
     color: "#f8fafc",
   },
   leftPanelOverlay: {
     position: "absolute",
     inset: 0,
     background:
-      "linear-gradient(98deg, rgba(2,6,23,0.72) 0%, rgba(15,23,42,0.45) 38%, rgba(2,6,23,0.34) 100%)",
+      "linear-gradient(105deg, rgba(34,211,238,0.14) 0%, transparent 48%, rgba(163,230,53,0.08) 100%)",
     pointerEvents: "none",
+  },
+  leftContent: {
+    position: "relative",
+    zIndex: 1,
   },
 
   leftAccentBar: {
@@ -363,15 +368,17 @@ const styles = {
     fontSize: "12px",
     textTransform: "uppercase",
     letterSpacing: "0.08em",
-    background: "rgba(2,6,23,0.35)",
-    border: "1px solid rgba(255,255,255,0.38)",
-    color: "#e2e8f0",
+    background: "rgba(255,255,255,0.1)",
+    border: "1px solid rgba(255,255,255,0.5)",
+    color: "#f1f5f9",
+    fontWeight: 600,
   },
 
   footerText: {
     marginTop: "30px",
     fontSize: "12px",
-    color: "rgba(226,232,240,0.86)",
+    color: "#cbd5e1",
+    letterSpacing: "0.02em",
   },
 
   rightPanel: {

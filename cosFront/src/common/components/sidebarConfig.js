@@ -100,7 +100,12 @@ const sidebarConfig = {
   VOLONTEER: [
     { label: "Accueil", icon: HomeIcon, path: "/volunteer" },
     {
-      label: "Notifications",
+      label: "Mon planning",
+      icon: ScheduleIcon,
+      path: "/volunteer/planning",
+    },
+    {
+      label: "Mes notifications",
       icon: NotificationsIcon,
       path: "/notifications",
     },

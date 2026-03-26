@@ -46,6 +46,8 @@ import CommissionerParticipantsPage from
 
 import VolunteersPage from
   "../features/volunteer/pages/VolunteersPage.jsx";
+import VolunteerPlanningPage from
+  "../features/volunteer/pages/VolunteerSchedulePage.jsx";
 
 import AthleteCompetitionsPage from
   "../features/athlete/pages/AthleteCompetitionsPage.jsx";
@@ -90,6 +92,10 @@ export default function App() {
               <Route path="/commissioner" element={<Commissioner />} />
               <Route path="/spectator" element={<Spectator />} />
               <Route path="/volunteer" element={<Volunteer />} />
+              <Route
+                path="/volunteer/planning"
+                element={<VolunteerPlanningPage />}
+              />
 
               <Route path="/events" element={<EventsList />} />
               <Route
