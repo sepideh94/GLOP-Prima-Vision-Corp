@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.user.domain.UserAccount;
 import java.util.List;
 

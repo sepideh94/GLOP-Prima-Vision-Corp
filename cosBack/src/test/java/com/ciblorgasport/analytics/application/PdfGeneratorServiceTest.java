@@ -7,8 +7,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.ciblorgasport.admin.AdminStatsResponse;
-import com.ciblorgasport.admin.ChartPointResponse;
+import com.ciblorgasport.admin.dto.AdminStatsResponse;
+import com.ciblorgasport.admin.dto.ChartPointResponse;
 
 class PdfGeneratorServiceTest {
 

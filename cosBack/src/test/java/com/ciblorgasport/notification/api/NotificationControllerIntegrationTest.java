@@ -19,7 +19,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.notification.dto.NotificationResponse;
 

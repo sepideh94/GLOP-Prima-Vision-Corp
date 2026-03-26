@@ -1,4 +1,4 @@
-package com.ciblorgasport.admin;
+package com.ciblorgasport.admin.domain;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

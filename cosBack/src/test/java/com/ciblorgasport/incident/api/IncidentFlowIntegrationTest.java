@@ -22,7 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.analytics.application.AnalyticsService;
 import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.event.domain.Event;
