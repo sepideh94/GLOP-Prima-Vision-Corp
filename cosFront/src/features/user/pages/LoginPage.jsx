@@ -74,6 +74,8 @@ const LoginPage = () => {
           id: res.userId,
           email: formData.email,
           role: userRole,
+          ...(res.firstName ? { firstName: res.firstName } : {}),
+          ...(res.lastName ? { lastName: res.lastName } : {}),
           ...(firstNameFromSignup ? { firstName: firstNameFromSignup } : {}),
         },
       });

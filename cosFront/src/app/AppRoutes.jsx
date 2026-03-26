@@ -9,6 +9,7 @@ import Spectator from '../features/user/pages/Spectator';
 import Athlete from '../features/user/pages/Athlete';
 import Commissioner from '../features/user/pages/Commissioner';
 import Volunteer from '../features/user/pages/Volunteer';
+import VolunteerPlanningPage from '../features/volunteer/pages/VolunteerSchedulePage';
 import EventsList from '../features/events/pages/EventsList';
 import CompetitionListPage from '../features/competition/pages/CompetitionListPage';
 import UsersManagementPage from '../features/user/pages/UsersManagementPage';
@@ -40,6 +41,7 @@ export default function AppRoutes() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/commissioner" element={<Commissioner />} />
         <Route path="/volunteer" element={<Volunteer />} />
+        <Route path="/volunteer/planning" element={<VolunteerPlanningPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>

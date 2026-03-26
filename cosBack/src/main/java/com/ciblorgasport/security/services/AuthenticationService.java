@@ -126,7 +126,13 @@ public class AuthenticationService {
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
 
-        return JwtAuthenticationResponse.builder().token(jwt).role(role).userId(user.getId()).build();
+        return JwtAuthenticationResponse.builder()
+                .token(jwt)
+                .role(role)
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
     }
 
     public String forgotPassword(String email) {
