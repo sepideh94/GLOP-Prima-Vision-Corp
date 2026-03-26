@@ -7,6 +7,7 @@ import Footer from "./Footer";
 import appTheme from "../theme/appTheme";
 import { SPECTATOR_PAGE_BACKGROUND } from "../../features/spectator/swimmingVisuals";
 import { ATHLETE_PLANNING_ACCESS_DENIED_EVENT } from "../api/axiosInstance";
+import { NotificationUnreadProvider } from "../contexts/NotificationUnreadContext";
 
 export default function Layout() {
   const location = useLocation();
@@ -72,45 +73,47 @@ export default function Layout() {
           minHeight: "100vh",
         }}
       >
-        <Navbar />
+        <NotificationUnreadProvider>
+          <Navbar />
 
-<Box sx={{ display: "flex", flex: 1, minHeight: 0, mt: "64px" }}>
-          {!isSpectatorArea && <Sidebar />}
+          <Box sx={{ display: "flex", flex: 1, minHeight: 0, mt: "64px" }}>
+            {!isSpectatorArea && <Sidebar />}
 
-          <Box
-            component="main"
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              minHeight: 0,
-              px: isSpectatorArea ? 3 : 6,
-              py: isSpectatorArea ? 0 : 5,
-              ...(isSpectatorArea && { background: "transparent" }),
-            }}
-          >
-            <Outlet />
+            <Box
+              component="main"
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minWidth: 0,
+                minHeight: 0,
+                px: isSpectatorArea ? { xs: 1, sm: 1.5, md: 2 } : 6,
+                py: isSpectatorArea ? 0 : 5,
+                ...(isSpectatorArea && { background: "transparent" }),
+              }}
+            >
+              <Outlet />
+            </Box>
           </Box>
-        </Box>
 
-{!isSpectatorArea && <Footer />}
+          {!isSpectatorArea && <Footer />}
 
-        <Snackbar
-          open={athleteAccessDenied.open}
-          autoHideDuration={8000}
-          onClose={closeAthleteAccessDenied}
-          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        >
-          <Alert
+          <Snackbar
+            open={athleteAccessDenied.open}
+            autoHideDuration={8000}
             onClose={closeAthleteAccessDenied}
-            severity="warning"
-            variant="filled"
-            sx={{ width: "100%", maxWidth: 560 }}
+            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
           >
-            {athleteAccessDenied.message}
-          </Alert>
-        </Snackbar>
+            <Alert
+              onClose={closeAthleteAccessDenied}
+              severity="warning"
+              variant="filled"
+              sx={{ width: "100%", maxWidth: 560 }}
+            >
+              {athleteAccessDenied.message}
+            </Alert>
+          </Snackbar>
+        </NotificationUnreadProvider>
       </Box>
     </Box>
   );

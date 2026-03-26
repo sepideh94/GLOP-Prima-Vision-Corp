@@ -33,6 +33,7 @@ import UsersManagementPage from "../features/user/pages/UsersManagementPage.jsx"
 import VolunteerSchedulePage from "../features/user/pages/VolunteerSchedulePage.jsx";
 import IncidentsPage from "../features/incident/pages/IncidentsPage.jsx";
 import NotificationsPage from "../features/notification/pages/NotificationsPage.jsx";
+import SpectatorNotificationsPage from "../features/notification/pages/SpectatorNotificationsPage.jsx";
 
 import CommissionerCompetitionListPage from
   "../features/competition/pages/CommissionerCompetitionListPage.jsx";
@@ -59,9 +60,11 @@ import AdminMapPage from "../features/map/pages/AdminMapPage.jsx";
 import EventDetailsPage from "../features/spectator/pages/EventDetailsPage.jsx";
 import CompetitionResultsPage from "../features/spectator/pages/CompetitionResultsPage.jsx";
 import SpectatorProfilePage from "../features/spectator/pages/SpectatorProfilePage.jsx";
+import SpectatorTicketsPage from "../features/spectator/pages/SpectatorTicketsPage.jsx";
 import PublicResultsPage from "../features/spectator/pages/PublicResultsPage.jsx";
 import PublicCompetitionsPage from "../features/spectator/pages/PublicCompetitionsPage.jsx";
 import SpectatorMapPage from "../features/map/pages/SpectatorMapPage.jsx";
+import SpectatorFollowedResultsPage from "../features/spectator/pages/SpectatorFollowedResultsPage.jsx";
 
 
 export default function App() {
@@ -171,8 +174,16 @@ export default function App() {
                 element={<CompetitionResultsPage />}
               />
               <Route
+                path="/spectator/followed-results"
+                element={<SpectatorFollowedResultsPage />}
+              />
+              <Route
                 path="/spectator/profile"
                 element={<SpectatorProfilePage />}
+              />
+              <Route
+                path="/spectator/tickets"
+                element={<SpectatorTicketsPage />}
               />
               <Route
                 path="/spectator/map"
@@ -180,7 +191,7 @@ export default function App() {
               />
               <Route
                 path="/spectator/notifications"
-                element={<NotificationsPage />}
+                element={<SpectatorNotificationsPage />}
               />
 
             </Route>
