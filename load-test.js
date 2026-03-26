@@ -9,13 +9,11 @@ const ADMIN_PASSWORD = __ENV.ADMIN_PASSWORD || 'Admin@123';
 
 const users = new SharedArray('users', function () {
   return [
-    { role: 'commissioner', email: 'amina.badji@yopmail.com', password: PASSWORD },
-    { role: 'commissioner', email: 'thomas.mercier@yopmail.com', password: PASSWORD },
+    { role: 'spectator', email: 'sophie.martin@yopmail.com', password: PASSWORD },
+    { role: 'spectator', email: 'karim.haddou@yopmail.com', password: PASSWORD },
+    { role: 'spectator', email: 'claire.dubois@yopmail.com', password: PASSWORD },
 
-    { role: 'volunteer', email: 'lea.bernard@yopmail.com', password: PASSWORD },
-    { role: 'volunteer', email: 'mehdi.fares@yopmail.com', password: PASSWORD },
-    { role: 'volunteer', email: 'julie.petit@yopmail.com', password: PASSWORD },
-
+    { role: 'athlete', email: 'emma.fournier@yopmail.com', password: PASSWORD },
     { role: 'athlete', email: 'lina.haddad@yopmail.com', password: PASSWORD },
     { role: 'athlete', email: 'nora.azizi@yopmail.com', password: PASSWORD },
     { role: 'athlete', email: 'ines.benali@yopmail.com', password: PASSWORD },
@@ -29,11 +27,13 @@ const users = new SharedArray('users', function () {
     { role: 'athlete', email: 'noa.diallo@yopmail.com', password: PASSWORD },
     { role: 'athlete', email: 'lena.rossi@yopmail.com', password: PASSWORD },
     { role: 'athlete', email: 'rayan.kaci@yopmail.com', password: PASSWORD },
-    { role: 'athlete', email: 'emma.fournier@yopmail.com', password: PASSWORD },
 
-    { role: 'spectator', email: 'sophie.martin@yopmail.com', password: PASSWORD },
-    { role: 'spectator', email: 'karim.haddou@yopmail.com', password: PASSWORD },
-    { role: 'spectator', email: 'claire.dubois@yopmail.com', password: PASSWORD },
+    { role: 'volunteer', email: 'lea.bernard@yopmail.com', password: PASSWORD },
+    { role: 'volunteer', email: 'mehdi.fares@yopmail.com', password: PASSWORD },
+    { role: 'volunteer', email: 'julie.petit@yopmail.com', password: PASSWORD },
+
+    { role: 'commissioner', email: 'amina.badji@yopmail.com', password: PASSWORD },
+    { role: 'commissioner', email: 'thomas.mercier@yopmail.com', password: PASSWORD },
 
     { role: 'admin', email: ADMIN_EMAIL, password: ADMIN_PASSWORD },
   ];
@@ -41,50 +41,64 @@ const users = new SharedArray('users', function () {
 
 export const options = {
   scenarios: {
-    spectator_flow: {
+    login_only_30000: {
       executor: 'shared-iterations',
-      vus: 30,
-      iterations: 300,
-      exec: 'spectatorFlow',
-      maxDuration: '10m',
+      vus: 200,
+      iterations: 30000,
+      exec: 'loginOnly',
+      maxDuration: '60m',
     },
-    athlete_flow: {
+
+    spectator_simple_5000: {
+      executor: 'shared-iterations',
+      vus: 80,
+      iterations: 5000,
+      exec: 'spectatorSimple',
+      startTime: '2s',
+      maxDuration: '60m',
+    },
+
+    athlete_simple_7000: {
+      executor: 'shared-iterations',
+      vus: 100,
+      iterations: 7000,
+      exec: 'athleteSimple',
+      startTime: '4s',
+      maxDuration: '60m',
+    },
+
+    volunteer_simple_2000: {
       executor: 'shared-iterations',
       vus: 40,
-      iterations: 400,
-      exec: 'athleteFlow',
-      startTime: '3s',
-      maxDuration: '10m',
-    },
-    volunteer_flow: {
-      executor: 'shared-iterations',
-      vus: 15,
-      iterations: 100,
-      exec: 'volunteerFlow',
+      iterations: 2000,
+      exec: 'volunteerSimple',
       startTime: '6s',
-      maxDuration: '10m',
+      maxDuration: '60m',
     },
-    commissioner_flow: {
+
+    commissioner_simple_2000: {
       executor: 'shared-iterations',
-      vus: 10,
-      iterations: 100,
-      exec: 'commissionerFlow',
-      startTime: '9s',
-      maxDuration: '10m',
+      vus: 40,
+      iterations: 2000,
+      exec: 'commissionerSimple',
+      startTime: '8s',
+      maxDuration: '60m',
     },
-    admin_flow: {
+
+    admin_simple_4000: {
       executor: 'shared-iterations',
-      vus: 8,
-      iterations: 100,
-      exec: 'adminFlow',
-      startTime: '12s',
-      maxDuration: '10m',
+      vus: 40,
+      iterations: 4000,
+      exec: 'adminSimple',
+      startTime: '10s',
+      maxDuration: '60m',
     },
   },
+
   thresholds: {
-    http_req_failed: ['rate<0.15'],
+    http_req_failed: ['rate<0.05'],
+    checks: ['rate>0.95'],
     http_req_duration: ['p(95)<3000'],
-    checks: ['rate>0.85'],
   },
 };
 
@@ -128,133 +142,95 @@ function login(email, password) {
   const res = http.post(`${BASE_URL}/api/auth/signin`, payload, authHeaders());
 
   check(res, {
-    'signin status ok': (r) => r.status === 200 || r.status === 201,
+    'signin ok': (r) => r.status === 200 || r.status === 201,
   });
 
   const token = extractToken(res);
 
   check(token, {
-    'token extracted': (t) => !!t,
+    'token ok': (t) => !!t,
   });
 
   return token;
 }
 
-function get(url, token, expectedStatuses = [200]) {
+function get(url, token, expected = [200]) {
   const res = http.get(`${BASE_URL}${url}`, bearerHeaders(token));
   check(res, {
-    [`GET ${url} status ok`]: (r) => expectedStatuses.includes(r.status),
+    [`${url} ok`]: (r) => expected.includes(r.status),
   });
   return res;
 }
 
-function think(min = 0.3, max = 1.2) {
-  sleep(Math.random() * (max - min) + min);
+function pause() {
+  sleep(Math.random() * 0.4 + 0.1);
 }
 
-// ---------- FLOWS ----------
+// 30,000 logins
+export function loginOnly() {
+  const roleList = ['spectator', 'athlete', 'volunteer', 'commissioner', 'admin'];
+  const role = roleList[Math.floor(Math.random() * roleList.length)];
+  const u = pickUser(role);
+  login(u.email, u.password);
+  pause();
+}
 
-export function spectatorFlow() {
+// 20,000 simple scenarios
+export function spectatorSimple() {
   const u = pickUser('spectator');
   const token = login(u.email, u.password);
 
   get('/api/events', token);
-  think();
-
   get('/api/events/2001', token);
-  think();
-
   get('/api/trials?competitionId=3001', token);
-  think();
-
   get('/api/trials/7003', token);
-  think();
 
-  // notifications / user routes si déjà dispo dans ton app
-  get('/api/notifications', token, [200, 204, 403]);
-  think();
-
-  get('/api/user', token, [200, 403]);
-  think();
+  pause();
 }
 
-export function athleteFlow() {
+export function athleteSimple() {
   const u = pickUser('athlete');
   const token = login(u.email, u.password);
 
   get('/api/events', token);
-  think();
-
   get('/api/trials?competitionId=3001', token);
-  think();
-
   get('/api/trials/7001', token);
-  think();
-
   get('/api/trials/7002', token);
-  think();
+  get('/api/athlete/competitions', token, [200]);
 
-  // mes competitions / profil athlete si déjà présent
-  get('/api/athlete/competitions', token, [200, 403, 404]);
-  think();
-
-  get('/api/user', token, [200, 403]);
-  think();
+  pause();
 }
 
-export function volunteerFlow() {
+export function volunteerSimple() {
   const u = pickUser('volunteer');
   const token = login(u.email, u.password);
 
   get('/api/events', token);
-  think();
-
   get('/api/trials?competitionId=3002', token);
-  think();
+  get('/api/trials/7003', token);
 
-  get('/api/schedule', token, [200, 403, 404]);
-  think();
-
-  get('/api/user', token, [200, 403]);
-  think();
+  pause();
 }
 
-export function commissionerFlow() {
+export function commissionerSimple() {
   const u = pickUser('commissioner');
   const token = login(u.email, u.password);
 
   get('/api/trials?competitionId=3001', token);
-  think();
-
   get('/api/trials?competitionId=3002', token);
-  think();
-
   get('/api/trials/7005', token);
-  think();
 
-  get('/api/commissioner', token, [200, 403, 404]);
-  think();
-
-  get('/api/user', token, [200, 403]);
-  think();
+  pause();
 }
 
-export function adminFlow() {
+export function adminSimple() {
   const u = pickUser('admin');
   const token = login(u.email, u.password);
 
   get('/api/admin/competitions/3001', token);
-  think();
-
   get('/api/admin/competitions/by-event/2001', token);
-  think();
-
   get('/api/admin/sites', token);
-  think();
-
   get('/api/rounds', token);
-  think();
 
-  get('/api/user', token, [200, 403]);
-  think();
+  pause();
 }
