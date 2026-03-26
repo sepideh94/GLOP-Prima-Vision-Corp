@@ -32,13 +32,6 @@ export default function Admin() {
       route: "/events",
     },
     {
-      title: "Dashboard et Reporting",
-      subtitle: "Indicateurs, graphiques et export PDF",
-      icon: <Assessment sx={{ fontSize: 42 }} />,
-      color: "#3B82F6",
-      route: "/admin/dashboard",
-    },
-    {
       title: "Gestion des compétitions et épreuves",
       subtitle: "Suivi sportif et résultats",
       icon: <EmojiEvents sx={{ fontSize: 42 }} />,
@@ -72,6 +65,13 @@ export default function Admin() {
       icon: <Schedule sx={{ fontSize: 42 }} />,
       color: "#f97316",
       route: "/admin/schedules/create",
+    },
+    {
+      title: "Dashboard & Reporting",
+      subtitle: "Indicateurs, graphiques et export PDF",
+      icon: <Assessment sx={{ fontSize: 42 }} />,
+      color: "#3B82F6",
+      route: "/admin/dashboard",
     },
     {
       title: "Fan Zones",

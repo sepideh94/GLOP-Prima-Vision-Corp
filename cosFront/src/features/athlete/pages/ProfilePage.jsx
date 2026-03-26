@@ -31,6 +31,7 @@ import { fr } from "date-fns/locale";
 import * as yup from "yup";
 import athleteProfileService from "../services/athleteProfileService";
 import { useAuth } from "../../../common/contexts/AuthContext";
+import appTheme from "../../../common/theme/appTheme";
 import UploadedFilePreviewModal from "../../../common/components/UploadedFilePreviewModal";
 
 const PROFILE_HERO =
@@ -335,14 +336,14 @@ export default function ProfilePage() {
       sx={{
         position: "relative",
         minHeight: "100%",
+        fontFamily: appTheme.typography.fontFamily,
         mx: { xs: -3, sm: -4, md: -6 },
         mt: { xs: -2, sm: -3 },
         px: { xs: 2, sm: 3, md: 4 },
         pt: { xs: 2, sm: 3 },
         pb: 6,
         overflow: "hidden",
-        background:
-          "linear-gradient(165deg, #fffbeb 0%, #ffedd5 35%, #fef9c3 65%, #fff7ed 100%)",
+        background: "linear-gradient(180deg, #fffefb 0%, #E8F3FC 38%, #F0F7FF 100%)",
       }}
     >
       <Box
@@ -350,21 +351,23 @@ export default function ProfilePage() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(251, 191, 36, 0.22) 0%, transparent 55%), radial-gradient(ellipse 60% 40% at 100% 80%, rgba(249, 115, 22, 0.15) 0%, transparent 50%)",
+            "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(34, 211, 238, 0.14) 0%, transparent 55%), radial-gradient(ellipse 60% 40% at 100% 80%, rgba(163, 230, 53, 0.12) 0%, transparent 50%)",
           zIndex: 0,
           pointerEvents: "none",
         }}
       />
 
       <Box sx={{ position: "relative", zIndex: 1, maxWidth: 800, mx: "auto" }}>
-        <Box
+        <Paper
+          elevation={0}
           sx={{
             position: "relative",
             borderRadius: 3,
             overflow: "hidden",
             mb: 3,
-            border: "1px solid rgba(15, 39, 68, 0.12)",
-            boxShadow: "0 16px 40px rgba(15, 39, 68, 0.14)",
+            border: "1px solid rgba(15, 39, 68, 0.08)",
+            boxShadow: "0 8px 32px rgba(15, 39, 68, 0.08), 0 1px 0 rgba(255,255,255,0.8) inset",
+            bgcolor: "#fff",
             minHeight: { xs: 200, sm: 220 },
           }}
         >
@@ -377,6 +380,14 @@ export default function ProfilePage() {
               backgroundPosition: "center 38%",
               transform: "scale(1.05)",
               filter: "blur(4px)",
+              opacity: 0.28,
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              background: `radial-gradient(ellipse 80% 60% at 50% 30%, rgba(163,230,53,0.08) 0%, transparent 55%), linear-gradient(165deg, rgba(255,255,255,0.97) 0%, rgba(240,247,255,0.94) 45%, rgba(224,242,254,0.88) 100%)`,
             }}
           />
           <Box
@@ -384,7 +395,8 @@ export default function ProfilePage() {
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(105deg, rgba(15,23,42,0.88) 0%, rgba(15,23,42,0.55) 45%, rgba(2,132,199,0.35) 100%)",
+                "linear-gradient(120deg, rgba(37,99,235,0.06) 0%, transparent 42%, rgba(34,211,238,0.06) 100%)",
+              pointerEvents: "none",
             }}
           />
           <Box
@@ -401,30 +413,39 @@ export default function ProfilePage() {
                 fontSize: { xs: "1.75rem", sm: "2.15rem" },
                 fontWeight: 900,
                 mb: 1.5,
-                color: "#fff",
+                color: "#0f2744",
                 letterSpacing: "-0.03em",
                 lineHeight: 1.15,
-                textShadow: "0 2px 16px rgba(0,0,0,0.35)",
               }}
             >
               Mon profil athlète
             </Typography>
-            <Typography
+            <Paper
+              elevation={0}
               sx={{
-                fontSize: { xs: 15, sm: 16 },
-                fontWeight: 600,
-                color: "rgba(255,255,255,0.94)",
-                lineHeight: 1.65,
+                p: { xs: 2, sm: 2.25 },
+                borderRadius: 3,
                 maxWidth: 520,
                 mx: "auto",
-                textShadow: "0 1px 10px rgba(0,0,0,0.25)",
+                border: "1px solid rgba(15, 39, 68, 0.08)",
+                backgroundColor: "rgba(255, 255, 255, 0.92)",
+                boxShadow: "0 4px 20px rgba(15, 39, 68, 0.06)",
               }}
             >
-              Complétez vos informations et vos documents : sans profil complet, la validation par le
-              commissaire ne peut pas aboutir.
-            </Typography>
+              <Typography
+                sx={{
+                  fontSize: { xs: 15, sm: 16 },
+                  fontWeight: 600,
+                  color: "#0c1a2e",
+                  lineHeight: 1.65,
+                }}
+              >
+                Complétez vos informations et vos documents : sans profil complet, la validation par le
+                commissaire ne peut pas aboutir.
+              </Typography>
+            </Paper>
           </Box>
-        </Box>
+        </Paper>
 
       <Paper
         elevation={0}
@@ -432,17 +453,17 @@ export default function ProfilePage() {
           p: { xs: 3, sm: 4 },
           borderRadius: 3,
           backdropFilter: "blur(14px)",
-          border: "3px solid rgba(234, 88, 12, 0.45)",
+          border: "1px solid rgba(15, 39, 68, 0.1)",
           backgroundColor: "rgba(255, 255, 255, 0.98)",
           boxShadow:
-            "0 0 0 1px rgba(15, 39, 68, 0.06), 0 8px 0 rgba(251, 191, 36, 0.35), 0 28px 56px rgba(234, 88, 12, 0.14), inset 0 1px 0 rgba(255,255,255,1)",
+            "0 4px 24px rgba(15, 39, 68, 0.07), 0 0 0 1px rgba(34, 211, 238, 0.12), inset 0 1px 0 rgba(255,255,255,1)",
         }}
       >
         <Box
           sx={{
             height: 4,
             borderRadius: 2,
-            background: "linear-gradient(90deg, #eab308, #f97316, #ea580c)",
+            background: appTheme.gradients.navbar,
             mb: 3,
             opacity: 0.95,
           }}
@@ -581,7 +602,14 @@ export default function ProfilePage() {
                 variant="text"
                 startIcon={<VisibilityIcon />}
                 onClick={() => openFilePreview("passport")}
-                sx={{ mt: 1, textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
+                sx={{
+                  mt: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  alignSelf: "flex-start",
+                  color: "#0e7490",
+                  "&:hover": { color: "#0f766e", backgroundColor: "rgba(8, 145, 178, 0.06)" },
+                }}
               >
                 Visualiser le document
               </Button>
@@ -634,7 +662,14 @@ export default function ProfilePage() {
                 variant="text"
                 startIcon={<VisibilityIcon />}
                 onClick={() => openFilePreview("medical")}
-                sx={{ mt: 1, textTransform: "none", fontWeight: 700, alignSelf: "flex-start" }}
+                sx={{
+                  mt: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  alignSelf: "flex-start",
+                  color: "#0e7490",
+                  "&:hover": { color: "#0f766e", backgroundColor: "rgba(8, 145, 178, 0.06)" },
+                }}
               >
                 Visualiser le document
               </Button>
@@ -703,11 +738,16 @@ export default function ProfilePage() {
                 borderRadius: 2,
                 fontWeight: 800,
                 textTransform: "none",
-                background: "linear-gradient(135deg, #f59e0b, #ea580c)",
-                color: "#fff",
-                boxShadow: "0 8px 24px rgba(234, 88, 12, 0.35)",
+                background: appTheme.gradients.navbar,
+                color: appTheme.colors.dark,
+                boxShadow: "0 8px 24px rgba(34, 211, 238, 0.25)",
                 "&:hover": {
-                  background: "linear-gradient(135deg, #d97706, #c2410c)",
+                  filter: "brightness(0.96)",
+                  boxShadow: "0 10px 28px rgba(15, 39, 68, 0.12)",
+                },
+                "&:disabled": {
+                  color: "rgba(2, 6, 23, 0.38)",
+                  background: "linear-gradient(90deg, rgba(34,211,238,0.35), rgba(163,230,53,0.35))",
                 },
               }}
             >
