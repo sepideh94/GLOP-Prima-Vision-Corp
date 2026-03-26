@@ -1,5 +1,7 @@
 package com.ciblorgasport.geolocation.application.usecase;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.geolocation.application.port.GeoLocationService;
 import com.ciblorgasport.geolocation.application.port.RouteInfo;
 import com.ciblorgasport.geolocation.application.port.TravelMode;
@@ -56,11 +58,11 @@ class GetDirectionsUseCaseTest {
         }
 
         @Test
-        @DisplayName("Site introuvable → IllegalArgumentException")
+        @DisplayName("Site introuvable → ResourceNotFoundException")
         void siteNotFound_throwsIllegalArgumentException() {
             when(siteRepository.findById(99L)).thenReturn(Optional.empty());
             DirectionsRequest request = buildRequest(48.85, 2.35, 99L, null, null, null, null);
-            assertThrows(IllegalArgumentException.class, () -> useCase.execute(request));
+            assertThrows(ResourceNotFoundException.class, () -> useCase.execute(request));
         }
     }
 
@@ -102,10 +104,10 @@ class GetDirectionsUseCaseTest {
         }
 
         @Test
-        @DisplayName("Aucune destination spécifiée → IllegalArgumentException")
+        @DisplayName("Aucune destination spécifiée → BusinessValidationException")
         void noDestination_throwsIllegalArgumentException() {
             DirectionsRequest request = buildRequest(48.85, 2.35, null, null, null, null, null);
-            assertThrows(IllegalArgumentException.class, () -> useCase.execute(request));
+            assertThrows(BusinessValidationException.class, () -> useCase.execute(request));
         }
     }
 

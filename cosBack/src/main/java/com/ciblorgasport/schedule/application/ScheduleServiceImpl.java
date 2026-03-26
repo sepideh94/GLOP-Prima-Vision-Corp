@@ -8,6 +8,8 @@ import com.ciblorgasport.schedule.dto.AthleteTrialScheduleResponse;
 import com.ciblorgasport.schedule.dto.ScheduleCreateRequest;
 import com.ciblorgasport.schedule.dto.ScheduleResponse;
 import com.ciblorgasport.schedule.dto.VolunteerScheduleSummary;
+import com.ciblorgasport.common.exception.BusinessValidationException;
+import com.ciblorgasport.common.exception.ResourceNotFoundException;
 import com.ciblorgasport.user.domain.UserAccount;
 import com.ciblorgasport.site.domain.Site;
 import com.ciblorgasport.site.dto.SiteResponse;
@@ -67,10 +69,10 @@ public class ScheduleServiceImpl implements ScheduleService {
 
      
         Competition comp = competitionRepository.findById(request.getCompetitionId())
-                .orElseThrow(() -> new RuntimeException("Compétition non trouvée"));
+                .orElseThrow(() -> new ResourceNotFoundException("Compétition non trouvée"));
 
         if (request.getStartTime().isBefore(comp.getStartDate()) || request.getEndTime().isAfter(comp.getEndDate())) {
-            throw new RuntimeException("Les horaires du planning doivent être compris dans les dates de la compétition (" 
+            throw new BusinessValidationException("Les horaires du planning doivent être compris dans les dates de la compétition ("
                 + comp.getStartDate() + " au " + comp.getEndDate() + ")");
         }
 
@@ -83,7 +85,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         return request.getAssignedUserIds().stream()
                 .map(userId -> {
                     UserAccount assignedUser = userRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("Utilisateur " + userId + " non trouvé"));
+                            .orElseThrow(() -> new ResourceNotFoundException("Utilisateur " + userId + " non trouvé"));
                     
                     ScheduleItem item = createSingleItem(request, assignedUser, comp, currentUser);
                     ScheduleItem savedItem = scheduleRepository.save(item);
@@ -91,7 +93,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                     VolonteerAssignment assignment = new VolonteerAssignment();
                     
                     Volonteer volonteer = volonteerRepository.findById(userId)
-                            .orElseThrow(() -> new RuntimeException("Profil volontaire introuvable"));
+                            .orElseThrow(() -> new ResourceNotFoundException("Profil volontaire introuvable"));
 
                     assignment.setVolonteer(volonteer);
                     assignment.setTitle(savedItem.getTitle());

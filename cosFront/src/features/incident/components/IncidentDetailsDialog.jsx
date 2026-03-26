@@ -15,6 +15,8 @@ import ReportProblemIcon from "@mui/icons-material/ReportProblem";
 import appTheme from "../../../common/theme/appTheme";
 
 import trialService from "../../trial/services/trialService";
+import siteService from "../../../common/api/siteService";
+import { getApiErrorMessage } from "../../../common/utils/apiErrorMessage";
 
 const impactLabels = {
   TOUS: "Tous les utilisateurs",
@@ -27,11 +29,6 @@ const impactLabels = {
 const statusLabels = {
   EN_COURS: "En cours",
   RESOLU: "Résolu",
-};
-
-const siteLabels = {
-  1: "Piscine principale",
-  2: "Piscine secondaire",
 };
 
 const getStatusColor = (status) => {
@@ -82,6 +79,8 @@ export default function IncidentDetailsDialog({
 }) {
 
   const [trials, setTrials] = useState([]);
+  const [site, setSite] = useState(null);
+  const [siteError, setSiteError] = useState("");
 
   useEffect(() => {
 
@@ -110,6 +109,33 @@ export default function IncidentDetailsDialog({
     loadTrials();
 
   }, [incident?.competitionId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSite = async () => {
+      setSite(null);
+      setSiteError("");
+
+      if (!open || !incident?.siteId) return;
+
+      try {
+        const data = await siteService.getById(incident.siteId);
+        if (!cancelled) setSite(data || null);
+      } catch (e) {
+        if (!cancelled) {
+          setSite(null);
+          setSiteError(getApiErrorMessage(e, "Impossible de charger le site."));
+        }
+      }
+    };
+
+    loadSite();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, incident?.siteId]);
 
   const getTrialName = (id) => {
 
@@ -219,9 +245,11 @@ export default function IncidentDetailsDialog({
           <DetailRow
             label="Site"
             value={
-              incident.siteId
-                ? siteLabels[incident.siteId] || incident.siteId
-                : "-"
+              !incident.siteId
+                ? "-"
+                : siteError
+                  ? `${incident.siteId} — ${siteError}`
+                  : (site?.adress || site?.address || site?.name || incident.siteId)
             }
           />
 

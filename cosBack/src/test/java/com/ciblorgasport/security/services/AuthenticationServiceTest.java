@@ -26,6 +26,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
@@ -214,7 +215,7 @@ class AuthenticationServiceTest {
 
     @Test
     void completeForgotPassword_WhenPasswordsMismatch_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () ->
+        assertThrows(BusinessValidationException.class, () ->
             authenticationService.completeForgotPassword("dummy-token", "newPass123", "differentPass")
         );
     }

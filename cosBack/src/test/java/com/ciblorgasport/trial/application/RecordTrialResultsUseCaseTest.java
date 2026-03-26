@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.notification.application.CompetitionResultsNotificationService;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
@@ -110,7 +111,7 @@ class RecordTrialResultsUseCaseTest {
         trial.setEndDate(LocalDate.now().minusDays(1));
         when(trialRepository.findById(10L)).thenReturn(Optional.of(trial));
 
-        assertThrows(IllegalStateException.class, 
+        assertThrows(BusinessValidationException.class,
             () -> useCase.updateManual(10L, List.of(), PerformanceType.TIME, "Admin"));
     }
 

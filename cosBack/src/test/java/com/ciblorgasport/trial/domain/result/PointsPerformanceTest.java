@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -42,18 +43,18 @@ class PointsPerformanceTest {
     }
 
     @Test
-    @DisplayName("compareTo : type incompatible → IllegalArgumentException")
+    @DisplayName("compareTo : type incompatible → BusinessValidationException")
     void testCompareTo_IncompatibleType_Throws() {
         PointsPerformance points = new PointsPerformance(new BigDecimal("9.00"));
         TimePerformance   time   = new TimePerformance(new BigDecimal("9.00"));
 
-        assertThrows(IllegalArgumentException.class, () -> points.compareTo(time));
+        assertThrows(BusinessValidationException.class, () -> points.compareTo(time));
     }
 
     @Test
-    @DisplayName("constructeur : valeur null → IllegalArgumentException")
+    @DisplayName("constructeur : valeur null → BusinessValidationException")
     void testConstructor_NullValue_Throws() {
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(BusinessValidationException.class,
                 () -> new PointsPerformance(null));
     }
 

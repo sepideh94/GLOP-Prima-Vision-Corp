@@ -2,6 +2,7 @@ package com.ciblorgasport.competition.application;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 
 import java.time.LocalDateTime;
@@ -140,5 +141,23 @@ class ParticipationServiceIntegrationTest {
         
         boolean confirmedAfter = participationService.isConfirmed(testAthlete.getId(), testCompetition.getId());
         assertTrue(confirmedAfter);
+    }
+
+    @Test
+    @DisplayName("Devrait confirmer la participation et déclencher les effets secondaires")
+    void shouldConfirmParticipationAndNotifyAthlete() {
+        participationService.validateParticipation(testParticipation.getId(), true);
+
+        Participation updatedParticipation = participationRepository.findById(testParticipation.getId()).orElseThrow();
+        assertEquals(ParticipationStatus.CONFIRMED, updatedParticipation.getStatus());
+
+        verify(emailService).sendAthleteParticipationValidatedEmail(anyString(), anyString());
+        verify(notificationService).createSystemNotification(
+                any(),
+                any(),
+                anyString(),
+                anyString(),
+                anyString()
+        );
     }
 }

@@ -19,6 +19,8 @@ import com.ciblorgasport.competition.application.exceptions.CompetitionDateInteg
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.event.domain.exception.EventNotFoundException;
 import com.ciblorgasport.trial.domain.exception.ResultModificationNotAllowedException;
+import com.ciblorgasport.trial.domain.exception.TrialNotCompletedException;
+import com.ciblorgasport.trial.domain.exception.TrialNotFoundException;
 
 import jakarta.persistence.EntityNotFoundException;
 

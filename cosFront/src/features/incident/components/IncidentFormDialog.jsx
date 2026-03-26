@@ -18,6 +18,7 @@ import {
 import appTheme from "../../../common/theme/appTheme";
 import competitionService from "../../competition/services/competitionService";
 import trialService from "../../trial/services/trialService";
+import SiteSearchInput from "../../map/components/SiteSearchInput";
 
 const impactOptions = [
   { label: "Commissaires", value: "COMMISSIONNER" },
@@ -27,14 +28,9 @@ const impactOptions = [
   { label: "Tous les utilisateurs", value: "TOUS" },
 ];
 
-const SITE_OPTIONS = [
-  { value: 1, label: "Site 1 - Piscine principale" },
-  { value: 2, label: "Site 2 - Piscine secondaire" },
-];
-
 const emptyForm = {
   title: "",
-  instructions: "",
+  description: "",
   impactLevels: [],
   eventId: "",
   competitionId: "",
@@ -86,7 +82,7 @@ export default function IncidentFormDialog({
 
       setForm({
         title: incident.title || "",
-        instructions: incident.description || "",
+        description: incident.description || "",
         impactLevels: Array.isArray(incident.impactLevels)
           ? incident.impactLevels
           : [],
@@ -268,7 +264,7 @@ export default function IncidentFormDialog({
 
       await onSave({
         title: form.title.trim(),
-        instructions: form.instructions?.trim() || null,
+        description: form.description?.trim() || null,
         impactLevels: form.impactLevels,
         eventId: Number(form.eventId),
         competitionId: form.competitionId
@@ -338,9 +334,9 @@ export default function IncidentFormDialog({
 
           <TextField
             label="Instructions"
-            name="instructions"
-            value={form.instructions}
-            onChange={(e) => setForm({ ...form, instructions: e.target.value })}
+            name="description"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
             multiline
             rows={3}
             fullWidth
@@ -417,21 +413,14 @@ export default function IncidentFormDialog({
             ))}
           </TextField>
 
-          <TextField
-            select
-            label="Site (optionnel)"
-            name="siteId"
-            value={form.siteId ?? ""}
-            onChange={handleChange}
-            fullWidth
-          >
-            <MenuItem value="">—</MenuItem>
-            {SITE_OPTIONS.map((site) => (
-              <MenuItem key={site.value} value={site.value}>
-                {site.label}
-              </MenuItem>
-            ))}
-          </TextField>
+          <Box>
+            <SiteSearchInput
+              label="Site (optionnel)"
+              required={false}
+              value={form.siteId ?? ""}
+              onChange={(id) => setForm((prev) => ({ ...prev, siteId: id }))}
+            />
+          </Box>
 
         </Box>
 

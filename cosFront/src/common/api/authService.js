@@ -6,7 +6,13 @@ const authService = {
       email,
       password,
     });
-    return res.data; 
+    return res.data;
+  },
+
+  /** Profil compte connecté (prénom, nom, rôle…) — toute session avec JWT. */
+  async getCurrentUser() {
+    const res = await api.get("/api/user/me");
+    return res.data;
   },
   async signUp(firstName, lastName, email, password, role) {
     const res = await api.post("/api/auth/signup", {

@@ -10,6 +10,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import StadiumIcon from "@mui/icons-material/Stadium";
 import MapIcon from "@mui/icons-material/Map";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 
 const sidebarConfig = {
   ADMIN: [
@@ -41,7 +42,7 @@ const sidebarConfig = {
       path: "/admin/users",
     },
     {
-      label: "Planning",
+      label: "Planning des volontaires",
       icon: ScheduleIcon,
       path: "/admin/schedules/create",
     },
@@ -99,7 +100,12 @@ const sidebarConfig = {
   VOLONTEER: [
     { label: "Accueil", icon: HomeIcon, path: "/volunteer" },
     {
-      label: "Notifications",
+      label: "Mon planning",
+      icon: ScheduleIcon,
+      path: "/volunteer/planning",
+    },
+    {
+      label: "Mes notifications",
       icon: NotificationsIcon,
       path: "/notifications",
     },
@@ -107,6 +113,11 @@ const sidebarConfig = {
 
   SPECTATOR: [
     { label: "Accueil", icon: HomeIcon, path: "/spectator" },
+    {
+      label: "Résultats des suivis",
+      icon: LeaderboardIcon,
+      path: "/spectator/followed-results",
+    },
     {
       label: "Mon profil",
       icon: PeopleIcon,

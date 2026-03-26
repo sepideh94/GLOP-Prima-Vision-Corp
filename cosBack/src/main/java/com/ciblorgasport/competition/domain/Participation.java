@@ -2,6 +2,8 @@ package com.ciblorgasport.competition.domain;
 
 import java.time.LocalDateTime;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -67,7 +69,7 @@ public class Participation {
 
     public void confirmCharter() {
         if (this.competition != null && this.competition.getEndDate().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("La compétition est terminée.");
+            throw new BusinessValidationException("La compétition est terminée.");
         }
         this.charterAccepted = true;
         this.charterAcceptedAt = LocalDateTime.now();

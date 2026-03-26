@@ -6,6 +6,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.common.utils.StatusChecker;
 import com.ciblorgasport.competition.domain.Competition;
@@ -174,28 +175,17 @@ public class Trial implements StatusChecker {
      * @throws IllegalStateException if the trial is already cancelled or completed
      */
     /**
-     * Retourne la stratégie métier associée au mode de cette épreuve.
-     * <p>
-     * Point d'entrée unique pour accéder aux règles spécifiques au mode
-     * (type de participant attendu, maximum par série, validation...).
-     * L'enum {@link TrialMode} reste l'unique source de vérité persistée ;
-     * la stratégie est résolue à la demande sans modifier le schéma JPA.
-     *
-     * @return la {@link TrialModeStrategy} correspondant au mode de l'épreuve
+     * Marks this trial as cancelled by the specified user.
      */
-    public TrialModeStrategy getModeStrategy() {
-        return TrialModeStrategyFactory.getStrategy(this.mode);
-    }
-
     public void cancel(UserAccount cancelledBy) {
         Status currentStatus = getStatus();
 
         if (currentStatus == Status.CANCELED) {
-            throw new IllegalStateException("Ce trial est déjà annulé.");
+            throw new BusinessValidationException("Ce trial est déjà annulé.");
         }
 
         if (currentStatus == Status.COMPLETED) {
-            throw new IllegalStateException("Impossible d'annuler un trial terminé.");
+            throw new BusinessValidationException("Impossible d'annuler un trial terminé.");
         }
 
         // Only UPCOMING and IN_PROGRESS can be cancelled

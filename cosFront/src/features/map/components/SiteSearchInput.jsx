@@ -22,7 +22,7 @@ import { getApiErrorMessage } from "../../../common/utils/apiErrorMessage";
  * Extrait lat/lng quelle que soit la forme renvoyée par l'API Google Maps (fonction ou nombre).
  */
 function readLatLng(location) {
-  if (!location) return { latitude: NaN, longitude: NaN };
+  if (!location) return { latitude: Number.NaN, longitude: Number.NaN };
   const latRaw = location.lat;
   const lngRaw = location.lng;
   const latitude = typeof latRaw === "function" ? latRaw() : Number(latRaw);
@@ -32,11 +32,11 @@ function readLatLng(location) {
 
 function geocodePlaceId(placeId) {
   return new Promise((resolve, reject) => {
-    if (!window.google?.maps?.Geocoder) {
+    if (!globalThis.google?.maps?.Geocoder) {
       reject(new Error("GOOGLE_MAPS_NOT_READY"));
       return;
     }
-    const geocoder = new window.google.maps.Geocoder();
+    const geocoder = new globalThis.google.maps.Geocoder();
     geocoder.geocode({ placeId }, (results, status) => {
       if (status === "OK" && results?.[0]) {
         resolve(results[0]);
@@ -70,8 +70,19 @@ function geocoderStatusMessage(status) {
  * Props:
  *   value: number|string — siteId
  *   onChange: (siteId) => void
+ *   label?: string
+ *   required?: boolean
+ *   placeholder?: string
+ *   helperText?: string
  */
-export default function SiteSearchInput({ value, onChange }) {
+export default function SiteSearchInput({
+  value,
+  onChange,
+  label = "Site",
+  required = true,
+  placeholder = "Tapez au moins 3 caractères, puis choisissez une suggestion dans la liste",
+  helperText,
+}) {
   const placesLib = useMapsLibrary("places");
 
   const [inputValue, setInputValue] = useState("");
@@ -170,8 +181,8 @@ export default function SiteSearchInput({ value, onChange }) {
       setSelectedSite(site);
       onChange(site.id);
 
-      if (window.google?.maps?.places?.AutocompleteSessionToken) {
-        sessionToken.current = new window.google.maps.places.AutocompleteSessionToken();
+      if (globalThis.google?.maps?.places?.AutocompleteSessionToken) {
+        sessionToken.current = new globalThis.google.maps.places.AutocompleteSessionToken();
       }
     } catch (e) {
       if (e?.message && e.message !== "Error" && !e.response) {
@@ -201,14 +212,18 @@ export default function SiteSearchInput({ value, onChange }) {
     <Box sx={{ position: "relative" }}>
       <TextField
         fullWidth
-        label="Site *"
+        label={required ? `${label} *` : label}
         value={inputValue}
         onChange={handleInputChange}
-        placeholder="Tapez au moins 3 caractères, puis choisissez une suggestion dans la liste"
+        placeholder={placeholder}
         helperText={
-          !placesLib
+          helperText ??
+          (!placesLib
             ? "Chargement de Google Places…"
-            : "La sélection dans la liste est obligatoire (pas seulement du texte libre)."
+            : required
+              ? "La sélection dans la liste est obligatoire (pas seulement du texte libre)."
+              : "Optionnel : sélectionnez une suggestion dans la liste pour lier un site."
+          )
         }
         slotProps={{
           inputLabel: { shrink: true },

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.common.model.Status;
 import com.ciblorgasport.trial.domain.Trial;
 import com.ciblorgasport.trial.domain.TrialParticipant;
@@ -82,7 +83,7 @@ public class RecordTrialResultsUseCase {
         Trial trial = loadCompletedTrialOrThrow(trialId);
 
         if (!LocalDate.now().equals(trial.getEndDate())) {
-            throw new IllegalStateException(
+            throw new BusinessValidationException(
                     "La modification des résultats n'est autorisée que le jour même de l'épreuve.");
         }
 

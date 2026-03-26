@@ -2,6 +2,7 @@ package com.ciblorgasport.trial.domain;
 
 import java.time.LocalDateTime;
 
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.competition.domain.CompetitorType;
 
 import jakarta.persistence.Column;
@@ -60,11 +61,11 @@ public class TrialParticipant {
 
     public void declareForfeit() {
         if (this.trial != null && this.trial.hasStarted()) {
-            throw new IllegalStateException("L'épreuve a déjà commencé.");
+            throw new BusinessValidationException("L'épreuve a déjà commencé.");
         }
 
         if (this.status == TrialParticipantStatus.FORFEIT) {
-            throw new IllegalStateException("Le forfait a déjà été déclaré pour cette épreuve.");
+            throw new BusinessValidationException("Le forfait a déjà été déclaré pour cette épreuve.");
         }
 
         this.status = TrialParticipantStatus.FORFEIT;

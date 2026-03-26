@@ -1,12 +1,12 @@
 package com.ciblorgasport.trial.domain;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 
 /**
  * Factory du Strategy Pattern pour les modes d'épreuve.
@@ -24,18 +24,18 @@ import lombok.RequiredArgsConstructor;
  * Aucun service métier n'a besoin d'être modifié.
  */
 @Component
-@RequiredArgsConstructor
 public final class TrialModeStrategyFactory {
 
-	private final IndividualTrialModeStrategy individualStrategy;
-    private final TeamTrialModeStrategy teamStrategy; 
+    private final Map<TrialMode, TrialModeStrategy> strategies = new EnumMap<>(TrialMode.class);
 
-    private static final Map<TrialMode, TrialModeStrategy> STRATEGIES = new EnumMap<>(TrialMode.class);
-
-    @PostConstruct
-    public void init() {
-        STRATEGIES.put(TrialMode.INDIVIDUAL, individualStrategy);
-        STRATEGIES.put(TrialMode.TEAM, teamStrategy); 
+    public TrialModeStrategyFactory(List<TrialModeStrategy> strategies) {
+        for (TrialModeStrategy strategy : strategies) {
+            TrialMode mode = strategy.getMode();
+            if (this.strategies.containsKey(mode)) {
+                throw new IllegalStateException("Stratégie dupliquée pour le mode : " + mode);
+            }
+            this.strategies.put(mode, strategy);
+        }
     }
 
     /**
@@ -45,10 +45,10 @@ public final class TrialModeStrategyFactory {
      * @return la stratégie correspondante
      * @throws IllegalArgumentException si aucune stratégie n'est définie pour ce mode
      */
-    public static TrialModeStrategy getStrategy(TrialMode mode) {
-        TrialModeStrategy strategy = STRATEGIES.get(mode);
+    public TrialModeStrategy getStrategy(TrialMode mode) {
+        TrialModeStrategy strategy = strategies.get(mode);
         if (strategy == null) {
-            throw new IllegalArgumentException(
+            throw new BusinessValidationException(
                 "Aucune stratégie définie pour le mode d'épreuve : " + mode
                 + ". Vérifiez que ce mode est enregistré dans TrialModeStrategyFactory.");
         }

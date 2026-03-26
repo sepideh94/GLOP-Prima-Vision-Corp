@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Alert,
   Stack,
+  Paper,
 } from "@mui/material";
 import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import {
@@ -40,8 +41,8 @@ const STATUS_LABELS = {
 };
 
 const STATUS_COLORS = {
-  UPCOMING: "#f59e0b",
-  IN_PROGRESS: "#22d3ee",
+  UPCOMING: "#2563eb",
+  IN_PROGRESS: "#0891b2",
   COMPLETED: "#16a34a",
   CANCELED: "#ef4444",
 };
@@ -67,7 +68,12 @@ const DEFAULT_ACCESS_DENIED =
   "Votre participation est en attente de validation par le commissaire. Vous ne pouvez pas encore consulter votre planning.";
 
 const PAGE_BG =
-  "linear-gradient(165deg, #ecfeff 0%, #fef9c3 28%, #fff7ed 55%, #e0f2fe 100%)";
+  "linear-gradient(180deg, #fffefb 0%, #E8F3FC 38%, #F0F7FF 100%)";
+const tBorder = "rgba(15, 39, 68, 0.08)";
+const inkHeading = "#0f2744";
+const ink = "#0c1a2e";
+const scheduleCardShadow = "0 8px 28px rgba(15, 39, 68, 0.1)";
+const scheduleCardShadowHover = "0 16px 40px rgba(15, 39, 68, 0.14)";
 
 const HEADER_IMAGE =
   "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1600&q=75";
@@ -239,6 +245,7 @@ export default function AthleteSchedulePage() {
       sx={{
         width: "100%",
         minHeight: "100%",
+        fontFamily: appTheme.typography.fontFamily,
         background: PAGE_BG,
         mx: { xs: -3, sm: -4, md: -6 },
         mt: { xs: -2, sm: -3 },
@@ -282,14 +289,16 @@ export default function AthleteSchedulePage() {
         </Button>
       </Box>
 
-      <Box
+      <Paper
+        elevation={0}
         sx={{
           position: "relative",
           borderRadius: 3,
           overflow: "hidden",
           mb: 4,
-          border: "1px solid rgba(15, 39, 68, 0.1)",
-          boxShadow: "0 12px 40px rgba(15, 39, 68, 0.1)",
+          border: `1px solid ${tBorder}`,
+          boxShadow: "0 8px 32px rgba(15, 39, 68, 0.08), 0 1px 0 rgba(255,255,255,0.8) inset",
+          bgcolor: "#fff",
         }}
       >
         <Box
@@ -301,6 +310,14 @@ export default function AthleteSchedulePage() {
             backgroundPosition: "center 45%",
             transform: "scale(1.05)",
             filter: "blur(4px)",
+            opacity: 0.26,
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            background: `radial-gradient(ellipse 80% 60% at 12% 20%, rgba(163,230,53,0.1) 0%, transparent 50%), linear-gradient(165deg, rgba(255,255,255,0.97) 0%, rgba(240,247,255,0.94) 45%, rgba(224,242,254,0.88) 100%)`,
           }}
         />
         <Box
@@ -308,25 +325,23 @@ export default function AthleteSchedulePage() {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(115deg, rgba(15,23,42,0.9) 0%, rgba(15,23,42,0.72) 50%, rgba(234,88,12,0.35) 100%)",
+              "linear-gradient(120deg, rgba(34,211,238,0.08) 0%, transparent 45%, rgba(37,99,235,0.06) 100%)",
+            pointerEvents: "none",
           }}
         />
-        <Box
-          sx={{
-            position: "relative",
-            p: { xs: 2.5, md: 3.5 },
-          }}
-        >
+        <Box sx={{ position: "relative", p: { xs: 2.5, md: 3.5 } }}>
           <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ mb: 2 }}>
             <Chip
-              icon={<ScheduleOutlinedIcon sx={{ fontSize: 18, color: "#fef08a !important" }} />}
+              icon={
+                <ScheduleOutlinedIcon sx={{ color: `${appTheme.colors.cyan} !important`, fontSize: 18 }} />
+              }
               label="Planning compétition"
               size="small"
               sx={{
                 fontWeight: 800,
-                backgroundColor: "rgba(255,255,255,0.15)",
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.35)",
+                backgroundColor: "rgba(34, 211, 238, 0.12)",
+                color: inkHeading,
+                border: "1px solid rgba(34, 211, 238, 0.22)",
               }}
             />
           </Stack>
@@ -335,41 +350,43 @@ export default function AthleteSchedulePage() {
             sx={{
               fontSize: { xs: "1.75rem", md: "2.15rem" },
               fontWeight: 900,
-              color: "#fff",
+              color: inkHeading,
               letterSpacing: "-0.03em",
-              lineHeight: 1.15,
+              lineHeight: 1.2,
               mb: 1.5,
-              textShadow: "0 2px 14px rgba(0,0,0,0.35)",
             }}
           >
             Mon planning
             {competitionHeading ? (
               <>
-                <Box component="span" sx={{ color: "rgba(255,255,255,0.75)", fontWeight: 700 }}>
+                <Box component="span" sx={{ color: "#64748b", fontWeight: 700 }}>
                   {" "}
                   —{" "}
                 </Box>
-                <Box component="span" sx={{ color: "#fde047" }}>{competitionHeading}</Box>
+                <Box component="span" sx={{ color: "#0e7490", fontWeight: 800 }}>
+                  {competitionHeading}
+                </Box>
               </>
             ) : null}
           </Typography>
-          <Box
+          <Paper
+            elevation={0}
             sx={{
               p: 2,
               borderRadius: 2,
               maxWidth: 640,
-              background: "rgba(255,255,255,0.12)",
-              border: "1px solid rgba(255,255,255,0.25)",
-              backdropFilter: "blur(10px)",
+              border: `1px solid ${tBorder}`,
+              backgroundColor: "rgba(255, 255, 255, 0.92)",
+              boxShadow: "0 4px 20px rgba(15, 39, 68, 0.06)",
             }}
           >
-            <Typography sx={{ fontSize: 15, color: "rgba(255,255,255,0.95)", lineHeight: 1.65 }}>
+            <Typography sx={{ fontSize: 15, color: ink, lineHeight: 1.65, fontWeight: 500 }}>
               Horaires, phases et lieux de vos épreuves. Vous pouvez déclarer forfait selon les règles de
               la compétition (tant que l&apos;épreuve n&apos;a pas réellement commencé côté organisation).
             </Typography>
-          </Box>
+          </Paper>
         </Box>
-      </Box>
+      </Paper>
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
@@ -385,21 +402,25 @@ export default function AthleteSchedulePage() {
             p: 4,
             borderRadius: 3,
             background: "rgba(255,255,255,0.75)",
-            border: "1px dashed rgba(14, 165, 233, 0.35)",
+            border: "1px dashed rgba(8, 145, 178, 0.35)",
             textAlign: "center",
           }}
         >
-          <Typography sx={{ color: "#64748b", fontWeight: 600 }}>
+          <Typography sx={{ color: "#475569", fontWeight: 600 }}>
             Aucune épreuve trouvée pour cette compétition
           </Typography>
         </Box>
       ) : (
         <Box
           sx={{
-            display: "flex",
-            flexWrap: "wrap",
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "minmax(0, 1fr)",
+              sm: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(3, minmax(0, 1fr))",
+            },
             gap: 3,
-            justifyContent: "flex-start",
+            alignItems: "stretch",
           }}
         >
           {schedule.map((trial, index) => {
@@ -414,17 +435,19 @@ export default function AthleteSchedulePage() {
               <Card
                 key={trial.trialParticipantId || trial.trialId || index}
                 sx={{
-                  width: 400,
-                  maxWidth: "100%",
-                  minWidth: { xs: "100%", sm: 360 },
+                  width: "100%",
+                  minWidth: 0,
+                  height: "100%",
                   display: "flex",
                   flexDirection: "column",
                   borderRadius: appTheme.radius.lg,
-                  boxShadow: appTheme.shadows.card,
+                  border: "1px solid rgba(15, 39, 68, 0.08)",
+                  bgcolor: "#fff",
+                  boxShadow: scheduleCardShadow,
                   transition: "transform 0.2s, box-shadow 0.2s",
                   "&:hover": {
                     transform: "translateY(-4px)",
-                    boxShadow: appTheme.shadows.cardHover,
+                    boxShadow: scheduleCardShadowHover,
                   },
                 }}
               >
@@ -504,11 +527,11 @@ export default function AthleteSchedulePage() {
 
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon sx={{ fontSize: 18, color: "#000000" }} />
+                      <AccessTimeIcon sx={{ fontSize: 18, color: "#0e7490" }} />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: "#000000",
+                          color: inkHeading,
                         }}
                       >
                         <strong>Début:</strong> {formatDateTime(trial.startTime)}
@@ -516,11 +539,11 @@ export default function AthleteSchedulePage() {
                     </Box>
 
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <AccessTimeIcon sx={{ fontSize: 18, color: "#000000" }} />
+                      <AccessTimeIcon sx={{ fontSize: 18, color: "#0e7490" }} />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: "#000000",
+                          color: inkHeading,
                         }}
                       >
                         <strong>Fin:</strong> {formatDateTime(trial.endTime)}
@@ -531,12 +554,12 @@ export default function AthleteSchedulePage() {
                       sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
                     >
                       <LocationOnIcon
-                        sx={{ fontSize: 18, color: "#000000", mt: 0.5 }}
+                        sx={{ fontSize: 18, color: "#0e7490", mt: 0.5 }}
                       />
                       <Typography
                         sx={{
                           fontSize: 14,
-                          color: "#000000",
+                          color: inkHeading,
                         }}
                       >
                         <strong>Lieu:</strong> {trial.siteAddress}

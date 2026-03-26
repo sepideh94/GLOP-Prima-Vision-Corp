@@ -14,8 +14,8 @@ const formatDate = (dateString) => {
 const ACCENTS = [
   { bar: "#2563eb", headerFrom: "#1e40af", headerTo: "#0ea5e9", chip: "#1d4ed8", chipBg: "rgba(37,99,235,0.18)" },
   { bar: "#16a34a", headerFrom: "#14532d", headerTo: "#4ade80", chip: "#15803d", chipBg: "rgba(22,163,74,0.18)" },
-  { bar: "#ea580c", headerFrom: "#9a3412", headerTo: "#fb923c", chip: "#c2410c", chipBg: "rgba(234,88,12,0.18)" },
-  { bar: "#ca8a04", headerFrom: "#713f12", headerTo: "#facc15", chip: "#a16207", chipBg: "rgba(202,138,4,0.22)" },
+  { bar: "#0891b2", headerFrom: "#0e7490", headerTo: "#22d3ee", chip: "#0e7490", chipBg: "rgba(8,145,178,0.18)" },
+  { bar: "#0284c7", headerFrom: "#0369a1", headerTo: "#38bdf8", chip: "#0369a1", chipBg: "rgba(2,132,199,0.16)" },
 ];
 
 function pickAccent(competition) {
@@ -53,7 +53,7 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
     ? "#16a34a"
     : awaitingTeamValidation || isPendingValidation
       ? "#0284c7"
-      : "#ca8a04";
+      : "#0e7490";
 
   return (
     <Card
@@ -232,7 +232,7 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
               sx={{
                 fontSize: 20,
                 color:
-                  awaitingTeamValidation || isPendingValidation ? "#0284c7" : "#ca8a04",
+                  awaitingTeamValidation || isPendingValidation ? "#0284c7" : "#0e7490",
               }}
             />
           )}
@@ -261,11 +261,11 @@ export default function CompetitionCard({ competition, onConfirm, isProfileCompl
               borderRadius: 999,
               flexShrink: 0,
               whiteSpace: "nowrap",
-              background: `linear-gradient(135deg, ${accent.bar}, #0ea5e9)`,
+              background: `linear-gradient(135deg, ${accent.bar}, ${accent.headerTo})`,
               color: "#fff",
-              boxShadow: "0 6px 20px rgba(37,99,235,0.25)",
+              boxShadow: "0 6px 20px rgba(15, 39, 68, 0.18)",
               "&:hover": {
-                background: `linear-gradient(135deg, #1d4ed8, #0284c7)`,
+                background: `linear-gradient(135deg, ${accent.headerFrom}, ${accent.bar})`,
               },
             }}
           >

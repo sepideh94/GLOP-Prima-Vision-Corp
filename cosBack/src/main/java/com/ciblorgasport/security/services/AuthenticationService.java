@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.ciblorgasport.analytics.application.AnalyticsService;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.config.FrontendUrlBuilder;
 import com.ciblorgasport.email.EmailService;
 import com.ciblorgasport.security.ActivationToken;
@@ -86,7 +87,7 @@ public class AuthenticationService {
     public String activateAccount(String token) {
     	
         ActivationToken at = activationTokenRepository.findByTokenAndType(token, TokenType.ACTIVATION)
-                .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+                .orElseThrow(() -> new BusinessValidationException("Token invalide."));
 
         if (at.isUsed()) {
             return frontendUrlBuilder.path("/login?activated=true&already=true");
@@ -117,7 +118,7 @@ public class AuthenticationService {
                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
 
         var user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password."));
+                .orElseThrow(() -> new BusinessValidationException("Invalid email or password."));
         
         //log suivi des indicateurs
         analyticsService.logAction(user.getEmail(), "LOGIN", "Connexion réussie");
@@ -125,7 +126,13 @@ public class AuthenticationService {
         var jwt = jwtService.generateToken(user);
         String role = user.getRoleName().replace("ROLE_", "");
 
-        return JwtAuthenticationResponse.builder().token(jwt).role(role).userId(user.getId()).build();
+        return JwtAuthenticationResponse.builder()
+                .token(jwt)
+                .role(role)
+                .userId(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .build();
     }
 
     public String forgotPassword(String email) {
@@ -171,29 +178,29 @@ public class AuthenticationService {
     public void completeForgotPassword(String token, String newPassword, String confirmNewPassword) {
 
     if (!Objects.equals(newPassword, confirmNewPassword)) {
-        throw new IllegalArgumentException("Les deux mots de passe ne correspondent pas.");
+        throw new BusinessValidationException("Les deux mots de passe ne correspondent pas.");
     }
 
     if (newPassword == null || newPassword.length() < 8) {
-        throw new IllegalArgumentException("Le mot de passe doit contenir au moins 8 caractères.");
+        throw new BusinessValidationException("Le mot de passe doit contenir au moins 8 caractères.");
     }
 
     ActivationToken at = activationTokenRepository.findByToken(token)
-            .orElseThrow(() -> new IllegalArgumentException("Token invalide."));
+            .orElseThrow(() -> new BusinessValidationException("Token invalide."));
 
     if (at.isUsed()) {
-        throw new IllegalArgumentException("Token déjà utilisé.");
+        throw new BusinessValidationException("Token déjà utilisé. Réinitialisez votre mot de passe.");
     }
 
     if (at.getExpiresAt().isBefore(LocalDateTime.now())) {
-        throw new IllegalArgumentException("Token expiré.");
+        throw new BusinessValidationException("Token expiré. Réinitialisez votre mot de passe.");
     }
 
     if (at.getType() != TokenType.PASSWORD_RESET
             && at.getType() != TokenType.INVITE_COMMISSIONNER
             && at.getType() != TokenType.INVITE_ATHLETE
             && at.getType() != TokenType.INVITE_VOLONTEER) {
-        throw new IllegalArgumentException("Token invalide.");
+        throw new BusinessValidationException("Token invalide.");
     }
 
     UserAccount user = at.getUser();

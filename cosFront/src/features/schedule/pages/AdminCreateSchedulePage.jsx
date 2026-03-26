@@ -33,6 +33,13 @@ import competitionService from "../../competition/services/competitionService";
 import volunteerService from "../../volunteer/services/volunteerService";
 import api from "../../../common/api/axiosInstance";
 
+/** Parse une valeur datetime-local (YYYY-MM-DDTHH:mm) ; retourne null si invalide. */
+function parseDateTimeLocal(value) {
+  if (!value || typeof value !== "string") return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export default function AdminCreateSchedulePage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -49,6 +56,7 @@ export default function AdminCreateSchedulePage() {
   const [tasks, setTasks] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [dateValidationMessage, setDateValidationMessage] = useState("");
 
   // État du formulaire
   const [form, setForm] = useState({
@@ -159,10 +167,12 @@ export default function AdminCreateSchedulePage() {
       competitionId: null,
       assignedUserIds: [],
     });
+    setDateValidationMessage("");
     setOpenForm(true);
   };
 
   const handleCloseForm = () => {
+    setDateValidationMessage("");
     setOpenForm(false);
     setForm({
       task: null,
@@ -185,6 +195,8 @@ export default function AdminCreateSchedulePage() {
 
   const handleSave = async () => {
     try {
+      setDateValidationMessage("");
+
       // Validation
       if (!form.task || !form.startTime || !form.endTime || !form.siteId || !form.competitionId || form.assignedUserIds.length === 0) {
         setError("Veuillez remplir tous les champs obligatoires");
@@ -192,9 +204,20 @@ export default function AdminCreateSchedulePage() {
         return;
       }
 
-      if (new Date(form.startTime) >= new Date(form.endTime)) {
-        setError("La date de fin doit être postérieure à la date de début");
-        setOpenSnackbar(true);
+      const planStartDate = parseDateTimeLocal(form.startTime);
+      const planEndDate = parseDateTimeLocal(form.endTime);
+
+      if (!planStartDate || !planEndDate) {
+        setDateValidationMessage(
+          "Les dates et heures saisies ne sont pas valides. Vérifiez le format (date et heure complètes)."
+        );
+        return;
+      }
+
+      if (planStartDate.getTime() >= planEndDate.getTime()) {
+        setDateValidationMessage(
+          "La date et l'heure de fin doivent être strictement postérieures à la date et l'heure de début."
+        );
         return;
       }
 
@@ -204,20 +227,29 @@ export default function AdminCreateSchedulePage() {
         if (competitionData) {
           const compStartDate = new Date(competitionData.startDate);
           const compEndDate = new Date(competitionData.endDate);
-          const planStartDate = new Date(form.startTime);
-          const planEndDate = new Date(form.endTime);
+
+          if (Number.isNaN(compStartDate.getTime()) || Number.isNaN(compEndDate.getTime())) {
+            setDateValidationMessage(
+              "Les dates de la compétition sont invalides côté serveur. Contactez un administrateur ou réessayez plus tard."
+            );
+            return;
+          }
 
           if (planStartDate < compStartDate || planEndDate > compEndDate) {
-            setError(
-              `Les dates du planning doivent être comprises entre le ${compStartDate.toLocaleDateString("fr-FR")} et le ${compEndDate.toLocaleDateString("fr-FR")}`
+            const fmt = (d) =>
+              d.toLocaleString("fr-FR", {
+                dateStyle: "short",
+                timeStyle: "short",
+              });
+            setDateValidationMessage(
+              `Les horaires du planning doivent être entièrement compris dans la période de la compétition : du ${fmt(compStartDate)} au ${fmt(compEndDate)} (fuseau local).`
             );
-            setOpenSnackbar(true);
             return;
           }
         }
       } catch (compErr) {
         console.warn("Impossible de vérifier les dates de la compétition:", compErr);
-        // On continue quand même, le backend fera la validation
+        // On continue : le backend refusera un créneau hors période avec un message explicite
       }
 
       // Convertir les dates au format ISO pour le backend (LocalDateTime)
@@ -286,8 +318,18 @@ export default function AdminCreateSchedulePage() {
         errorMessage = err.message;
       }
       
-      setError(errorMessage);
-      setOpenSnackbar(true);
+      const isDateRelatedError =
+        typeof errorMessage === "string" &&
+        (errorMessage.includes("horaires du planning") ||
+          errorMessage.includes("dates de la compétition") ||
+          errorMessage.includes("compris dans"));
+
+      if (isDateRelatedError) {
+        setDateValidationMessage(errorMessage);
+      } else {
+        setError(errorMessage);
+        setOpenSnackbar(true);
+      }
     }
   };
 
@@ -472,9 +514,13 @@ Créer un planning
                   label="Date et heure de début"
                   type="datetime-local"
                   value={form.startTime}
-                  onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+                  onChange={(e) => {
+                    setDateValidationMessage("");
+                    setForm({ ...form, startTime: e.target.value });
+                  }}
                   fullWidth
                   required
+                  error={Boolean(dateValidationMessage)}
                   InputLabelProps={{
                     shrink: true,
                   }}
@@ -485,15 +531,29 @@ Créer un planning
                   label="Date et heure de fin"
                   type="datetime-local"
                   value={form.endTime}
-                  onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                  onChange={(e) => {
+                    setDateValidationMessage("");
+                    setForm({ ...form, endTime: e.target.value });
+                  }}
                   fullWidth
                   required
+                  error={Boolean(dateValidationMessage)}
                   InputLabelProps={{
                     shrink: true,
                   }}
                 />
               </Grid>
             </Grid>
+
+            {dateValidationMessage ? (
+              <Alert
+                severity="error"
+                onClose={() => setDateValidationMessage("")}
+                sx={{ mt: -1 }}
+              >
+                {dateValidationMessage}
+              </Alert>
+            ) : null}
 
             <Autocomplete
               options={competitions}

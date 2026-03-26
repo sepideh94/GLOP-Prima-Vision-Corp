@@ -232,14 +232,22 @@ export default function CommissionerCompetitionListPage() {
           <table className="table align-middle table-hover">
             <thead>
               <tr>
-                {["Nom", "Description", "Début", "Fin", "Statut"].map(
-                  (label, i) => (
-                    <td key={i}>
-                      <strong>{label}</strong>
-                      <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
-                    </td>
-                  )
-                )}
+                {[
+                  { label: "Nom", key: "name" },
+                  { label: "Description", key: "description" },
+                  { label: "Début", key: "startDate" },
+                  { label: "Fin", key: "endDate" },
+                  { label: "Statut", key: "statusLabel" },
+                ].map((col) => (
+                  <td
+                    key={col.key}
+                    style={{ cursor: "pointer" }}
+                    onClick={() => handleSort(col.key)}
+                  >
+                    <strong>{col.label}</strong>
+                    <UnfoldMoreIcon sx={{ fontSize: 16, ml: 0.5 }} />
+                  </td>
+                ))}
                 <td><strong>Actions</strong></td>
               </tr>
             </thead>

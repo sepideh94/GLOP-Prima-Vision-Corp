@@ -24,6 +24,7 @@ import org.mockito.quality.Strictness;
 
 import com.ciblorgasport.athlete.domain.Athlete;
 import com.ciblorgasport.athlete.infrastructure.AthleteRepository;
+import com.ciblorgasport.common.exception.BusinessValidationException;
 import com.ciblorgasport.commissionner.CommissionerRepository;
 import com.ciblorgasport.commissionner.Commissionner;
 import com.ciblorgasport.competition.domain.CompetitorType;
@@ -35,7 +36,9 @@ import com.ciblorgasport.notification.domain.NotificationType;
 import com.ciblorgasport.team.domain.Team;
 import com.ciblorgasport.team.infrastructure.TeamRepository;
 import com.ciblorgasport.trial.domain.Trial;
+import com.ciblorgasport.trial.domain.TrialMode;
 import com.ciblorgasport.trial.domain.TrialModeStrategy;
+import com.ciblorgasport.trial.domain.TrialModeStrategyFactory;
 import com.ciblorgasport.trial.domain.TrialParticipant;
 import com.ciblorgasport.trial.domain.TrialParticipantStatus;
 import com.ciblorgasport.trial.dto.TrialParticipantResponse;
@@ -72,6 +75,9 @@ class TrialParticipantServiceImplTest {
 
     @Mock
     private NotificationService notificationService;
+
+    @Mock
+    private TrialModeStrategyFactory trialModeStrategyFactory;
 
     @Mock
     private TrialModeStrategy strategy;
@@ -114,7 +120,8 @@ class TrialParticipantServiceImplTest {
         when(trial.hasStarted()).thenReturn(false);
         when(trial.isCancelled()).thenReturn(false);
         when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
-        when(trial.getModeStrategy()).thenReturn(strategy);
+        when(trial.getMode()).thenReturn(TrialMode.INDIVIDUAL);
+        when(trialModeStrategyFactory.getStrategy(TrialMode.INDIVIDUAL)).thenReturn(strategy);
         when(trial.getCompetition().getId()).thenReturn(100L);
 
         when(strategy.getMaxParticipantsPerHeat()).thenReturn(10);
@@ -200,8 +207,8 @@ class TrialParticipantServiceImplTest {
             when(trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     1L, 13L, CompetitorType.ATHLETE)).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignAthletes(1L, List.of(13L))
             );
 
@@ -220,8 +227,8 @@ class TrialParticipantServiceImplTest {
             when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                     100L, 13L, CompetitorType.ATHLETE, ParticipationStatus.CONFIRMED)).thenReturn(false);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignAthletes(1L, List.of(13L))
             );
 
@@ -289,8 +296,8 @@ class TrialParticipantServiceImplTest {
             when(trialParticipantRepository.existsByTrialIdAndCompetitorIdAndCompetitorType(
                     1L, 21L, CompetitorType.TEAM)).thenReturn(true);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignTeams(1L, List.of(21L))
             );
 
@@ -311,8 +318,8 @@ class TrialParticipantServiceImplTest {
             when(participationRepository.existsByCompetition_IdAndCompetitorIdAndCompetitorTypeAndStatus(
                     100L, 21L, CompetitorType.TEAM, ParticipationStatus.CONFIRMED)).thenReturn(false);
 
-            IllegalArgumentException exception = assertThrows(
-                    IllegalArgumentException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.assignTeams(1L, List.of(21L))
             );
 
@@ -374,8 +381,8 @@ class TrialParticipantServiceImplTest {
             Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
             when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.declareForfeit(4L, 13L)
             );
 
@@ -398,8 +405,8 @@ class TrialParticipantServiceImplTest {
             Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
             when(athleteRepository.findById(13L)).thenReturn(Optional.of(athlete));
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     () -> trialParticipantService.declareForfeit(4L, 13L)
             );
 
@@ -440,8 +447,8 @@ class TrialParticipantServiceImplTest {
 
             when(trial.hasStarted()).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     participant::declareForfeit
             );
 
@@ -460,8 +467,8 @@ class TrialParticipantServiceImplTest {
 
             when(trial.hasStarted()).thenReturn(false);
 
-            IllegalStateException exception = assertThrows(
-                    IllegalStateException.class,
+            BusinessValidationException exception = assertThrows(
+                    BusinessValidationException.class,
                     participant::declareForfeit
             );
 
@@ -538,7 +545,7 @@ class TrialParticipantServiceImplTest {
             when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
             when(trial.hasStarted()).thenReturn(true);
 
-            IllegalStateException exception = assertThrows(IllegalStateException.class, () -> trialParticipantService.removeAthlete(1L, 13L));
+            BusinessValidationException exception = assertThrows(BusinessValidationException.class, () -> trialParticipantService.removeAthlete(1L, 13L));
             assertEquals("Série déjà commencée.", exception.getMessage());
         }
 
@@ -564,6 +571,8 @@ class TrialParticipantServiceImplTest {
             when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
             when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
             when(trial.getCompetition().getId()).thenReturn(100L);
+            when(trial.getMode()).thenReturn(TrialMode.INDIVIDUAL);
+            when(teamRepository.findAllMemberAthleteIds()).thenReturn(List.of());
 
             com.ciblorgasport.competition.domain.Participation p = new com.ciblorgasport.competition.domain.Participation();
             p.setCompetitorType(CompetitorType.ATHLETE);
@@ -582,12 +591,37 @@ class TrialParticipantServiceImplTest {
         }
 
         @Test
+        void shouldExcludeTeamMembersFromEligibleAthletesInIndividualMode() {
+            when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
+            when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
+            when(trial.getCompetition().getId()).thenReturn(100L);
+            when(trial.getMode()).thenReturn(TrialMode.INDIVIDUAL);
+            when(teamRepository.findAllMemberAthleteIds()).thenReturn(List.of(13L));
+
+            com.ciblorgasport.competition.domain.Participation p = new com.ciblorgasport.competition.domain.Participation();
+            p.setCompetitorType(CompetitorType.ATHLETE);
+            p.setStatus(ParticipationStatus.CONFIRMED);
+            p.setCompetitorId(13L);
+
+            when(participationRepository.findByCompetition_Id(100L)).thenReturn(List.of(p));
+            when(trialParticipantRepository.findByTrialId(1L)).thenReturn(List.of());
+
+            Athlete athlete = mockEligibleAthlete(13L, "Ali", "Reza");
+            when(athleteRepository.findAllById(List.of(13L))).thenReturn(List.of(athlete));
+
+            List<com.ciblorgasport.athlete.dto.AthleteResponse> results = trialParticipantService.getEligibleAthletes(1L);
+            assertEquals(0, results.size());
+        }
+
+        @Test
         void shouldGetEligibleAthletesForFinal() {
             when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
             when(trial.getRound().getName()).thenReturn(RoundName.FINALE);
             when(trial.getCompetition()).thenReturn(new com.ciblorgasport.competition.domain.Competition());
             when(trial.getTrialName()).thenReturn(com.ciblorgasport.trial.domain.TrialName.HUNDRED_M_FREESTYLE);
             when(trial.getCategoryGender()).thenReturn(com.ciblorgasport.trial.domain.CategoryGender.MALE);
+            when(trial.getMode()).thenReturn(TrialMode.INDIVIDUAL);
+            when(teamRepository.findAllMemberAthleteIds()).thenReturn(List.of());
 
             when(trialParticipantRepository.findQualifiedCompetitorIds(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                     .thenReturn(List.of(13L));
@@ -605,6 +639,7 @@ class TrialParticipantServiceImplTest {
             when(trialRepository.findById(1L)).thenReturn(Optional.of(trial));
             when(trial.getRound().getName()).thenReturn(RoundName.QUALIFICATION_HEAT);
             when(trial.getCompetition().getId()).thenReturn(100L);
+            when(trial.getMode()).thenReturn(TrialMode.TEAM);
 
             com.ciblorgasport.competition.domain.Participation p = new com.ciblorgasport.competition.domain.Participation();
             p.setCompetitorType(CompetitorType.TEAM);
