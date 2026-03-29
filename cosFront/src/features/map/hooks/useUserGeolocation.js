@@ -1,5 +1,10 @@
 import { useState, useCallback } from "react";
-import { GEO_FALLBACK_POSITION, isGeoFallbackEnabled } from "../geoFallbackConfig";
+import {
+  GEO_FALLBACK_POSITION,
+  GEO_HTTPS_REQUIRED_MESSAGE,
+  isGeoFallbackEnabled,
+  isInsecureOriginForGeolocation,
+} from "../geoFallbackConfig";
 
 export default function useUserGeolocation() {
   const [position, setPosition] = useState(null);
@@ -8,6 +13,15 @@ export default function useUserGeolocation() {
 
   /** Résolu à `true` si une position a été obtenue (y compris secours), sinon `false`. */
   const locate = useCallback(() => {
+    if (isInsecureOriginForGeolocation()) {
+      if (isGeoFallbackEnabled()) {
+        setError(null);
+        setPosition({ lat: GEO_FALLBACK_POSITION.lat, lng: GEO_FALLBACK_POSITION.lng });
+        return Promise.resolve(true);
+      }
+      setError(GEO_HTTPS_REQUIRED_MESSAGE);
+      return Promise.resolve(false);
+    }
     if (!navigator.geolocation) {
       if (isGeoFallbackEnabled()) {
         setError(null);

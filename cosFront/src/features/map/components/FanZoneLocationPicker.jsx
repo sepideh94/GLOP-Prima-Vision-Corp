@@ -8,6 +8,7 @@ import MapIcon from "@mui/icons-material/Map";
 import SearchIcon from "@mui/icons-material/Search";
 import { Map, AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import { GOOGLE_MAP_ID } from "../googleMapConfig";
 
 /**
  * Props:
@@ -134,7 +135,7 @@ export default function FanZoneLocationPicker({ value, onChange }) {
             <Map
               defaultCenter={mapCenter}
               defaultZoom={13}
-              mapId="ciblorgasport-map"
+              mapId={GOOGLE_MAP_ID}
               style={{ width: "100%", height: "100%" }}
               onClick={handleMapClick}
             >

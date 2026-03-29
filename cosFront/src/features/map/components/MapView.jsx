@@ -7,6 +7,7 @@ import {
   useMap,
 } from "@vis.gl/react-google-maps";
 import { Box, Typography } from "@mui/material";
+import { GOOGLE_MAP_ID } from "../googleMapConfig";
 import { MAP_MARKER_COLORS } from "../mapMarkerColors";
 
 function PolylineOverlay({ path }) {
@@ -72,7 +73,7 @@ export default function MapView({
       <Map
         defaultCenter={center}
         defaultZoom={zoom}
-        mapId="ciblorgasport-map"
+        mapId={GOOGLE_MAP_ID}
         style={{ width: "100%", height: "100%" }}
       >
         <MapCameraSync center={center} zoom={zoom} recenterNonce={recenterNonce} />

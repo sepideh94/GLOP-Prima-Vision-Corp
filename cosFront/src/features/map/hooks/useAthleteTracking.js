@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import athleteLocationService from "../services/athleteLocationService";
-import { GEO_FALLBACK_POSITION, isGeoFallbackEnabled } from "../geoFallbackConfig";
+import {
+  GEO_FALLBACK_POSITION,
+  GEO_HTTPS_REQUIRED_MESSAGE,
+  isGeoFallbackEnabled,
+  isInsecureOriginForGeolocation,
+} from "../geoFallbackConfig";
 
 const TRACKING_INTERVAL_MS = 30_000;
 
@@ -36,6 +41,18 @@ export default function useAthleteTracking(athleteId) {
   }, [sendLocation]);
 
   const startTracking = useCallback(() => {
+    if (isInsecureOriginForGeolocation()) {
+      if (isGeoFallbackEnabled()) {
+        setError(null);
+        setTracking(true);
+        setPosition({ lat: GEO_FALLBACK_POSITION.lat, lng: GEO_FALLBACK_POSITION.lng });
+        sendLocation(GEO_FALLBACK_POSITION.lat, GEO_FALLBACK_POSITION.lng);
+        startFallbackInterval();
+        return;
+      }
+      setError(GEO_HTTPS_REQUIRED_MESSAGE);
+      return;
+    }
     if (!navigator.geolocation) {
       if (isGeoFallbackEnabled()) {
         setError(null);

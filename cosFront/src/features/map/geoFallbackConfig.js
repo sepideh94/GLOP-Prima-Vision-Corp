@@ -20,3 +20,11 @@ export function isGeoFallbackEnabled() {
   if (import.meta.env.DEV) return true;
   return String(import.meta.env.VITE_GEO_FALLBACK || "").toLowerCase() === "true";
 }
+
+/** Hors localhost, la Geolocation API n'est disponible qu'en HTTPS (`isSecureContext`). */
+export function isInsecureOriginForGeolocation() {
+  return typeof globalThis !== "undefined" && globalThis.isSecureContext === false;
+}
+
+export const GEO_HTTPS_REQUIRED_MESSAGE =
+  "La géolocalisation nécessite HTTPS en production. En HTTP, le navigateur bloque la position et l'option reste grisée — ce n'est pas un défaut de l'application.";
