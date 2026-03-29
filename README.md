@@ -155,9 +155,12 @@ docker-compose down -v
 docker compose up --build
 ```
 
-* **Savoir quand l'appli est prête** : 
-Attendez de voir le message encadré ` APPLICATION CIBLORGASPORT PRÊTE !` dans la console.
+* **Savoir quand l'appli est prête** :  
+Attendez de voir le message encadré `APPLICATION CIBLORGASPORT PRÊTE !` dans la console.
 
+* **Données initiales** :  
+Au démarrage, les données d’initialisation sont automatiquement migrées et injectées dans la base.  
+Le détail des données créées est présenté à la fin de ce README.
 
 Cette commande va :
 - Démarrer PostgreSQL sur le port 5433
@@ -365,5 +368,25 @@ L'application est accessible (lorsque l'instance de démonstration est active) �
 
 - Le frontend utilise Material-UI pour l'interface utilisateur
 
----
+## Données initialisées automatiquement
 
+Au démarrage, l’application charge un jeu de données de démonstration pour faciliter les tests et la prise en main. 
+
+- **1 événement** : **Championnats d’Europe de natation 2026** (du 1 mars 2026 au 30 avril 2026)
+- **2 compétitions** :
+  - **Natation individuelle** (du 5 mars 2026 au 20 mars 2026)
+  - **Natation par équipes** (du 10 avril 2026 au 20 avril 2026)
+- **6 épreuves** réparties entre qualifications, finales et relais mixtes
+- **2 commissaires**, **3 volontaires**, **14 athlètes** et **3 spectateurs**
+- **4 sites** et **4 équipes**
+- des participations, résultats, incidents, notifications et documents associés.
+
+### Comptes de test
+- **Admin** : user : admincos@yopmail.com, mot de passe **Admin@123**
+- **Tous les autres utilisateurs seedés** : mot de passe **12345678**. 
+
+### Exemples de connexions
+- Commissaire : `amina.badji@yopmail.com`
+- Volontaire : `lea.bernard@yopmail.com`
+- Athlète : `emma.fournier@yopmail.com`
+- Spectateur : `sophie.martin@yopmail.com`

@@ -1,7 +1,7 @@
 package com.ciblorgasport.analytics.application;
 
-import com.ciblorgasport.admin.AdminStatsResponse;
-import com.ciblorgasport.admin.ChartPointResponse;
+import com.ciblorgasport.admin.dto.AdminStatsResponse;
+import com.ciblorgasport.admin.dto.ChartPointResponse;
 import com.ciblorgasport.analytics.domain.SystemLog;
 import com.ciblorgasport.analytics.dto.SectionVisitCount;
 import com.ciblorgasport.analytics.dto.SectionVisitCountView;

@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ciblorgasport.admin.Admin;
+import com.ciblorgasport.admin.domain.Admin;
 import com.ciblorgasport.config.SecurityDisabledConfig;
 import com.ciblorgasport.notification.application.NotificationService;
 import com.ciblorgasport.notification.domain.NotificationType;

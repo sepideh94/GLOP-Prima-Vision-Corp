@@ -1389,7 +1389,7 @@ export default function HomePage() {
                       </Box>
                       {statusLabel === "Terminée" && (
                         <Button
-                          onClick={() => goToCompetitionResults(navigate, c.competitionId)}
+                          onClick={() => navigate("/resultats")}
                           endIcon={<ArrowForwardIcon />}
                           sx={{
                             mt: 1.4,

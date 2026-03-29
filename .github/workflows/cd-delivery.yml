@@ -2,7 +2,7 @@ name: CD - Build Spring Boot JAR (cosBack only)
 
 on:
   push:
-    branches: [ main ]   # Exécute seulement sur main
+    branches: [ main ]
 
 jobs:
   build-jar:
@@ -24,9 +24,3 @@ jobs:
 
       - name: Package Spring Boot JAR
         run: mvn -B -ntp clean package -DskipTests
-
-      - name: Upload built JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: springboot-app
-          path: cosBack/target/*.jar
